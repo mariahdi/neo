@@ -69,6 +69,20 @@ def _category(fields: dict) -> str:
     return "STD"
 
 
+def _is_proposal(summary: str) -> bool:
+    """Only show real proposal tickets on the board.
+
+    Neo creates proposals as 'Proposal — <title>'. This hides dev/build
+    tickets, project epics ('Proposals module ...'), and any VOID tickets.
+    """
+    s = (summary or "").strip().lower()
+    if "void" in s:
+        return False
+    if s.startswith("proposals "):   # e.g. the "Proposals module" epic
+        return False
+    return s.startswith("proposal")
+
+
 def get_dashboard() -> dict:
     """
     Return the control-panel view: columns of proposals plus a total count.
@@ -107,6 +121,8 @@ def get_dashboard() -> dict:
     buckets = {c["key"]: [] for c in COLUMNS}
     for issue in issues:
         f = issue["fields"]
+        if not _is_proposal(f.get("summary", "")):
+            continue  # hide VOID / dev / epic tickets — proposals only
         status_name = ((f.get("status") or {}).get("name") or "").lower()
         col_key = _STATUS_TO_KEY.get(status_name)
         if col_key is None:
@@ -126,7 +142,7 @@ def get_dashboard() -> dict:
         "items": buckets[c["key"]],
     } for c in COLUMNS]
 
-    return {"total": len(issues), "columns": columns}
+    return {"total": sum(len(buckets[c["key"]]) for c in COLUMNS), "columns": columns}
 
 
 def create_request(text: str) -> str:

@@ -60,6 +60,18 @@ def _fetch_draft_from_github(ticket_key: str) -> str | None:
         print(f"[review] couldn't fetch draft for {ticket_key} from GitHub: {e}")
         return None
 
+def _is_proposal(summary: str) -> bool:
+    """Only surface real proposal tickets. Neo creates them as
+    'Proposal — <title>'; this skips dev/build tickets, the 'Proposals
+    module' epic, and any VOID tickets."""
+    s = (summary or "").strip().lower()
+    if "void" in s:
+        return False
+    if s.startswith("proposals "):
+        return False
+    return s.startswith("proposal")
+
+
 # ── Step 1: Fetch In Review tickets from Jira ─────────────────────────────────
 def fetch_in_review_tickets() -> list[dict]:
     """Return raw Jira issues currently In Review."""
@@ -147,6 +159,8 @@ def get_review_queue() -> list[dict]:
     for ticket in tickets:
         key = ticket["key"]
         summary = ticket["fields"].get("summary", "")
+        if not _is_proposal(summary):
+            continue  # proposals only — skip VOID / dev / epic tickets
 
         # Flatten description to plain text
         desc_obj = ticket["fields"].get("description") or {}
