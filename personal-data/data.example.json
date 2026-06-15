@@ -1,0 +1,9 @@
+{
+  "owner": "Your name",
+  "organization": "Your company",
+  "proposals_group": ["reviewer@example.com"],
+  "defaults": {
+    "currency": "USD",
+    "signature_block": "Kind regards,\n<name>"
+  }
+}

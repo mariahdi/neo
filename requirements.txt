@@ -1,0 +1,5 @@
+# Neo orchestrator has no hard runtime deps yet (stdlib only).
+# Add when integrations are wired in, e.g.:
+#   anthropic>=0.40
+#   requests>=2.31
+#   PyYAML>=6.0

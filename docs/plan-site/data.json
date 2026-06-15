@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "docType": "Business Plan",
+    "project": "Neo",
+    "owner": "Dad",
+    "author": "Mariah Harris",
+    "location": "Arlington, VA",
+    "date": "June 2026"
+  },
+  "hero": {
+    "kicker": "Neo · a personal operating system",
+    "title": "Dad's assistant.",
+    "tagline": "Say what you need. <em>Neo handles the rest.</em>",
+    "lead": "You speak a request out loud. Neo turns it into tracked work, drafts it with AI, routes it to a real person to check, and tells you when it's done and ready for your sign-off."
+  },
+  "thesis": {
+    "kicker": "The idea",
+    "title": "From your <em>brain</em> to <em>done</em>.",
+    "body": [
+      "You already know what needs to happen — a proposal for the Red Cross, a fix to a website, a note to a tenant. The slow part is the doing. Neo removes the doing.",
+      "Speak the request. Neo writes a first draft, opens it for a contracted expert to review and refine, and brings it back to you to approve or send back. Nothing goes out without a human and your final yes.",
+      "The near-term goal is simple: keep your output high through shoulder surgery and recovery, without you leaving the bed."
+    ],
+    "pull": "Augmented, not automated. AI drafts, a person verifies, you decide."
+  },
+  "workflow": {
+    "kicker": "How it works",
+    "title": "One clean <em>loop</em>, every time.",
+    "intro": "Every request — proposal, repair, message — follows the same path. Hot items start themselves; everything else waits in a queue until you say go, or until you ask \u201cwhat can I knock out in five minutes?\u201d",
+    "steps": [
+      { "n": "01", "name": "Speak", "desc": "You say what you want in plain language. Neo captures it as a tracked ticket, prompts and all." },
+      { "n": "02", "name": "Sort", "desc": "Neo tags it: which area, how urgent, how long it'll take. Hot items start now; the rest queue for later." },
+      { "n": "03", "name": "Draft", "desc": "Claude picks the right skill, drafts the work into a shared file, and opens it for review — all the technical plumbing stays hidden." },
+      { "n": "04", "name": "Review", "desc": "A contracted expert checks the draft, comments line by line, and asks for changes until it's right. Then they sign off." },
+      { "n": "05", "name": "Approve", "desc": "It comes to you. Approve it and it's done. Send it back and it returns to the expert for another pass." }
+    ],
+    "loopNote": "If you reject, the work loops back to \u201cin progress\u201d \u2014 the same way a control system re-runs its loop until the target is met."
+  },
+  "architecture": {
+    "kicker": "Under the hood",
+    "title": "Built like <em>flight software</em>.",
+    "intro": "Mariah builds guidance, navigation and control software for satellites at Umbra. Neo borrows that discipline: one main loop that orchestrates, and self-contained modules that only run when you've turned them on.",
+    "pillars": [
+      { "label": "The Neo loop", "desc": "The brain. It listens, decides which area a request belongs to, loads the right skill, and tracks progress. It holds no sensitive data itself." },
+      { "label": "Modules", "desc": "Each area of life is its own piece, loaded only when you need it. Lighter, faster, and each one can be improved on its own." },
+      { "label": "Private data layer", "desc": "Your templates, past proposals, pricing and client details live here — never shared, never published. Neo reads from it but never exposes it." },
+      { "label": "Skill loader", "desc": "Skills like \u201cnonprofit proposal\u201d or \u201cgovernment contract\u201d live in your private layer. Neo pulls in the right one for each job." }
+    ],
+    "compartmentNote": "Sensitive areas like banking stay sealed off. They report back only \u201cdone,\u201d never the underlying numbers."
+  },
+  "privacy": {
+    "kicker": "What's shared, what's not",
+    "title": "Public frame. <em>Private contents.</em>",
+    "body": "Neo splits cleanly in two. The machinery is generic and shareable — anyone could run it. The substance is yours alone and stays locked away. It's the same idea as a journal you can buy empty: the book is for everyone, what you write in it is only yours.",
+    "columns": [
+      { "head": "Shared / open", "items": ["The Neo loop and workflow logic", "Module scaffolding", "The page template you're looking at"] },
+      { "head": "Private / yours", "items": ["Past proposals and templates", "Pricing and methodology", "Client and account details", "All personal data"] }
+    ],
+    "meta": "This very page is built that way: the layout is a reusable template, and everything you're reading lives in a separate data file. Swap the file, get a new document."
+  },
+  "modules": {
+    "kicker": "The roadmap",
+    "title": "Start small. <em>Then scale.</em>",
+    "intro": "Proposals proves the whole system. Once that loop runs smoothly, the same shape drops onto everything else.",
+    "items": [
+      { "tag": "Proof of concept", "name": "Proposals", "desc": "Voice to drafted, reviewed, approved proposal. The first loop we build.", "live": true },
+      { "tag": "Next", "name": "Landlord", "desc": "Tenant messages, maintenance requests, and recurring property admin.", "live": false },
+      { "tag": "Next", "name": "Air Force web dev", "desc": "Website updates and development tasks, tracked and reviewed before they ship.", "live": false },
+      { "tag": "Next", "name": "Mental health app", "desc": "Product and content work for the app, run through the same review loop.", "live": false },
+      { "tag": "Later", "name": "Finance & stocks", "desc": "A sealed-off module — reports status only, never exposes account data.", "live": false }
+    ]
+  },
+  "template": {
+    "kicker": "The first template",
+    "title": "Structure and <em>substance</em>, kept apart.",
+    "intro": "This document is also the first proposal template. The design never changes; the words come from a data file. To make the next proposal, we copy the data file and rewrite it.",
+    "snippet": "{\n  \"hero\": {\n    \"title\": \"Dad's assistant.\",\n    \"tagline\": \"Say what you need.\"\n  },\n  \"modules\": [\n    { \"name\": \"Proposals\", \"live\": true }\n  ]\n}",
+    "caption": "data.json \u2014 the part that changes per proposal"
+  },
+  "status": {
+    "kicker": "Where we are",
+    "title": "Already <em>moving</em>.",
+    "items": [
+      { "state": "done", "label": "Plan documented", "detail": "Full architecture written up and agreed." },
+      { "state": "done", "label": "Jira board seeded", "detail": "NEO-1 epic + NEO-2 (Red Cross example) created." },
+      { "state": "next", "label": "Add \u201cIn Review\u201d column", "detail": "Quick board setting so the workflow has all four stages." },
+      { "state": "next", "label": "Scaffold the repo", "detail": "Lay down the Neo skeleton and the private data stub." },
+      { "state": "next", "label": "Build the proposals loop", "detail": "Wire voice \u2192 ticket \u2192 draft \u2192 review \u2192 approve end to end." }
+    ]
+  },
+  "people": {
+    "kicker": "Who's involved",
+    "title": "Small team. <em>Clear roles.</em>",
+    "items": [
+      { "name": "Dad", "role": "Owner & primary user", "note": "Former SVP at an IT consulting firm. Speaks the requests, gives the final yes." },
+      { "name": "Mariah", "role": "Architect & builder", "note": "GNC engineer at Umbra. Designs and builds Neo; brings the flight-software discipline." },
+      { "name": "Reviewers", "role": "Contracted experts", "note": "Sign off on drafts. Notified by on-call, ping, or dashboard depending on contract." }
+    ]
+  },
+  "footer": {
+    "line": "Neo \u2014 dad's assistant",
+    "credit": "Designed & built by Mariah · Arlington, VA · June 2026"
+  }
+}

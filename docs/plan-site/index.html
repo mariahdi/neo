@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Neo — Dad's Assistant · Business Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF6EC;
+    --paper-2:#F3ECDB;
+    --ink:#211C16;
+    --ink-soft:#4A4238;
+    --gold:#F2B01E;
+    --gold-deep:#C98A0E;
+    --slate:#26313A;
+    --slate-2:#2E3A44;
+    --taupe:#8A7E6A;
+    --line:#E4DCCB;
+    --line-dk:#3C4750;
+    --display:"Fraunces",Georgia,serif;
+    --body:"Hanken Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"Space Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);color:var(--ink);font-family:var(--body);
+    font-size:18px;line-height:1.6;-webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 32px}
+  .eyebrow{
+    font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--gold-deep);display:inline-block;margin-bottom:20px;
+  }
+  h1,h2,h3{font-family:var(--display);font-weight:600;line-height:1.02;letter-spacing:-.02em}
+  h2{font-size:clamp(34px,5.5vw,60px);margin-bottom:28px}
+  em{font-style:italic;font-weight:500;color:var(--gold-deep)}
+  section{padding:96px 0;border-bottom:1px solid var(--line)}
+  p{color:var(--ink-soft);max-width:62ch}
+  .lead{font-size:clamp(19px,2.1vw,23px);color:var(--ink);max-width:54ch}
+
+  /* ---------- Hero ---------- */
+  .hero{position:relative;padding:120px 0 104px;border-bottom:1px solid var(--line);overflow:hidden}
+  .hero .kick{font-family:var(--mono);font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--taupe)}
+  .hero h1{font-size:clamp(62px,13vw,168px);line-height:.92;margin:18px 0 6px;letter-spacing:-.04em}
+  .hero .tag{font-family:var(--display);font-size:clamp(24px,4vw,42px);font-weight:400;line-height:1.1;color:var(--ink);margin-bottom:30px}
+  .hero .tag em{color:var(--gold-deep)}
+  .hero .lead{margin-bottom:36px}
+  .hero-meta{display:flex;flex-wrap:wrap;gap:10px 26px;font-family:var(--mono);font-size:12.5px;letter-spacing:.04em;color:var(--taupe);text-transform:uppercase}
+  .hero-meta b{color:var(--ink);font-weight:700}
+  /* orbital signature */
+  .orbit{position:absolute;top:-60px;right:-120px;width:460px;height:460px;pointer-events:none;opacity:.9}
+  .orbit svg{width:100%;height:100%}
+  .orbit .ring{fill:none;stroke:var(--line);stroke-width:1.5}
+  .orbit .core{fill:var(--gold)}
+  .orbit .sat{fill:var(--slate)}
+  .orbit .spin{transform-origin:230px 230px;animation:spin 18s linear infinite}
+  .orbit .spin2{transform-origin:230px 230px;animation:spin 30s linear infinite reverse}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ---------- Marquee ---------- */
+  .marquee{background:var(--ink);color:var(--paper);padding:16px 0;overflow:hidden;border-bottom:1px solid var(--line)}
+  .marquee-track{display:flex;white-space:nowrap;width:max-content;animation:slide 26s linear infinite}
+  .marquee span{font-family:var(--display);font-style:italic;font-size:22px;padding:0 28px;color:var(--paper)}
+  .marquee span::after{content:"·";color:var(--gold);margin-left:56px}
+  @keyframes slide{to{transform:translateX(-50%)}}
+
+  /* ---------- Thesis ---------- */
+  .thesis .body p{margin-bottom:20px}
+  .pull{font-family:var(--display);font-style:italic;font-size:clamp(22px,3.2vw,34px);line-height:1.25;color:var(--ink);border-left:3px solid var(--gold);padding-left:26px;margin-top:40px;max-width:24ch}
+
+  /* ---------- Workflow ---------- */
+  .steps{margin-top:46px;border-top:1px solid var(--line)}
+  .step{display:grid;grid-template-columns:120px 200px 1fr;gap:28px;align-items:baseline;padding:30px 0;border-bottom:1px solid var(--line)}
+  .step .num{font-family:var(--mono);font-size:15px;color:var(--gold-deep);letter-spacing:.1em}
+  .step .nm{font-family:var(--display);font-size:30px;font-weight:600}
+  .step p{margin:0}
+  .loopnote{margin-top:30px;font-family:var(--mono);font-size:13.5px;color:var(--taupe);display:flex;gap:12px;align-items:flex-start}
+  .loopnote::before{content:"↻";color:var(--gold-deep);font-size:18px;line-height:1}
+
+  /* ---------- Architecture (dark) ---------- */
+  .arch{background:var(--slate);color:var(--paper);border-bottom:none}
+  .arch .eyebrow{color:var(--gold)}
+  .arch h2{color:var(--paper)}
+  .arch h2 em{color:var(--gold)}
+  .arch .intro{color:#C9D2D8;max-width:60ch;margin-bottom:48px}
+  .pillars{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line-dk);border:1px solid var(--line-dk)}
+  .pillar{background:var(--slate);padding:30px 28px}
+  .pillar .lbl{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
+  .pillar .lbl::before{content:"▸ ";color:var(--gold)}
+  .pillar p{color:#C2CBD1;font-size:16px;margin:0}
+  .compartment{margin-top:34px;font-family:var(--mono);font-size:13.5px;color:#9FB0BB;border-top:1px dashed var(--line-dk);padding-top:22px}
+  .compartment b{color:var(--gold);font-weight:400}
+
+  /* ---------- Privacy ---------- */
+  .pcols{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:42px}
+  .pcol{border:1px solid var(--line);border-radius:4px;padding:26px;background:#fff8;}
+  .pcol h3{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:18px}
+  .pcol.share h3{color:var(--gold-deep)}
+  .pcol.priv h3{color:var(--slate-2)}
+  .pcol ul{list-style:none}
+  .pcol li{padding:9px 0 9px 22px;position:relative;color:var(--ink-soft);font-size:16px;border-bottom:1px solid var(--line)}
+  .pcol li:last-child{border-bottom:none}
+  .pcol li::before{position:absolute;left:0;top:9px}
+  .pcol.share li::before{content:"○";color:var(--gold-deep)}
+  .pcol.priv li::before{content:"●";color:var(--slate-2)}
+  .meta-note{margin-top:32px;font-style:italic;font-family:var(--display);font-size:20px;color:var(--ink);max-width:58ch}
+
+  /* ---------- Modules ---------- */
+  .mods{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:46px}
+  .mod{border:1px solid var(--line);border-radius:5px;padding:26px;background:#fff8;transition:transform .2s ease,box-shadow .2s ease;position:relative}
+  .mod:hover{transform:translateY(-3px);box-shadow:0 12px 30px -16px rgba(33,28,22,.3)}
+  .mod.poc{background:var(--gold);border-color:var(--gold-deep)}
+  .mod .tag{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--taupe)}
+  .mod.poc .tag{color:#5c4708}
+  .mod h3{font-size:27px;margin:10px 0 8px}
+  .mod p{font-size:15.5px;margin:0;color:var(--ink-soft)}
+  .mod.poc p{color:#4d3c08}
+  .mod .dot{position:absolute;top:26px;right:26px;width:9px;height:9px;border-radius:50%;background:var(--line)}
+  .mod.poc .dot{background:var(--ink);box-shadow:0 0 0 4px rgba(33,28,22,.15)}
+
+  /* ---------- Template / code ---------- */
+  .tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;margin-top:40px}
+  .code{background:var(--slate);border-radius:6px;padding:24px;font-family:var(--mono);font-size:13.5px;line-height:1.7;color:#D7E0E6;overflow-x:auto}
+  .code .k{color:var(--gold)}
+  .code .s{color:#9ED9A0}
+  .code-cap{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--taupe);margin-top:12px;text-transform:uppercase}
+
+  /* ---------- Status ---------- */
+  .status-list{margin-top:42px;border-top:1px solid var(--line)}
+  .srow{display:grid;grid-template-columns:34px 240px 1fr;gap:20px;align-items:center;padding:20px 0;border-bottom:1px solid var(--line)}
+  .srow .chk{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-family:var(--mono)}
+  .srow.done .chk{background:var(--gold);color:var(--ink)}
+  .srow.next .chk{background:transparent;border:1.5px dashed var(--taupe);color:var(--taupe)}
+  .srow .lbl{font-family:var(--display);font-size:20px;font-weight:600}
+  .srow.next .lbl{color:var(--ink-soft)}
+  .srow .det{font-size:15.5px;color:var(--taupe);margin:0}
+
+  /* ---------- People ---------- */
+  .ppl{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:46px}
+  .person{border-top:2px solid var(--ink);padding-top:18px}
+  .person .nm{font-family:var(--display);font-size:26px;font-weight:600;margin-bottom:4px}
+  .person .rl{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:12px}
+  .person p{font-size:15px;color:var(--ink-soft);margin:0}
+
+  /* ---------- Footer ---------- */
+  footer{background:var(--ink);color:var(--paper);padding:70px 0;border:none}
+  footer .fl{font-family:var(--display);font-size:clamp(30px,6vw,64px);font-weight:600;letter-spacing:-.03em}
+  footer .fl em{color:var(--gold)}
+  footer .cr{font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:#A99F8E;margin-top:18px;text-transform:uppercase}
+
+  /* ---------- Responsive ---------- */
+  @media(max-width:760px){
+    body{font-size:17px}
+    .wrap{padding:0 22px}
+    section{padding:64px 0}
+    .orbit{display:none}
+    .step{grid-template-columns:60px 1fr;gap:14px}
+    .step .nm{grid-column:2;font-size:24px}
+    .step p{grid-column:2}
+    .pillars,.pcols,.mods,.tpl-grid,.ppl{grid-template-columns:1fr}
+    .srow{grid-template-columns:30px 1fr;row-gap:4px}
+    .srow .det{grid-column:2}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .marquee-track,.orbit .spin,.orbit .spin2{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="orbit" aria-hidden="true">
+    <svg viewBox="0 0 460 460">
+      <circle class="ring" cx="230" cy="230" r="200"/>
+      <circle class="ring" cx="230" cy="230" r="140"/>
+      <circle class="ring" cx="230" cy="230" r="86"/>
+      <circle class="core" cx="230" cy="230" r="11"/>
+      <g class="spin"><circle class="sat" cx="430" cy="230" r="8"/></g>
+      <g class="spin2"><circle class="sat" cx="230" cy="90" r="6"/></g>
+      <g class="spin"><circle class="core" cx="316" cy="230" r="5"/></g>
+    </svg>
+  </div>
+  <div class="wrap">
+    <div class="kick" id="h-kick"></div>
+    <h1 id="h-title"></h1>
+    <div class="tag" id="h-tag"></div>
+    <p class="lead" id="h-lead"></p>
+    <div class="hero-meta" id="h-meta"></div>
+  </div>
+</header>
+
+<!-- MARQUEE -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track" id="marquee"></div>
+</div>
+
+<!-- THESIS -->
+<section class="thesis">
+  <div class="wrap">
+    <span class="eyebrow" id="t-kick"></span>
+    <h2 id="t-title"></h2>
+    <div class="body" id="t-body"></div>
+    <div class="pull" id="t-pull"></div>
+  </div>
+</section>
+
+<!-- WORKFLOW -->
+<section class="workflow">
+  <div class="wrap">
+    <span class="eyebrow" id="w-kick"></span>
+    <h2 id="w-title"></h2>
+    <p class="lead" id="w-intro"></p>
+    <div class="steps" id="w-steps"></div>
+    <div class="loopnote" id="w-loop"></div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section class="arch">
+  <div class="wrap">
+    <span class="eyebrow" id="a-kick"></span>
+    <h2 id="a-title"></h2>
+    <p class="intro" id="a-intro"></p>
+    <div class="pillars" id="a-pillars"></div>
+    <div class="compartment" id="a-comp"></div>
+  </div>
+</section>
+
+<!-- PRIVACY -->
+<section class="privacy">
+  <div class="wrap">
+    <span class="eyebrow" id="p-kick"></span>
+    <h2 id="p-title"></h2>
+    <p id="p-body"></p>
+    <div class="pcols" id="p-cols"></div>
+    <div class="meta-note" id="p-meta"></div>
+  </div>
+</section>
+
+<!-- MODULES -->
+<section class="modules">
+  <div class="wrap">
+    <span class="eyebrow" id="m-kick"></span>
+    <h2 id="m-title"></h2>
+    <p class="lead" id="m-intro"></p>
+    <div class="mods" id="m-list"></div>
+  </div>
+</section>
+
+<!-- TEMPLATE -->
+<section class="template">
+  <div class="wrap">
+    <span class="eyebrow" id="tp-kick"></span>
+    <h2 id="tp-title"></h2>
+    <div class="tpl-grid">
+      <p id="tp-intro"></p>
+      <div>
+        <pre class="code" id="tp-code"></pre>
+        <div class="code-cap" id="tp-cap"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATUS -->
+<section class="status">
+  <div class="wrap">
+    <span class="eyebrow" id="s-kick"></span>
+    <h2 id="s-title"></h2>
+    <div class="status-list" id="s-list"></div>
+  </div>
+</section>
+
+<!-- PEOPLE -->
+<section class="people">
+  <div class="wrap">
+    <span class="eyebrow" id="pe-kick"></span>
+    <h2 id="pe-title"></h2>
+    <div class="ppl" id="pe-list"></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="fl" id="f-line"></div>
+    <div class="cr" id="f-cr"></div>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   Neo plan renderer.
+   The page is a TEMPLATE. All content comes from data.json.
+   In the repo: serve both files and it fetches data.json live.
+   Here in preview: fetch() of a local file is blocked, so it
+   falls back to the embedded copy below. Keep the two in sync,
+   or better — delete FALLBACK once you're serving from a folder.
+   ============================================================ */
+const FALLBACK = {"meta":{"docType":"Business Plan","project":"Neo","owner":"Dad","author":"Mariah Harris","location":"Arlington, VA","date":"June 2026"},"hero":{"kicker":"Neo · a personal operating system","title":"Dad's assistant.","tagline":"Say what you need. <em>Neo handles the rest.</em>","lead":"You speak a request out loud. Neo turns it into tracked work, drafts it with AI, routes it to a real person to check, and tells you when it's done and ready for your sign-off."},"thesis":{"kicker":"The idea","title":"From your <em>brain</em> to <em>done</em>.","body":["You already know what needs to happen — a proposal for the Red Cross, a fix to a website, a note to a tenant. The slow part is the doing. Neo removes the doing.","Speak the request. Neo writes a first draft, opens it for a contracted expert to review and refine, and brings it back to you to approve or send back. Nothing goes out without a human and your final yes.","The near-term goal is simple: keep your output high through shoulder surgery and recovery, without you leaving the bed."],"pull":"Augmented, not automated. AI drafts, a person verifies, you decide."},"workflow":{"kicker":"How it works","title":"One clean <em>loop</em>, every time.","intro":"Every request — proposal, repair, message — follows the same path. Hot items start themselves; everything else waits in a queue until you say go, or until you ask “what can I knock out in five minutes?”","steps":[{"n":"01","name":"Speak","desc":"You say what you want in plain language. Neo captures it as a tracked ticket, prompts and all."},{"n":"02","name":"Sort","desc":"Neo tags it: which area, how urgent, how long it'll take. Hot items start now; the rest queue for later."},{"n":"03","name":"Draft","desc":"Claude picks the right skill, drafts the work into a shared file, and opens it for review — all the technical plumbing stays hidden."},{"n":"04","name":"Review","desc":"A contracted expert checks the draft, comments line by line, and asks for changes until it's right. Then they sign off."},{"n":"05","name":"Approve","desc":"It comes to you. Approve it and it's done. Send it back and it returns to the expert for another pass."}],"loopNote":"If you reject, the work loops back to “in progress” — the same way a control system re-runs its loop until the target is met."},"architecture":{"kicker":"Under the hood","title":"Built like <em>flight software</em>.","intro":"Mariah builds guidance, navigation and control software for satellites at Umbra. Neo borrows that discipline: one main loop that orchestrates, and self-contained modules that only run when you've turned them on.","pillars":[{"label":"The Neo loop","desc":"The brain. It listens, decides which area a request belongs to, loads the right skill, and tracks progress. It holds no sensitive data itself."},{"label":"Modules","desc":"Each area of life is its own piece, loaded only when you need it. Lighter, faster, and each one can be improved on its own."},{"label":"Private data layer","desc":"Your templates, past proposals, pricing and client details live here — never shared, never published. Neo reads from it but never exposes it."},{"label":"Skill loader","desc":"Skills like “nonprofit proposal” or “government contract” live in your private layer. Neo pulls in the right one for each job."}],"compartmentNote":"Sensitive areas like banking stay sealed off. They report back only “done,” never the underlying numbers."},"privacy":{"kicker":"What's shared, what's not","title":"Public frame. <em>Private contents.</em>","body":"Neo splits cleanly in two. The machinery is generic and shareable — anyone could run it. The substance is yours alone and stays locked away. It's the same idea as a journal you can buy empty: the book is for everyone, what you write in it is only yours.","columns":[{"head":"Shared / open","items":["The Neo loop and workflow logic","Module scaffolding","The page template you're looking at"]},{"head":"Private / yours","items":["Past proposals and templates","Pricing and methodology","Client and account details","All personal data"]}],"meta":"This very page is built that way: the layout is a reusable template, and everything you're reading lives in a separate data file. Swap the file, get a new document."},"modules":{"kicker":"The roadmap","title":"Start small. <em>Then scale.</em>","intro":"Proposals proves the whole system. Once that loop runs smoothly, the same shape drops onto everything else.","items":[{"tag":"Proof of concept","name":"Proposals","desc":"Voice to drafted, reviewed, approved proposal. The first loop we build.","live":true},{"tag":"Next","name":"Landlord","desc":"Tenant messages, maintenance requests, and recurring property admin.","live":false},{"tag":"Next","name":"Air Force web dev","desc":"Website updates and development tasks, tracked and reviewed before they ship.","live":false},{"tag":"Next","name":"Mental health app","desc":"Product and content work for the app, run through the same review loop.","live":false},{"tag":"Later","name":"Finance & stocks","desc":"A sealed-off module — reports status only, never exposes account data.","live":false}]},"template":{"kicker":"The first template","title":"Structure and <em>substance</em>, kept apart.","intro":"This document is also the first proposal template. The design never changes; the words come from a data file. To make the next proposal, we copy the data file and rewrite it.","snippet":"{\n  \"hero\": {\n    \"title\": \"Dad's assistant.\",\n    \"tagline\": \"Say what you need.\"\n  },\n  \"modules\": [\n    { \"name\": \"Proposals\", \"live\": true }\n  ]\n}","caption":"data.json — the part that changes per proposal"},"status":{"kicker":"Where we are","title":"Already <em>moving</em>.","items":[{"state":"done","label":"Plan documented","detail":"Full architecture written up and agreed."},{"state":"done","label":"Jira board seeded","detail":"NEO-1 epic + NEO-2 (Red Cross example) created."},{"state":"next","label":"Add “In Review” column","detail":"Quick board setting so the workflow has all four stages."},{"state":"next","label":"Scaffold the repo","detail":"Lay down the Neo skeleton and the private data stub."},{"state":"next","label":"Build the proposals loop","detail":"Wire voice → ticket → draft → review → approve end to end."}]},"people":{"kicker":"Who's involved","title":"Small team. <em>Clear roles.</em>","items":[{"name":"Dad","role":"Owner & primary user","note":"Former SVP at an IT consulting firm. Speaks the requests, gives the final yes."},{"name":"Mariah","role":"Architect & builder","note":"GNC engineer at Umbra. Designs and builds Neo; brings the flight-software discipline."},{"name":"Reviewers","role":"Contracted experts","note":"Sign off on drafts. Notified by on-call, ping, or dashboard depending on contract."}]},"footer":{"line":"Neo — dad's assistant","credit":"Designed & built by Mariah · Arlington, VA · June 2026"}};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+function render(d){
+  // hero
+  $("h-kick").textContent = d.hero.kicker;
+  $("h-title").textContent = d.hero.title;
+  $("h-tag").innerHTML = d.hero.tagline;
+  $("h-lead").textContent = d.hero.lead;
+  $("h-meta").innerHTML =
+    `<span><b>${d.meta.docType}</b></span>`+
+    `<span>For <b>${d.meta.owner}</b></span>`+
+    `<span>By <b>${d.meta.author}</b></span>`+
+    `<span>${d.meta.date}</span>`;
+
+  // marquee
+  const words = d.workflow.steps.map(s=>s.name);
+  const strip = [...words,...words,...words,...words].map(w=>`<span>${w}</span>`).join("");
+  $("marquee").innerHTML = strip;
+
+  // thesis
+  $("t-kick").textContent = d.thesis.kicker;
+  $("t-title").innerHTML = d.thesis.title;
+  $("t-body").innerHTML = d.thesis.body.map(p=>`<p>${p}</p>`).join("");
+  $("t-pull").textContent = d.thesis.pull;
+
+  // workflow
+  $("w-kick").textContent = d.workflow.kicker;
+  $("w-title").innerHTML = d.workflow.title;
+  $("w-intro").textContent = d.workflow.intro;
+  $("w-steps").innerHTML = d.workflow.steps.map(s=>
+    `<div class="step"><span class="num">${s.n}</span><span class="nm">${esc(s.name)}</span><p>${esc(s.desc)}</p></div>`).join("");
+  $("w-loop").innerHTML = `<span>${esc(d.workflow.loopNote)}</span>`;
+
+  // architecture
+  $("a-kick").textContent = d.architecture.kicker;
+  $("a-title").innerHTML = d.architecture.title;
+  $("a-intro").textContent = d.architecture.intro;
+  $("a-pillars").innerHTML = d.architecture.pillars.map(p=>
+    `<div class="pillar"><div class="lbl">${esc(p.label)}</div><p>${esc(p.desc)}</p></div>`).join("");
+  $("a-comp").innerHTML = `<b>Compartmentalized.</b> ${esc(d.architecture.compartmentNote)}`;
+
+  // privacy
+  $("p-kick").textContent = d.privacy.kicker;
+  $("p-title").innerHTML = d.privacy.title;
+  $("p-body").textContent = d.privacy.body;
+  $("p-cols").innerHTML = d.privacy.columns.map((c,i)=>
+    `<div class="pcol ${i===0?'share':'priv'}"><h3>${esc(c.head)}</h3><ul>${c.items.map(it=>`<li>${esc(it)}</li>`).join("")}</ul></div>`).join("");
+  $("p-meta").textContent = d.privacy.meta;
+
+  // modules
+  $("m-kick").textContent = d.modules.kicker;
+  $("m-title").innerHTML = d.modules.title;
+  $("m-intro").textContent = d.modules.intro;
+  $("m-list").innerHTML = d.modules.items.map(m=>
+    `<div class="mod ${m.live?'poc':''}"><span class="dot"></span><span class="tag">${esc(m.tag)}</span><h3>${esc(m.name)}</h3><p>${esc(m.desc)}</p></div>`).join("");
+
+  // template
+  $("tp-kick").textContent = d.template.kicker;
+  $("tp-title").innerHTML = d.template.title;
+  $("tp-intro").textContent = d.template.intro;
+  const code = esc(d.template.snippet)
+    .replace(/&quot;(hero|modules|title|tagline|name|live)&quot;/g,'<span class="k">"$1"</span>')
+    .replace(/&quot;(Dad's assistant\.|Say what you need\.|Proposals)&quot;/g,'<span class="s">"$1"</span>');
+  $("tp-code").innerHTML = code;
+  $("tp-cap").textContent = d.template.caption;
+
+  // status
+  $("s-kick").textContent = d.status.kicker;
+  $("s-title").innerHTML = d.status.title;
+  $("s-list").innerHTML = d.status.items.map(s=>
+    `<div class="srow ${s.state}"><span class="chk">${s.state==='done'?'✓':'·'}</span><span class="lbl">${esc(s.label)}</span><p class="det">${esc(s.detail)}</p></div>`).join("");
+
+  // people
+  $("pe-kick").textContent = d.people.kicker;
+  $("pe-title").innerHTML = d.people.title;
+  $("pe-list").innerHTML = d.people.items.map(p=>
+    `<div class="person"><div class="nm">${esc(p.name)}</div><div class="rl">${esc(p.role)}</div><p>${esc(p.note)}</p></div>`).join("");
+
+  // footer
+  $("f-line").innerHTML = esc(d.footer.line).replace("dad's assistant","<em>dad's assistant</em>");
+  $("f-cr").textContent = d.footer.credit;
+}
+
+(async function(){
+  let data = FALLBACK;
+  try{
+    const res = await fetch("./data.json",{cache:"no-store"});
+    if(res.ok) data = await res.json();
+  }catch(e){ /* preview / file:// — use embedded fallback */ }
+  render(data);
+})();
+</script>
+</body>
+</html>

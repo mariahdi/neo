@@ -1,0 +1,17 @@
+# --- Private data layer: never commit real contents ---
+personal-data/data.json
+personal-data/skills/*.md
+!personal-data/skills/*.example.md
+
+# Real local config (keep only the .example)
+config/neo.config.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Env / secrets
+.env

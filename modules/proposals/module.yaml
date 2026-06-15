@@ -1,0 +1,18 @@
+# Proposals module manifest
+name: proposals
+status: proof-of-concept
+description: Voice request -> drafted, reviewed, approved proposal.
+
+# Jira workflow this module expects (add "In Review" in board settings).
+states: [to_do, in_progress, in_review, done]
+
+# Skills this module can load from the private data layer.
+# The skill files themselves live in personal-data/skills/ and are NOT
+# committed. Only their names are public.
+skills:
+  - nonprofit-proposal
+  - government-contract
+  - general-proposal
+
+# Branch naming: one feature branch per ticket.
+branch_pattern: "feature/{key}"
