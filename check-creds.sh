@@ -7,8 +7,11 @@
 #   - Anthropic (NEO_ANTHROPIC_API_KEY)                -> /v1/models
 #   - GitHub    (NEO_GITHUB_TOKEN)                     -> /user + repo push perm
 #
-# Base URL and repo default to this project's config if unset. Nothing here
-# writes anything — it's read-only. Exit code is 0 only if every check passes.
+# Base URL and repo default to this project's config if unset. The GitHub
+# check makes ONE reversible write (creates a temp branch off the default
+# branch, then deletes it) to truly verify push access — a read of
+# permissions.push can't see a fine-grained token's missing Contents:write.
+# Everything else is read-only. Exit code is 0 only if every check passes.
 
 set -uo pipefail
 
@@ -74,14 +77,37 @@ else
     bad "auth rejected (HTTP $code) — invalid token"
   else
     ok "token valid"
-    # Confirm write access to the repo (needed for branch + commit + PR).
-    body=$(curl -s -m 15 "${gh_h[@]}" "https://api.github.com/repos/$REPO")
-    if echo "$body" | grep -q '"push":[[:space:]]*true'; then
-      ok "write access to $REPO"
-    elif echo "$body" | grep -q '"id"'; then
-      bad "can see $REPO but no push access — token needs Contents R/W + Pull requests R/W (or 'repo' scope)"
+    repo_json=$(curl -s -m 15 "${gh_h[@]}" "https://api.github.com/repos/$REPO")
+    if ! echo "$repo_json" | grep -q '"id"'; then
+      bad "cannot access $REPO — the token's Repository access doesn't include it"
     else
-      bad "cannot access $REPO — check the token's repository permissions"
+      ok "can see $REPO"
+      # Real write probe: create a throwaway ref off the default branch (the
+      # exact op the live run does via POST /git/refs), then delete it.
+      default_branch=$(printf '%s' "$repo_json" | sed -n 's/.*"default_branch":[[:space:]]*"\([^"]*\)".*/\1/p')
+      default_branch="${default_branch:-main}"
+      base_sha=$(curl -s -m 15 "${gh_h[@]}" \
+        "https://api.github.com/repos/$REPO/git/ref/heads/$default_branch" \
+        | sed -n 's/.*"sha":[[:space:]]*"\([0-9a-f]\{40\}\)".*/\1/p' | head -1)
+      if [ -z "$base_sha" ]; then
+        bad "couldn't read '$default_branch' to test write access"
+      else
+        tmp_ref="neo-credcheck-$$"
+        create_code=$(curl -s -o /dev/null -w "%{http_code}" -m 15 "${gh_h[@]}" \
+          -X POST "https://api.github.com/repos/$REPO/git/refs" \
+          -d "{\"ref\":\"refs/heads/$tmp_ref\",\"sha\":\"$base_sha\"}")
+        case "$create_code" in
+          201)
+            ok "write access confirmed (Contents: write)"
+            del_code=$(curl -s -o /dev/null -w "%{http_code}" -m 15 "${gh_h[@]}" \
+              -X DELETE "https://api.github.com/repos/$REPO/git/refs/heads/$tmp_ref")
+            [ "$del_code" = "204" ] || printf "         note: couldn't auto-delete temp branch '%s' (HTTP %s) — remove it on GitHub\n" "$tmp_ref" "$del_code"
+            ;;
+          403) bad "token can READ $REPO but not WRITE — grant Contents: Read and write (+ Pull requests: Read and write)" ;;
+          422) bad "write test inconclusive (HTTP 422) — base ref/sha problem" ;;
+          *)   bad "write test failed (HTTP $create_code)" ;;
+        esac
+      fi
     fi
   fi
 fi
