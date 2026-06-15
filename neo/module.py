@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .integrations import (ClaudeClient, DryGitHubClient, DryJiraClient,
-                           LiveGitHubClient, LiveJiraClient)
+from .integrations import (DryClaudeClient, DryGitHubClient, DryJiraClient,
+                           LiveClaudeClient, LiveGitHubClient, LiveJiraClient)
 from .skill_loader import SkillLoader
 from .types import WorkItem
 
@@ -21,7 +21,7 @@ from .types import WorkItem
 class Context:
     jira: DryJiraClient | LiveJiraClient
     github: DryGitHubClient | LiveGitHubClient
-    claude: ClaudeClient
+    claude: DryClaudeClient | LiveClaudeClient
     skills: SkillLoader
 
 

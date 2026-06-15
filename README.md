@@ -47,8 +47,8 @@ In Review. Add `--force-start` to also run the queued (non-hot) item.
 1. `cp config/neo.config.example.json config/neo.config.json` and edit.
 2. In `personal-data/`, copy the `*.example.*` stubs to real files and fill
    them in (they're gitignored).
-3. Wire the TODOs in `neo/integrations.py` to the Jira, GitHub, and
-   Anthropic APIs.
+3. Set the integration env vars (Jira, GitHub, Anthropic) and run
+   `python -m neo --live`. See [`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md).
 
 ## Workflow
 

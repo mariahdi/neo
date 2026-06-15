@@ -6,8 +6,8 @@ Each integration has two variants that share one interface:
   - a Dry* client that only narrates ("what would happen"), used by --dry-run
   - a Live* client that actually calls the API
 
-GitHub and Jira are now live; Claude is still a dry-only stub. The loop is
-agnostic — it just calls the methods on whatever client it's given.
+Jira, GitHub and Claude all now have live variants. The loop is agnostic —
+it just calls the methods on whatever client it's given.
 
 Jira uses the Atlassian Cloud REST API v3 over stdlib urllib (no extra
 deps). Credentials come from the environment, never the repo:
@@ -259,12 +259,18 @@ class LiveGitHubClient:
 
 
 # --------------------------------------------------------------------------
-# Claude (still a dry stub — next integration to wire)
+# Claude (acts as one of the developers: it drafts the work)
 # --------------------------------------------------------------------------
+_DRAFT_SYSTEM = (
+    "You are drafting a document on behalf of the owner, acting as one of "
+    "their developers. Follow the skill instructions below exactly. Produce "
+    "a complete, ready-to-review draft in Markdown — no preamble, no notes "
+    "to the reviewer, just the document itself.\n\n"
+    "=== SKILL ===\n{skill}\n=== END SKILL ==="
+)
 
 
-class ClaudeClient:
-    """Claude acts as one of the developers: it drafts the work."""
+class DryClaudeClient:
     def __init__(self, reporter: Reporter | None = None):
         self.reporter = reporter or ConsoleReporter()
 
@@ -276,3 +282,54 @@ class ClaudeClient:
             "This is where Claude's drafted proposal will appear once the "
             "Anthropic API is wired in. The loaded skill shaped this output."
         )
+
+
+class LiveClaudeClient:
+    """Real drafting via the Anthropic Messages API (stdlib urllib).
+
+    Env:
+        NEO_ANTHROPIC_API_KEY   from console.anthropic.com
+        NEO_ANTHROPIC_MODEL     optional, defaults to a balanced model
+    """
+    API = "https://api.anthropic.com/v1/messages"
+    DEFAULT_MODEL = "claude-sonnet-4-6"
+
+    def __init__(self, reporter: Reporter | None = None):
+        self.reporter = reporter or ConsoleReporter()
+        self._key = os.environ.get("NEO_ANTHROPIC_API_KEY", "")
+        if not self._key:
+            raise RuntimeError(
+                "Live Claude needs NEO_ANTHROPIC_API_KEY in the environment."
+            )
+        self.model = os.environ.get("NEO_ANTHROPIC_MODEL", self.DEFAULT_MODEL)
+        self.max_tokens = int(os.environ.get("NEO_ANTHROPIC_MAX_TOKENS", "4096"))
+
+    def draft(self, request: str, skill_text: str) -> str:
+        self.reporter.say(f"Claude: drafting with {self.model}")
+        payload = {
+            "model": self.model,
+            "max_tokens": self.max_tokens,
+            "system": _DRAFT_SYSTEM.format(skill=skill_text),
+            "messages": [{"role": "user", "content": request}],
+        }
+        req = urllib.request.Request(self.API, data=json.dumps(payload).encode(),
+                                     method="POST")
+        req.add_header("x-api-key", self._key)
+        req.add_header("anthropic-version", "2023-06-01")
+        req.add_header("content-type", "application/json")
+        try:
+            with urllib.request.urlopen(req) as resp:
+                body = json.loads(resp.read().decode())
+        except urllib.error.HTTPError as e:
+            raise RuntimeError(
+                f"Anthropic API {e.code}: {e.read().decode()[:300]}"
+            ) from None
+        # Concatenate all text blocks from the response.
+        text = "".join(
+            b.get("text", "") for b in body.get("content", []) if b.get("type") == "text"
+        )
+        return text or "(empty draft returned)"
+
+
+# Backwards-compatible alias.
+ClaudeClient = DryClaudeClient
