@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Neo — Sprint Standup #01</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF6EC;
+    --paper-2:#F3ECDB;
+    --ink:#211C16;
+    --ink-soft:#4A4238;
+    --gold:#F2B01E;
+    --gold-deep:#C98A0E;
+    --slate:#26313A;
+    --slate-2:#2E3A44;
+    --taupe:#8A7E6A;
+    --green:#3F8E5B;
+    --line:#E4DCCB;
+    --line-dk:#3C4750;
+    --display:"Fraunces",Georgia,serif;
+    --body:"Hanken Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"Space Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);color:var(--ink);font-family:var(--body);
+    font-size:18px;line-height:1.6;-webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 32px}
+  .eyebrow{
+    font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--gold-deep);display:inline-block;margin-bottom:20px;
+  }
+  h1,h2,h3{font-family:var(--display);font-weight:600;line-height:1.02;letter-spacing:-.02em}
+  h2{font-size:clamp(34px,5.5vw,60px);margin-bottom:28px}
+  em{font-style:italic;font-weight:500;color:var(--gold-deep)}
+  section{padding:96px 0;border-bottom:1px solid var(--line)}
+  p{color:var(--ink-soft);max-width:62ch}
+  .lead{font-size:clamp(19px,2.1vw,23px);color:var(--ink);max-width:54ch}
+
+  /* ---------- Hero ---------- */
+  .hero{position:relative;padding:120px 0 104px;border-bottom:1px solid var(--line);overflow:hidden}
+  .hero .kick{font-family:var(--mono);font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--taupe)}
+  .hero h1{font-size:clamp(62px,13vw,168px);line-height:.92;margin:18px 0 6px;letter-spacing:-.04em}
+  .hero .tag{font-family:var(--display);font-size:clamp(24px,4vw,42px);font-weight:400;line-height:1.1;color:var(--ink);margin-bottom:30px}
+  .hero .tag em{color:var(--gold-deep)}
+  .hero .lead{margin-bottom:36px}
+  .hero-meta{display:flex;flex-wrap:wrap;gap:10px 26px;font-family:var(--mono);font-size:12.5px;letter-spacing:.04em;color:var(--taupe);text-transform:uppercase}
+  .hero-meta b{color:var(--ink);font-weight:700}
+  .pill{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--green);border:1px solid var(--green);border-radius:100px;padding:6px 14px;margin-bottom:22px}
+  .pill::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(63,142,91,.18)}
+  /* orbital signature */
+  .orbit{position:absolute;top:-60px;right:-120px;width:460px;height:460px;pointer-events:none;opacity:.9}
+  .orbit svg{width:100%;height:100%}
+  .orbit .ring{fill:none;stroke:var(--line);stroke-width:1.5}
+  .orbit .core{fill:var(--gold)}
+  .orbit .sat{fill:var(--slate)}
+  .orbit .spin{transform-origin:230px 230px;animation:spin 18s linear infinite}
+  .orbit .spin2{transform-origin:230px 230px;animation:spin 30s linear infinite reverse}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ---------- Marquee ---------- */
+  .marquee{background:var(--ink);color:var(--paper);padding:16px 0;overflow:hidden;border-bottom:1px solid var(--line)}
+  .marquee-track{display:flex;white-space:nowrap;width:max-content;animation:slide 26s linear infinite}
+  .marquee span{font-family:var(--display);font-style:italic;font-size:22px;padding:0 28px;color:var(--paper)}
+  .marquee span::after{content:"·";color:var(--gold);margin-left:56px}
+  @keyframes slide{to{transform:translateX(-50%)}}
+
+  /* ---------- Summary ---------- */
+  .summary .body p{margin-bottom:20px}
+  .pull{font-family:var(--display);font-style:italic;font-size:clamp(22px,3.2vw,34px);line-height:1.25;color:var(--ink);border-left:3px solid var(--gold);padding-left:26px;margin-top:40px;max-width:28ch}
+
+  /* ---------- Shipped (status list) ---------- */
+  .status-list{margin-top:42px;border-top:1px solid var(--line)}
+  .srow{display:grid;grid-template-columns:34px 250px 1fr;gap:20px;align-items:center;padding:22px 0;border-bottom:1px solid var(--line)}
+  .srow .chk{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-family:var(--mono)}
+  .srow.done .chk{background:var(--gold);color:var(--ink)}
+  .srow.next .chk{background:transparent;border:1.5px dashed var(--taupe);color:var(--taupe)}
+  .srow .lbl{font-family:var(--display);font-size:21px;font-weight:600}
+  .srow .lbl .t{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-deep);font-weight:400;margin-bottom:4px}
+  .srow.next .lbl{color:var(--ink-soft)}
+  .srow .det{font-size:15.5px;color:var(--taupe);margin:0}
+
+  /* ---------- Loop (steps) ---------- */
+  .steps{margin-top:46px;border-top:1px solid var(--line)}
+  .step{display:grid;grid-template-columns:120px 200px 1fr 70px;gap:28px;align-items:baseline;padding:30px 0;border-bottom:1px solid var(--line)}
+  .step .num{font-family:var(--mono);font-size:15px;color:var(--gold-deep);letter-spacing:.1em}
+  .step .nm{font-family:var(--display);font-size:30px;font-weight:600}
+  .step p{margin:0}
+  .step .live{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--green);text-align:right;white-space:nowrap}
+  .step .live::before{content:"● ";font-size:10px}
+  .loopnote{margin-top:30px;font-family:var(--mono);font-size:13.5px;color:var(--taupe);display:flex;gap:12px;align-items:flex-start}
+  .loopnote::before{content:"↻";color:var(--gold-deep);font-size:18px;line-height:1}
+
+  /* ---------- Demo (dark cards) ---------- */
+  .demo{background:var(--slate);color:var(--paper);border-bottom:none}
+  .demo .eyebrow{color:var(--gold)}
+  .demo h2{color:var(--paper)}
+  .demo h2 em{color:var(--gold)}
+  .demo .intro{color:#C9D2D8;max-width:60ch;margin-bottom:48px}
+  .demo-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .dcard{background:var(--slate-2);border:1px solid var(--line-dk);border-radius:6px;padding:26px;display:flex;flex-direction:column}
+  .dcard.hot{border-color:var(--gold)}
+  .dcard .tag{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+  .dcard h3{color:var(--paper);font-size:24px;margin-bottom:10px}
+  .dcard p{color:#C2CBD1;font-size:15px;margin:0 0 20px}
+  .dcard .cmd{margin-top:auto;font-family:var(--mono);font-size:13px;color:#9ED9A0;background:#1b242b;border:1px solid var(--line-dk);border-radius:5px;padding:11px 13px;overflow-x:auto}
+  .dcard .cmd::before{content:"$ ";color:var(--taupe)}
+
+  /* ---------- Metrics ---------- */
+  .metrics{background:var(--ink);color:var(--paper);border-bottom:none}
+  .metrics .eyebrow{color:var(--gold)}
+  .metrics h2{color:var(--paper)}
+  .metrics h2 em{color:var(--gold)}
+  .mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line-dk);border:1px solid var(--line-dk);margin-top:42px}
+  .mcell{background:var(--ink);padding:38px 26px}
+  .mcell .v{font-family:var(--display);font-size:clamp(46px,7vw,76px);font-weight:600;line-height:1;color:var(--gold);letter-spacing:-.03em}
+  .mcell .l{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#A99F8E;margin-top:14px}
+
+  /* ---------- Footer ---------- */
+  footer{background:var(--ink);color:var(--paper);padding:70px 0;border:none}
+  footer .fl{font-family:var(--display);font-size:clamp(30px,6vw,64px);font-weight:600;letter-spacing:-.03em}
+  footer .fl em{color:var(--gold)}
+  footer .cr{font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:#A99F8E;margin-top:18px;text-transform:uppercase}
+
+  /* ---------- Responsive ---------- */
+  @media(max-width:760px){
+    body{font-size:17px}
+    .wrap{padding:0 22px}
+    section{padding:64px 0}
+    .orbit{display:none}
+    .step{grid-template-columns:60px 1fr;gap:14px}
+    .step .nm{grid-column:2;font-size:24px}
+    .step p{grid-column:2}
+    .step .live{grid-column:2;text-align:left}
+    .demo-cards,.mgrid{grid-template-columns:1fr}
+    .srow{grid-template-columns:30px 1fr;row-gap:4px}
+    .srow .det{grid-column:2}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .marquee-track,.orbit .spin,.orbit .spin2{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="orbit" aria-hidden="true">
+    <svg viewBox="0 0 460 460">
+      <circle class="ring" cx="230" cy="230" r="200"/>
+      <circle class="ring" cx="230" cy="230" r="140"/>
+      <circle class="ring" cx="230" cy="230" r="86"/>
+      <circle class="core" cx="230" cy="230" r="11"/>
+      <g class="spin"><circle class="sat" cx="430" cy="230" r="8"/></g>
+      <g class="spin2"><circle class="sat" cx="230" cy="90" r="6"/></g>
+      <g class="spin"><circle class="core" cx="316" cy="230" r="5"/></g>
+    </svg>
+  </div>
+  <div class="wrap">
+    <div class="pill" id="h-pill"></div>
+    <div class="kick" id="h-kick"></div>
+    <h1 id="h-title"></h1>
+    <div class="tag" id="h-tag"></div>
+    <p class="lead" id="h-lead"></p>
+    <div class="hero-meta" id="h-meta"></div>
+  </div>
+</header>
+
+<!-- MARQUEE -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track" id="marquee"></div>
+</div>
+
+<!-- SUMMARY -->
+<section class="summary">
+  <div class="wrap">
+    <span class="eyebrow" id="su-kick"></span>
+    <h2 id="su-title"></h2>
+    <div class="body" id="su-body"></div>
+    <div class="pull" id="su-pull"></div>
+  </div>
+</section>
+
+<!-- SHIPPED -->
+<section class="shipped">
+  <div class="wrap">
+    <span class="eyebrow" id="sh-kick"></span>
+    <h2 id="sh-title"></h2>
+    <div class="status-list" id="sh-list"></div>
+  </div>
+</section>
+
+<!-- LOOP -->
+<section class="loop">
+  <div class="wrap">
+    <span class="eyebrow" id="l-kick"></span>
+    <h2 id="l-title"></h2>
+    <p class="lead" id="l-intro"></p>
+    <div class="steps" id="l-steps"></div>
+    <div class="loopnote" id="l-loop"></div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section class="demo">
+  <div class="wrap">
+    <span class="eyebrow" id="d-kick"></span>
+    <h2 id="d-title"></h2>
+    <p class="intro" id="d-intro"></p>
+    <div class="demo-cards" id="d-cards"></div>
+  </div>
+</section>
+
+<!-- METRICS -->
+<section class="metrics">
+  <div class="wrap">
+    <span class="eyebrow" id="me-kick"></span>
+    <h2 id="me-title"></h2>
+    <div class="mgrid" id="me-grid"></div>
+  </div>
+</section>
+
+<!-- NEXT -->
+<section class="next">
+  <div class="wrap">
+    <span class="eyebrow" id="n-kick"></span>
+    <h2 id="n-title"></h2>
+    <div class="status-list" id="n-list"></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="fl" id="f-line"></div>
+    <div class="cr" id="f-cr"></div>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   Neo standup renderer.
+   The page is a TEMPLATE. All content comes from data.json.
+   Serve the folder and it fetches data.json live; opened as a
+   file:// (double-click) it falls back to the embedded copy.
+   To make the next standup: copy data.json, rewrite it, done.
+   Keep FALLBACK in sync, or serve the folder and ignore it.
+   ============================================================ */
+const FALLBACK = {"meta":{"docType":"Sprint Standup","sprint":"Sprint 01","project":"Neo","owner":"Dad","author":"Mariah Harris","location":"Arlington, VA","date":"June 15, 2026"},"hero":{"kicker":"Neo · sprint standup #01","title":"Sprint one.","tagline":"From a plan on paper to a <em>working loop.</em>","lead":"Two weeks ago Neo was a write-up. Today the whole path runs: speak a request, Claude drafts it, a real reviewer signs off in a clean web app, and it comes back to you to approve — with no Jira or Git jargon ever reaching the people using it.","statusLabel":"On track"},"marquee":["Scaffold","GitHub","Claude","Jira","--live","Reviewer app","Approve"],"summary":{"kicker":"The headline","title":"The loop <em>runs end to end</em>.","body":["The proof-of-concept module — Proposals — now goes the whole distance. You can narrate the loop with a single command, and with real keys it opens a branch, drafts with Claude, files a pull request, and moves the ticket to In Review on its own.","The big new piece this sprint is the reviewer web app: a clean dashboard where a contracted expert reviews a draft and clicks Approve or Request Changes. They never see a Jira key, a branch name, or a line of code — just the work."],"pull":"Plan → scaffold → live integrations → a reviewer app. The skeleton now has a heartbeat."},"shipped":{"kicker":"Shipped this sprint","title":"What got <em>done</em>.","items":[{"state":"done","tag":"Foundation","label":"Repo scaffolded","detail":"The Neo loop, router, skill loader, the Proposals module, the private data layer, config, and docs — the full skeleton, ~770 lines."},{"state":"done","tag":"Integration","label":"Live GitHub","detail":"Neo opens a real branch, makes a commit, and files a pull request entirely on its own — 245 lines of integration code."},{"state":"done","tag":"Integration","label":"Live Claude","detail":"Drafting runs through the Anthropic Messages API, so the first draft of every proposal is written by AI."},{"state":"done","tag":"Integration","label":"Jira + GitHub + Claude wired","detail":"All three integrations run as one path under ticket NEO-4 — ticket in, branch + draft + PR out, status updated."},{"state":"done","tag":"Safety","label":"The --live switch","detail":"One flag flips Neo from safe dry-run narration to real calls, and fails gracefully with a clear message when a key is missing."},{"state":"done","tag":"New app","label":"Reviewer web app","detail":"A dashboard + reviewer screens (~880 lines) wired to live Jira. Approve, Request Changes, and Re-prompt all work — and no keys, branches, or jargon ever leak to the reviewer."}]},"loop":{"kicker":"What it does","title":"One clean <em>loop</em>, now live.","intro":"Every request follows the same five steps. As of this sprint, all five actually run — not as a sketch, but against real Jira, GitHub, and Claude.","steps":[{"n":"01","name":"Speak","desc":"A request becomes a tracked ticket on the Jira board.","live":true},{"n":"02","name":"Sort","desc":"Neo tags the area and urgency; hot items start, the rest queue.","live":true},{"n":"03","name":"Draft","desc":"Claude drafts the work; Neo opens a branch and a pull request.","live":true},{"n":"04","name":"Review","desc":"An expert reviews it in the new web app and signs off — or sends it back.","live":true},{"n":"05","name":"Approve","desc":"It comes to you for the final yes. Reject and it loops back.","live":true}],"loopNote":"Every step in this loop now has working code behind it. Reject still loops the work back to “in progress,” the same way a control system re-runs until the target is met."},"demo":{"kicker":"Live demo","title":"What I'll <em>show you</em>.","intro":"Two things to watch, in order. The first needs nothing but the terminal; the second is the new web app.","items":[{"tag":"Demo 1 · terminal","name":"The loop narrated","desc":"Run the proposals loop on the Red Cross example. The hot item auto-starts, the router picks the module, the nonprofit skill loads, Claude drafts, a branch + PR open, and the ticket moves to In Review.","cmd":"python -m neo --dry-run"},{"tag":"Demo 2 · web app","name":"The reviewer dashboard","desc":"Open the reviewer app. See a draft proposal pulled from live Jira — clean, no jargon — then click Approve or Request Changes and watch the ticket move.","cmd":"uvicorn reviewer.main:app --reload","highlight":true},{"tag":"Demo 3 · going live","name":"The real thing","desc":"Same loop, real keys: python -m neo --live opens an actual branch, draft, and pull request. Shown only if we want to commit a live run.","cmd":"python -m neo --live"}]},"metrics":{"kicker":"By the numbers","title":"Sprint one, <em>counted</em>.","items":[{"value":"6","label":"Commits shipped"},{"value":"3","label":"Integrations live · Jira · GitHub · Claude"},{"value":"880","label":"Lines in the reviewer app"},{"value":"5 / 5","label":"Loop steps now running"}]},"next":{"kicker":"Next sprint","title":"Where it <em>goes next</em>.","items":[{"state":"next","label":"Commit the reviewer app","detail":"It's built and working locally — next is landing it on the board as its own tickets and cleaning it up."},{"state":"next","label":"End-to-end live run","detail":"Take one real proposal all the way through with live keys, start to approved."},{"state":"next","label":"Reviewer notifications","detail":"Tell the expert there's something to review — on-call ping, message, or dashboard, per contract."},{"state":"next","label":"Second module","detail":"Drop the same loop onto Landlord or Air Force web dev to prove it generalizes."}]},"footer":{"line":"Neo — sprint one, shipped","credit":"Standup by Mariah · Arlington, VA · June 15, 2026"}};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+function render(d){
+  // hero
+  $("h-pill").textContent = d.hero.statusLabel || "On track";
+  $("h-kick").textContent = d.hero.kicker;
+  $("h-title").textContent = d.hero.title;
+  $("h-tag").innerHTML = d.hero.tagline;
+  $("h-lead").textContent = d.hero.lead;
+  $("h-meta").innerHTML =
+    `<span><b>${esc(d.meta.docType)}</b></span>`+
+    `<span><b>${esc(d.meta.sprint)}</b></span>`+
+    `<span>For <b>${esc(d.meta.owner)}</b></span>`+
+    `<span>By <b>${esc(d.meta.author)}</b></span>`+
+    `<span>${esc(d.meta.date)}</span>`;
+
+  // marquee
+  const words = d.marquee && d.marquee.length ? d.marquee : d.shipped.items.map(s=>s.label);
+  const strip = [...words,...words,...words,...words].map(w=>`<span>${esc(w)}</span>`).join("");
+  $("marquee").innerHTML = strip;
+
+  // summary
+  $("su-kick").textContent = d.summary.kicker;
+  $("su-title").innerHTML = d.summary.title;
+  $("su-body").innerHTML = d.summary.body.map(p=>`<p>${esc(p)}</p>`).join("");
+  $("su-pull").textContent = d.summary.pull;
+
+  // shipped
+  $("sh-kick").textContent = d.shipped.kicker;
+  $("sh-title").innerHTML = d.shipped.title;
+  $("sh-list").innerHTML = d.shipped.items.map(s=>
+    `<div class="srow done"><span class="chk">✓</span><span class="lbl">${s.tag?`<span class="t">${esc(s.tag)}</span>`:""}${esc(s.label)}</span><p class="det">${esc(s.detail)}</p></div>`).join("");
+
+  // loop
+  $("l-kick").textContent = d.loop.kicker;
+  $("l-title").innerHTML = d.loop.title;
+  $("l-intro").textContent = d.loop.intro;
+  $("l-steps").innerHTML = d.loop.steps.map(s=>
+    `<div class="step"><span class="num">${esc(s.n)}</span><span class="nm">${esc(s.name)}</span><p>${esc(s.desc)}</p><span class="live">${s.live?"Live":""}</span></div>`).join("");
+  $("l-loop").innerHTML = `<span>${esc(d.loop.loopNote)}</span>`;
+
+  // demo
+  $("d-kick").textContent = d.demo.kicker;
+  $("d-title").innerHTML = d.demo.title;
+  $("d-intro").textContent = d.demo.intro;
+  $("d-cards").innerHTML = d.demo.items.map(c=>
+    `<div class="dcard ${c.highlight?'hot':''}"><div class="tag">${esc(c.tag)}</div><h3>${esc(c.name)}</h3><p>${esc(c.desc)}</p>${c.cmd?`<div class="cmd">${esc(c.cmd)}</div>`:""}</div>`).join("");
+
+  // metrics
+  $("me-kick").textContent = d.metrics.kicker;
+  $("me-title").innerHTML = d.metrics.title;
+  $("me-grid").innerHTML = d.metrics.items.map(m=>
+    `<div class="mcell"><div class="v">${esc(m.value)}</div><div class="l">${esc(m.label)}</div></div>`).join("");
+
+  // next
+  $("n-kick").textContent = d.next.kicker;
+  $("n-title").innerHTML = d.next.title;
+  $("n-list").innerHTML = d.next.items.map(s=>
+    `<div class="srow next"><span class="chk">·</span><span class="lbl">${esc(s.label)}</span><p class="det">${esc(s.detail)}</p></div>`).join("");
+
+  // footer
+  $("f-line").innerHTML = esc(d.footer.line).replace(/shipped/i,"<em>shipped</em>");
+  $("f-cr").textContent = d.footer.credit;
+}
+
+(async function(){
+  let data = FALLBACK;
+  try{
+    const res = await fetch("./data.json",{cache:"no-store"});
+    if(res.ok) data = await res.json();
+  }catch(e){ /* preview / file:// — use embedded fallback */ }
+  render(data);
+})();
+</script>
+</body>
+</html>

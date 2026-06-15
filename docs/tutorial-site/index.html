@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Neo — Workflow Tutorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF6EC;
+    --paper-2:#F3ECDB;
+    --ink:#211C16;
+    --ink-soft:#4A4238;
+    --gold:#F2B01E;
+    --gold-deep:#C98A0E;
+    --slate:#26313A;
+    --slate-2:#2E3A44;
+    --taupe:#8A7E6A;
+    --green:#3F8E5B;
+    --line:#E4DCCB;
+    --line-dk:#3C4750;
+    --display:"Fraunces",Georgia,serif;
+    --body:"Hanken Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --mono:"Space Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);color:var(--ink);font-family:var(--body);
+    font-size:18px;line-height:1.6;-webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 32px}
+  .eyebrow{
+    font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--gold-deep);display:inline-block;margin-bottom:20px;
+  }
+  h1,h2,h3{font-family:var(--display);font-weight:600;line-height:1.02;letter-spacing:-.02em}
+  h2{font-size:clamp(34px,5.5vw,60px);margin-bottom:28px}
+  em{font-style:italic;font-weight:500;color:var(--gold-deep)}
+  section{padding:96px 0;border-bottom:1px solid var(--line)}
+  p{color:var(--ink-soft);max-width:62ch}
+  .lead{font-size:clamp(19px,2.1vw,23px);color:var(--ink);max-width:54ch}
+
+  /* ---------- Hero ---------- */
+  .hero{position:relative;padding:120px 0 104px;border-bottom:1px solid var(--line);overflow:hidden}
+  .hero .kick{font-family:var(--mono);font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--taupe)}
+  .hero h1{font-size:clamp(62px,13vw,168px);line-height:.92;margin:18px 0 6px;letter-spacing:-.04em}
+  .hero .tag{font-family:var(--display);font-size:clamp(24px,4vw,42px);font-weight:400;line-height:1.1;color:var(--ink);margin-bottom:30px}
+  .hero .tag em{color:var(--gold-deep)}
+  .hero .lead{margin-bottom:36px}
+  .hero-meta{display:flex;flex-wrap:wrap;gap:10px 26px;font-family:var(--mono);font-size:12.5px;letter-spacing:.04em;color:var(--taupe);text-transform:uppercase}
+  .hero-meta b{color:var(--ink);font-weight:700}
+  .pill{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep);border:1px solid var(--gold-deep);border-radius:100px;padding:6px 14px;margin-bottom:22px}
+  .pill::before{content:"▸"}
+  /* orbital signature */
+  .orbit{position:absolute;top:-60px;right:-120px;width:460px;height:460px;pointer-events:none;opacity:.9}
+  .orbit svg{width:100%;height:100%}
+  .orbit .ring{fill:none;stroke:var(--line);stroke-width:1.5}
+  .orbit .core{fill:var(--gold)}
+  .orbit .sat{fill:var(--slate)}
+  .orbit .spin{transform-origin:230px 230px;animation:spin 18s linear infinite}
+  .orbit .spin2{transform-origin:230px 230px;animation:spin 30s linear infinite reverse}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ---------- Marquee ---------- */
+  .marquee{background:var(--ink);color:var(--paper);padding:16px 0;overflow:hidden;border-bottom:1px solid var(--line)}
+  .marquee-track{display:flex;white-space:nowrap;width:max-content;animation:slide 26s linear infinite}
+  .marquee span{font-family:var(--display);font-style:italic;font-size:22px;padding:0 28px;color:var(--paper)}
+  .marquee span::after{content:"·";color:var(--gold);margin-left:56px}
+  @keyframes slide{to{transform:translateX(-50%)}}
+
+  /* ---------- Mindset ---------- */
+  .mindset .body p{margin-bottom:20px}
+  .pull{font-family:var(--display);font-style:italic;font-size:clamp(22px,3.2vw,34px);line-height:1.25;color:var(--ink);border-left:3px solid var(--gold);padding-left:26px;margin-top:40px;max-width:26ch}
+
+  /* ---------- Roles ---------- */
+  .roles{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:46px}
+  .role{border-top:2px solid var(--ink);padding-top:18px}
+  .role .nm{font-family:var(--display);font-size:30px;font-weight:600;margin-bottom:4px}
+  .role .rl{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:12px}
+  .role p{font-size:15.5px;color:var(--ink-soft);margin:0}
+
+  /* ---------- Walkthrough (timeline) ---------- */
+  .lessons{margin-top:52px}
+  .lesson{position:relative;display:grid;grid-template-columns:56px minmax(0,1fr) 344px;gap:24px 30px;padding-bottom:46px;align-items:start}
+  .lesson::before{content:"";position:absolute;left:27px;top:62px;bottom:-4px;width:2px;background:var(--line)}
+  .lesson:last-child::before{display:none}
+  .lnum{position:relative;z-index:1;width:56px;height:56px;border-radius:50%;background:var(--ink);color:var(--paper);font-family:var(--display);font-weight:600;font-size:24px;display:flex;align-items:center;justify-content:center}
+  .lbody{padding-top:4px}
+  .who{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:4px 12px;border-radius:100px;margin-bottom:12px}
+  .who.you{background:var(--gold);color:#5c4708}
+  .who.neo{background:var(--slate);color:var(--paper)}
+  .who.rev{background:rgba(63,142,91,.14);color:var(--green);border:1px solid var(--green)}
+  .lbody h3{font-size:28px;margin-bottom:10px}
+  .lbody p{margin:0}
+
+  /* ---------- Step visuals (screen mockups) ---------- */
+  .lviz{padding-top:4px}
+  .mock{border:1px solid var(--line);border-radius:9px;background:#fff;padding:13px;box-shadow:0 18px 36px -26px rgba(33,28,22,.6)}
+  .mockcap{font-family:var(--mono);font-size:11px;line-height:1.5;color:var(--taupe);margin-top:11px;text-align:center}
+  .mockcap::before{content:"On screen → ";color:var(--gold-deep)}
+  /* mini kanban */
+  .mboard{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+  .mcol{background:var(--paper-2);border-radius:6px;padding:8px 7px;min-height:118px}
+  .mcol h5{font-family:var(--mono);font-size:8px;letter-spacing:.07em;text-transform:uppercase;color:var(--taupe);margin-bottom:8px;font-weight:400}
+  .mcard{position:relative;background:#fff;border:1px solid var(--line);border-radius:5px;padding:8px 8px 9px;font-size:10.5px;font-weight:600;color:var(--ink-soft);line-height:1.3}
+  .mcard.active{background:var(--gold);border-color:var(--gold-deep);color:#4d3c08}
+  .mcard.fin{background:#fff;border-color:var(--green)}
+  .mchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+  .mchips span{font-family:var(--mono);font-size:7.5px;letter-spacing:.04em;text-transform:uppercase;background:rgba(33,28,22,.14);color:#4d3c08;border-radius:100px;padding:2px 6px;font-weight:400}
+  .mcheck{position:absolute;top:7px;right:7px;width:14px;height:14px;border-radius:50%;background:var(--green);color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center}
+  /* mini document */
+  .mdoc .docbar{display:flex;align-items:center;gap:5px;padding-bottom:11px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+  .mdoc .dot{width:8px;height:8px;border-radius:50%;background:var(--line)}
+  .mdoc .dot.r{background:#E0726A}.mdoc .dot.y{background:var(--gold)}.mdoc .dot.g{background:var(--green)}
+  .mdoc .docstatus{margin-left:auto;font-family:var(--mono);font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-deep);border:1px solid var(--gold-deep);border-radius:100px;padding:2px 8px}
+  .dline{height:7px;background:var(--line);border-radius:4px;margin:9px 0}
+  .dline.title{height:11px;width:62%;background:var(--ink);margin-bottom:14px}
+  .dline.short{width:52%}
+  /* mini app screen */
+  .mapp{margin:-13px -13px 0;border-radius:9px 9px 0 0;overflow:hidden}
+  .appbar{background:var(--ink);color:var(--paper);display:flex;align-items:center;gap:10px;padding:9px 13px;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase}
+  .appbar b{color:var(--gold);font-weight:700}
+  .appbar .ab-r{margin-left:auto;color:#A99F8E}
+  .appbody{padding:13px 13px 3px}
+  .apptag{font-family:var(--mono);font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--taupe);margin-bottom:11px}
+  .btnrow{display:flex;gap:8px;margin-top:15px}
+  .btn{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;border-radius:5px;padding:8px 11px;font-weight:700}
+  .btn.approve{background:var(--green);color:#fff}
+  .btn.changes{background:transparent;border:1px solid var(--taupe);color:var(--ink-soft)}
+  .loopnote{margin-top:18px;font-family:var(--mono);font-size:13.5px;color:var(--taupe);display:flex;gap:12px;align-items:flex-start;max-width:64ch}
+  .loopnote::before{content:"↻";color:var(--gold-deep);font-size:18px;line-height:1}
+  .loopnote{margin-top:18px;font-family:var(--mono);font-size:13.5px;color:var(--taupe);display:flex;gap:12px;align-items:flex-start;max-width:64ch}
+  .loopnote::before{content:"↻";color:var(--gold-deep);font-size:18px;line-height:1}
+
+  /* ---------- Reviewer (light steps) ---------- */
+  .reviewer{background:var(--paper-2)}
+  .steps{margin-top:46px;border-top:1px solid var(--line)}
+  .step{display:grid;grid-template-columns:120px 220px 1fr;gap:28px;align-items:baseline;padding:30px 0;border-bottom:1px solid var(--line)}
+  .step .num{font-family:var(--mono);font-size:15px;color:var(--gold-deep);letter-spacing:.1em}
+  .step .nm{font-family:var(--display);font-size:28px;font-weight:600}
+  .step p{margin:0}
+
+  /* ---------- Try it (dark cards) ---------- */
+  .tryit{background:var(--slate);color:var(--paper);border-bottom:none}
+  .tryit .eyebrow{color:var(--gold)}
+  .tryit h2{color:var(--paper)}
+  .tryit h2 em{color:var(--gold)}
+  .tryit .intro{color:#C9D2D8;max-width:60ch;margin-bottom:48px}
+  .demo-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .dcard{background:var(--slate-2);border:1px solid var(--line-dk);border-radius:6px;padding:26px;display:flex;flex-direction:column}
+  .dcard.hot{border-color:var(--gold)}
+  .dcard .tag{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+  .dcard h3{color:var(--paper);font-size:23px;margin-bottom:10px}
+  .dcard p{color:#C2CBD1;font-size:15px;margin:0 0 20px}
+  .dcard .cmd{margin-top:auto;font-family:var(--mono);font-size:12.5px;color:#9ED9A0;background:#1b242b;border:1px solid var(--line-dk);border-radius:5px;padding:11px 13px;overflow-x:auto}
+  .dcard .cmd::before{content:"$ ";color:var(--taupe)}
+
+  /* ---------- Remember (checklist) ---------- */
+  .status-list{margin-top:42px;border-top:1px solid var(--line)}
+  .srow{display:grid;grid-template-columns:34px 280px 1fr;gap:20px;align-items:center;padding:22px 0;border-bottom:1px solid var(--line)}
+  .srow .chk{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-family:var(--mono);background:var(--gold);color:var(--ink)}
+  .srow .lbl{font-family:var(--display);font-size:21px;font-weight:600}
+  .srow .det{font-size:15.5px;color:var(--taupe);margin:0}
+
+  /* ---------- Footer ---------- */
+  footer{background:var(--ink);color:var(--paper);padding:70px 0;border:none}
+  footer .fl{font-family:var(--display);font-size:clamp(30px,6vw,64px);font-weight:600;letter-spacing:-.03em}
+  footer .fl em{color:var(--gold)}
+  footer .cr{font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:#A99F8E;margin-top:18px;text-transform:uppercase}
+
+  /* ---------- Responsive ---------- */
+  @media(max-width:760px){
+    body{font-size:17px}
+    .wrap{padding:0 22px}
+    section{padding:64px 0}
+    .orbit{display:none}
+    .roles,.demo-cards{grid-template-columns:1fr}
+    .lesson{grid-template-columns:56px 1fr}
+    .lviz{grid-column:2;width:100%;max-width:360px}
+    .step{grid-template-columns:60px 1fr;gap:14px}
+    .step .nm{grid-column:2;font-size:24px}
+    .step p{grid-column:2}
+    .srow{grid-template-columns:30px 1fr;row-gap:4px}
+    .srow .det{grid-column:2}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .marquee-track,.orbit .spin,.orbit .spin2{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="orbit" aria-hidden="true">
+    <svg viewBox="0 0 460 460">
+      <circle class="ring" cx="230" cy="230" r="200"/>
+      <circle class="ring" cx="230" cy="230" r="140"/>
+      <circle class="ring" cx="230" cy="230" r="86"/>
+      <circle class="core" cx="230" cy="230" r="11"/>
+      <g class="spin"><circle class="sat" cx="430" cy="230" r="8"/></g>
+      <g class="spin2"><circle class="sat" cx="230" cy="90" r="6"/></g>
+      <g class="spin"><circle class="core" cx="316" cy="230" r="5"/></g>
+    </svg>
+  </div>
+  <div class="wrap">
+    <div class="pill" id="h-pill"></div>
+    <div class="kick" id="h-kick"></div>
+    <h1 id="h-title"></h1>
+    <div class="tag" id="h-tag"></div>
+    <p class="lead" id="h-lead"></p>
+    <div class="hero-meta" id="h-meta"></div>
+  </div>
+</header>
+
+<!-- MARQUEE -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track" id="marquee"></div>
+</div>
+
+<!-- MINDSET -->
+<section class="mindset">
+  <div class="wrap">
+    <span class="eyebrow" id="mi-kick"></span>
+    <h2 id="mi-title"></h2>
+    <div class="body" id="mi-body"></div>
+    <div class="pull" id="mi-pull"></div>
+  </div>
+</section>
+
+<!-- ROLES -->
+<section class="roles-sec">
+  <div class="wrap">
+    <span class="eyebrow" id="r-kick"></span>
+    <h2 id="r-title"></h2>
+    <p class="lead" id="r-intro"></p>
+    <div class="roles" id="r-list"></div>
+  </div>
+</section>
+
+<!-- WALKTHROUGH -->
+<section class="walk">
+  <div class="wrap">
+    <span class="eyebrow" id="w-kick"></span>
+    <h2 id="w-title"></h2>
+    <p class="lead" id="w-intro"></p>
+    <div class="lessons" id="w-lessons"></div>
+    <div class="loopnote" id="w-loop"></div>
+  </div>
+</section>
+
+<!-- REVIEWER -->
+<section class="reviewer">
+  <div class="wrap">
+    <span class="eyebrow" id="rv-kick"></span>
+    <h2 id="rv-title"></h2>
+    <p class="lead" id="rv-intro"></p>
+    <div class="steps" id="rv-steps"></div>
+    <div class="loopnote" id="rv-loop"></div>
+  </div>
+</section>
+
+<!-- TRY IT -->
+<section class="tryit">
+  <div class="wrap">
+    <span class="eyebrow" id="ti-kick"></span>
+    <h2 id="ti-title"></h2>
+    <p class="intro" id="ti-intro"></p>
+    <div class="demo-cards" id="ti-cards"></div>
+  </div>
+</section>
+
+<!-- REMEMBER -->
+<section class="remember">
+  <div class="wrap">
+    <span class="eyebrow" id="rm-kick"></span>
+    <h2 id="rm-title"></h2>
+    <div class="status-list" id="rm-list"></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="fl" id="f-line"></div>
+    <div class="cr" id="f-cr"></div>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   Neo workflow tutorial renderer.
+   The page is a TEMPLATE. All content comes from data.json.
+   Serve the folder and it fetches data.json live; opened as a
+   file:// (double-click) it falls back to the embedded copy.
+   ============================================================ */
+const FALLBACK = {"meta":{"docType":"Workflow Tutorial","sprint":"A 5-minute tour","project":"Neo","owner":"Dad","author":"Mariah Harris","location":"Arlington, VA","date":"June 15, 2026"},"hero":{"kicker":"Neo · how it works","title":"The walkthrough.","tagline":"Follow one request from <em>spoken</em> to <em>done.</em>","lead":"This is a guided tour of how Neo works — no code, no setup. We follow a single request all the way through the loop, show who does what at each step, and end with a few commands you can run yourself.","badge":"5-minute tour"},"marquee":["Speak","Sort","Draft","Review","Approve","Repeat"],"mindset":{"kicker":"The one idea","title":"Hold onto <em>this</em>.","body":["You say what you want. Neo turns it into tracked work, drafts it with AI, hands it to a real person to check, and brings it back to you for the final yes.","That's the whole thing. Everything below is just that one sentence, slowed down so you can see each step happen."],"pull":"AI drafts. A person verifies. You decide. Nothing goes out without all three."},"roles":{"kicker":"Before we start","title":"Three <em>players</em>.","intro":"Only three people (well — two people and Neo) touch any request. Knowing who does what makes the rest obvious.","items":[{"name":"You","role":"The owner","note":"You speak the request and you give the final yes. That's it — you never touch the tools in between."},{"name":"Neo","role":"The assistant","note":"Sorts the request, drafts it with Claude, opens the branch and pull request, and tracks the status. All the plumbing."},{"name":"The reviewer","role":"The expert","note":"A contracted person who checks the draft, asks for changes if needed, and signs off — seeing only the work, never the jargon."}]},"walkthrough":{"kicker":"The walkthrough","title":"Follow <em>one request</em>.","intro":"Say you want a proposal for the Red Cross. Here's every step it takes, who does it, and what you'd actually see on screen.","steps":[{"n":"1","who":"You","name":"Speak the request","happens":"You say what you want in plain language — “draft a sponsorship proposal for the Red Cross.” Neo captures it as a tracked ticket.","see":"A new card appears on the board, in the To-do column.","visual":"board-todo"},{"n":"2","who":"Neo","name":"Neo sorts it","happens":"Neo tags the request: which area of life it belongs to, how urgent it is, how long it'll take. Hot items start right away; the rest wait in a queue.","see":"The card moves into In progress, with its area and priority filled in.","visual":"board-progress"},{"n":"3","who":"Neo","name":"Claude drafts it","happens":"Neo picks the right skill (“nonprofit proposal”), asks Claude to write a first draft, saves it to a shared file, and opens a pull request — all automatically.","see":"The card moves to In Review. A complete first draft now exists.","visual":"draft-doc"},{"n":"4","who":"Reviewer","name":"An expert checks it","happens":"The reviewer opens the draft in the web app, reads it, and either signs off or asks for changes. If they request changes, it loops back to step 3 for another pass.","see":"A clean draft with two buttons — Approve and Request Changes. No ticket numbers, no code.","visual":"reviewer-screen"},{"n":"5","who":"You","name":"You approve","happens":"Once the expert signs off, it comes to you. Approve it and it's done. Send it back and it returns to the expert for another round.","see":"The card moves to Done, parked for your final sign-off.","visual":"board-done"}],"loopNote":"Reject at any point and the work loops back to “in progress” — the same way a control system re-runs its loop until the target is met."},"reviewer":{"kicker":"What the expert sees","title":"Three <em>clicks</em>, that's it.","intro":"The reviewer's whole job is three screens. This is what they'd do for the Red Cross draft.","steps":[{"n":"01","name":"Open the queue","desc":"They land on the review queue and see every draft waiting for them — each with a clean, human title."},{"n":"02","name":"Read the draft","desc":"They click one and read the full proposal. No Jira key, no branch name, no jargon — just the work itself."},{"n":"03","name":"Decide","desc":"They click Approve, or write a note and click Request Changes. Neo handles everything that happens next."}],"loopNote":"Request Changes sends the note to Claude and re-opens the draft — the reviewer never has to explain it twice."},"tryit":{"kicker":"Try it yourself","title":"Run it in <em>three steps</em>.","intro":"Want to poke at it live? Here's the whole thing, in order — no accounts or keys required. It all runs in demo mode with sample proposals; the first step needs only a terminal, the rest open in a browser.","items":[{"tag":"Step 1 · terminal","name":"Watch the loop run","desc":"Narrate the whole loop on the Red Cross example — all five steps print out, no keys needed.","cmd":"python -m neo --dry-run"},{"tag":"Step 2 · browser","name":"Open the app","desc":"Start the web app with one command — it frees the port and launches in demo mode — then open the address it prints (http://127.0.0.1:8000).","cmd":"./run-reviewer.sh","highlight":true},{"tag":"Step 3 · click around","name":"Walk the screens","desc":"Speak a request at /new, watch it land, then play the reviewer at /reviews — open the Red Cross draft and click Approve.","cmd":"open http://127.0.0.1:8000"}]},"remember":{"kicker":"What to remember","title":"Four things to <em>take away</em>.","items":[{"label":"You only speak and approve","detail":"The two ends of the loop are yours. Neo and the expert do everything in between."},{"label":"Nothing goes out without a human","detail":"AI drafts, but a real person checks every piece, and you give the final yes."},{"label":"No jargon ever leaks","detail":"The reviewer and you see clean work — never a ticket number, branch, or line of code."},{"label":"Reject just loops it back","detail":"Sending something back isn't a dead end — it re-runs the draft step automatically."}]},"footer":{"line":"Neo — now you've seen the loop","credit":"Walkthrough by Mariah · Arlington, VA · June 15, 2026"}};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const whoClass = w => ({you:"you",neo:"neo",reviewer:"rev"})[String(w).toLowerCase()] || "neo";
+
+/* ---- step screen mockups: pure HTML/CSS, selected per step by `visual` key ---- */
+function board(active, chips){
+  const cols = [["todo","To-do"],["progress","In progress"],["done","Done"]];
+  const card =
+    `<div class="mcard ${active==='done'?'fin':'active'}">Red Cross proposal`+
+    (chips ? `<div class="mchips">${chips.map(c=>`<span>${esc(c)}</span>`).join("")}</div>` : "")+
+    (active==='done' ? `<span class="mcheck">✓</span>` : "")+
+    `</div>`;
+  const body = cols.map(([k,label])=>`<div class="mcol"><h5>${label}</h5>${k===active?card:""}</div>`).join("");
+  return `<div class="mock"><div class="mboard">${body}</div></div>`;
+}
+function doc(){
+  return `<div class="mock"><div class="mdoc">`+
+    `<div class="docbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="docstatus">In Review</span></div>`+
+    `<div class="dline title"></div><div class="dline"></div><div class="dline"></div><div class="dline short"></div><div class="dline"></div><div class="dline short"></div>`+
+    `</div></div>`;
+}
+function app(){
+  return `<div class="mock"><div class="mapp"><div class="appbar"><b>Neo</b><span>Review</span><span class="ab-r">reviewer</span></div></div>`+
+    `<div class="appbody"><div class="apptag">Proposal · Red Cross</div>`+
+    `<div class="dline title"></div><div class="dline"></div><div class="dline"></div><div class="dline short"></div>`+
+    `<div class="btnrow"><span class="btn approve">Approve</span><span class="btn changes">Request changes</span></div></div></div>`;
+}
+const VISUALS = {
+  "board-todo":     () => board("todo"),
+  "board-progress": () => board("progress", ["Proposals","Hot"]),
+  "draft-doc":      () => doc(),
+  "reviewer-screen":() => app(),
+  "board-done":     () => board("done")
+};
+function visualFor(step){
+  const fn = VISUALS[step.visual];
+  if(!fn) return "";
+  return `<div class="lviz">${fn()}<div class="mockcap">${esc(step.see)}</div></div>`;
+}
+
+function render(d){
+  // hero
+  $("h-pill").textContent = d.hero.badge || "Tutorial";
+  $("h-kick").textContent = d.hero.kicker;
+  $("h-title").textContent = d.hero.title;
+  $("h-tag").innerHTML = d.hero.tagline;
+  $("h-lead").textContent = d.hero.lead;
+  $("h-meta").innerHTML =
+    `<span><b>${esc(d.meta.docType)}</b></span>`+
+    `<span>${esc(d.meta.sprint)}</span>`+
+    `<span>For <b>${esc(d.meta.owner)}</b></span>`+
+    `<span>By <b>${esc(d.meta.author)}</b></span>`+
+    `<span>${esc(d.meta.date)}</span>`;
+
+  // marquee
+  const words = d.marquee && d.marquee.length ? d.marquee : d.walkthrough.steps.map(s=>s.name);
+  $("marquee").innerHTML = [...words,...words,...words,...words].map(w=>`<span>${esc(w)}</span>`).join("");
+
+  // mindset
+  $("mi-kick").textContent = d.mindset.kicker;
+  $("mi-title").innerHTML = d.mindset.title;
+  $("mi-body").innerHTML = d.mindset.body.map(p=>`<p>${esc(p)}</p>`).join("");
+  $("mi-pull").textContent = d.mindset.pull;
+
+  // roles
+  $("r-kick").textContent = d.roles.kicker;
+  $("r-title").innerHTML = d.roles.title;
+  $("r-intro").textContent = d.roles.intro;
+  $("r-list").innerHTML = d.roles.items.map(p=>
+    `<div class="role"><div class="nm">${esc(p.name)}</div><div class="rl">${esc(p.role)}</div><p>${esc(p.note)}</p></div>`).join("");
+
+  // walkthrough
+  $("w-kick").textContent = d.walkthrough.kicker;
+  $("w-title").innerHTML = d.walkthrough.title;
+  $("w-intro").textContent = d.walkthrough.intro;
+  $("w-lessons").innerHTML = d.walkthrough.steps.map(s=>
+    `<div class="lesson"><div class="lnum">${esc(s.n)}</div><div class="lbody"><span class="who ${whoClass(s.who)}">${esc(s.who)}</span><h3>${esc(s.name)}</h3><p>${esc(s.happens)}</p></div>${visualFor(s)}</div>`).join("");
+  $("w-loop").innerHTML = `<span>${esc(d.walkthrough.loopNote)}</span>`;
+
+  // reviewer
+  $("rv-kick").textContent = d.reviewer.kicker;
+  $("rv-title").innerHTML = d.reviewer.title;
+  $("rv-intro").textContent = d.reviewer.intro;
+  $("rv-steps").innerHTML = d.reviewer.steps.map(s=>
+    `<div class="step"><span class="num">${esc(s.n)}</span><span class="nm">${esc(s.name)}</span><p>${esc(s.desc)}</p></div>`).join("");
+  $("rv-loop").innerHTML = `<span>${esc(d.reviewer.loopNote)}</span>`;
+
+  // try it
+  $("ti-kick").textContent = d.tryit.kicker;
+  $("ti-title").innerHTML = d.tryit.title;
+  $("ti-intro").textContent = d.tryit.intro;
+  $("ti-cards").innerHTML = d.tryit.items.map(c=>
+    `<div class="dcard ${c.highlight?'hot':''}"><div class="tag">${esc(c.tag)}</div><h3>${esc(c.name)}</h3><p>${esc(c.desc)}</p>${c.cmd?`<div class="cmd">${esc(c.cmd)}</div>`:""}</div>`).join("");
+
+  // remember
+  $("rm-kick").textContent = d.remember.kicker;
+  $("rm-title").innerHTML = d.remember.title;
+  $("rm-list").innerHTML = d.remember.items.map(s=>
+    `<div class="srow"><span class="chk">✓</span><span class="lbl">${esc(s.label)}</span><p class="det">${esc(s.detail)}</p></div>`).join("");
+
+  // footer
+  $("f-line").innerHTML = esc(d.footer.line).replace(/the loop/i,"<em>the loop</em>");
+  $("f-cr").textContent = d.footer.credit;
+}
+
+(async function(){
+  let data = FALLBACK;
+  try{
+    const res = await fetch("./data.json",{cache:"no-store"});
+    if(res.ok) data = await res.json();
+  }catch(e){ /* preview / file:// — use embedded fallback */ }
+  render(data);
+})();
+</script>
+</body>
+</html>

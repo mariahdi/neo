@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "docType": "Sprint Standup",
+    "sprint": "Sprint 01",
+    "project": "Neo",
+    "owner": "Dad",
+    "author": "Mariah Harris",
+    "location": "Arlington, VA",
+    "date": "June 15, 2026"
+  },
+  "hero": {
+    "kicker": "Neo · sprint standup #01",
+    "title": "Sprint one.",
+    "tagline": "From a plan on paper to a <em>working loop.</em>",
+    "lead": "Two weeks ago Neo was a write-up. Today the whole path runs: speak a request, Claude drafts it, a real reviewer signs off in a clean web app, and it comes back to you to approve — with no Jira or Git jargon ever reaching the people using it.",
+    "statusLabel": "On track"
+  },
+  "marquee": ["Scaffold", "GitHub", "Claude", "Jira", "--live", "Reviewer app", "Approve"],
+  "summary": {
+    "kicker": "The headline",
+    "title": "The loop <em>runs end to end</em>.",
+    "body": [
+      "The proof-of-concept module — Proposals — now goes the whole distance. You can narrate the loop with a single command, and with real keys it opens a branch, drafts with Claude, files a pull request, and moves the ticket to In Review on its own.",
+      "The big new piece this sprint is the reviewer web app: a clean dashboard where a contracted expert reviews a draft and clicks Approve or Request Changes. They never see a Jira key, a branch name, or a line of code — just the work."
+    ],
+    "pull": "Plan → scaffold → live integrations → a reviewer app. The skeleton now has a heartbeat."
+  },
+  "shipped": {
+    "kicker": "Shipped this sprint",
+    "title": "What got <em>done</em>.",
+    "items": [
+      { "state": "done", "tag": "Foundation", "label": "Repo scaffolded", "detail": "The Neo loop, router, skill loader, the Proposals module, the private data layer, config, and docs — the full skeleton, ~770 lines." },
+      { "state": "done", "tag": "Integration", "label": "Live GitHub", "detail": "Neo opens a real branch, makes a commit, and files a pull request entirely on its own — 245 lines of integration code." },
+      { "state": "done", "tag": "Integration", "label": "Live Claude", "detail": "Drafting runs through the Anthropic Messages API, so the first draft of every proposal is written by AI." },
+      { "state": "done", "tag": "Integration", "label": "Jira + GitHub + Claude wired", "detail": "All three integrations run as one path under ticket NEO-4 — ticket in, branch + draft + PR out, status updated." },
+      { "state": "done", "tag": "Safety", "label": "The --live switch", "detail": "One flag flips Neo from safe dry-run narration to real calls, and fails gracefully with a clear message when a key is missing." },
+      { "state": "done", "tag": "New app", "label": "Reviewer web app", "detail": "A dashboard + reviewer screens (~880 lines) wired to live Jira. Approve, Request Changes, and Re-prompt all work — and no keys, branches, or jargon ever leak to the reviewer." }
+    ]
+  },
+  "loop": {
+    "kicker": "What it does",
+    "title": "One clean <em>loop</em>, now live.",
+    "intro": "Every request follows the same five steps. As of this sprint, all five actually run — not as a sketch, but against real Jira, GitHub, and Claude.",
+    "steps": [
+      { "n": "01", "name": "Speak", "desc": "A request becomes a tracked ticket on the Jira board.", "live": true },
+      { "n": "02", "name": "Sort", "desc": "Neo tags the area and urgency; hot items start, the rest queue.", "live": true },
+      { "n": "03", "name": "Draft", "desc": "Claude drafts the work; Neo opens a branch and a pull request.", "live": true },
+      { "n": "04", "name": "Review", "desc": "An expert reviews it in the new web app and signs off — or sends it back.", "live": true },
+      { "n": "05", "name": "Approve", "desc": "It comes to you for the final yes. Reject and it loops back.", "live": true }
+    ],
+    "loopNote": "Every step in this loop now has working code behind it. Reject still loops the work back to “in progress,” the same way a control system re-runs until the target is met."
+  },
+  "demo": {
+    "kicker": "Live demo",
+    "title": "What I'll <em>show you</em>.",
+    "intro": "Two things to watch, in order. The first needs nothing but the terminal; the second is the new web app.",
+    "items": [
+      { "tag": "Demo 1 · terminal", "name": "The loop narrated", "desc": "Run the proposals loop on the Red Cross example. The hot item auto-starts, the router picks the module, the nonprofit skill loads, Claude drafts, a branch + PR open, and the ticket moves to In Review.", "cmd": "python -m neo --dry-run" },
+      { "tag": "Demo 2 · web app", "name": "The reviewer dashboard", "desc": "Open the reviewer app. See a draft proposal pulled from live Jira — clean, no jargon — then click Approve or Request Changes and watch the ticket move.", "cmd": "uvicorn reviewer.main:app --reload", "highlight": true },
+      { "tag": "Demo 3 · going live", "name": "The real thing", "desc": "Same loop, real keys: python -m neo --live opens an actual branch, draft, and pull request. Shown only if we want to commit a live run.", "cmd": "python -m neo --live" }
+    ]
+  },
+  "metrics": {
+    "kicker": "By the numbers",
+    "title": "Sprint one, <em>counted</em>.",
+    "items": [
+      { "value": "6", "label": "Commits shipped" },
+      { "value": "3", "label": "Integrations live · Jira · GitHub · Claude" },
+      { "value": "880", "label": "Lines in the reviewer app" },
+      { "value": "5 / 5", "label": "Loop steps now running" }
+    ]
+  },
+  "next": {
+    "kicker": "Next sprint",
+    "title": "Where it <em>goes next</em>.",
+    "items": [
+      { "state": "next", "label": "Commit the reviewer app", "detail": "It's built and working locally — next is landing it on the board as its own tickets and cleaning it up." },
+      { "state": "next", "label": "End-to-end live run", "detail": "Take one real proposal all the way through with live keys, start to approved." },
+      { "state": "next", "label": "Reviewer notifications", "detail": "Tell the expert there's something to review — on-call ping, message, or dashboard, per contract." },
+      { "state": "next", "label": "Second module", "detail": "Drop the same loop onto Landlord or Air Force web dev to prove it generalizes." }
+    ]
+  },
+  "footer": {
+    "line": "Neo — sprint one, shipped",
+    "credit": "Standup by Mariah · Arlington, VA · June 15, 2026"
+  }
+}

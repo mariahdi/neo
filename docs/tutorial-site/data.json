@@ -1,0 +1,121 @@
+{
+  "meta": {
+    "docType": "Workflow Tutorial",
+    "sprint": "A 5-minute tour",
+    "project": "Neo",
+    "owner": "Dad",
+    "author": "Mariah Harris",
+    "location": "Arlington, VA",
+    "date": "June 15, 2026"
+  },
+  "hero": {
+    "kicker": "Neo · how it works",
+    "title": "The walkthrough.",
+    "tagline": "Follow one request from <em>spoken</em> to <em>done.</em>",
+    "lead": "This is a guided tour of how Neo works — no code, no setup. We follow a single request all the way through the loop, show who does what at each step, and end with a few commands you can run yourself.",
+    "badge": "5-minute tour"
+  },
+  "marquee": ["Speak", "Sort", "Draft", "Review", "Approve", "Repeat"],
+  "mindset": {
+    "kicker": "The one idea",
+    "title": "Hold onto <em>this</em>.",
+    "body": [
+      "You say what you want. Neo turns it into tracked work, drafts it with AI, hands it to a real person to check, and brings it back to you for the final yes.",
+      "That's the whole thing. Everything below is just that one sentence, slowed down so you can see each step happen."
+    ],
+    "pull": "AI drafts. A person verifies. You decide. Nothing goes out without all three."
+  },
+  "roles": {
+    "kicker": "Before we start",
+    "title": "Three <em>players</em>.",
+    "intro": "Only three people (well — two people and Neo) touch any request. Knowing who does what makes the rest obvious.",
+    "items": [
+      { "name": "You", "role": "The owner", "note": "You speak the request and you give the final yes. That's it — you never touch the tools in between." },
+      { "name": "Neo", "role": "The assistant", "note": "Sorts the request, drafts it with Claude, opens the branch and pull request, and tracks the status. All the plumbing." },
+      { "name": "The reviewer", "role": "The expert", "note": "A contracted person who checks the draft, asks for changes if needed, and signs off — seeing only the work, never the jargon." }
+    ]
+  },
+  "walkthrough": {
+    "kicker": "The walkthrough",
+    "title": "Follow <em>one request</em>.",
+    "intro": "Say you want a proposal for the Red Cross. Here's every step it takes, who does it, and what you'd actually see on screen.",
+    "steps": [
+      {
+        "n": "1",
+        "who": "You",
+        "name": "Speak the request",
+        "happens": "You say what you want in plain language — “draft a sponsorship proposal for the Red Cross.” Neo captures it as a tracked ticket.",
+        "see": "A new card appears on the board, in the To-do column.",
+        "visual": "board-todo"
+      },
+      {
+        "n": "2",
+        "who": "Neo",
+        "name": "Neo sorts it",
+        "happens": "Neo tags the request: which area of life it belongs to, how urgent it is, how long it'll take. Hot items start right away; the rest wait in a queue.",
+        "see": "The card moves into In progress, with its area and priority filled in.",
+        "visual": "board-progress"
+      },
+      {
+        "n": "3",
+        "who": "Neo",
+        "name": "Claude drafts it",
+        "happens": "Neo picks the right skill (“nonprofit proposal”), asks Claude to write a first draft, saves it to a shared file, and opens a pull request — all automatically.",
+        "see": "The card moves to In Review. A complete first draft now exists.",
+        "visual": "draft-doc"
+      },
+      {
+        "n": "4",
+        "who": "Reviewer",
+        "name": "An expert checks it",
+        "happens": "The reviewer opens the draft in the web app, reads it, and either signs off or asks for changes. If they request changes, it loops back to step 3 for another pass.",
+        "see": "A clean draft with two buttons — Approve and Request Changes. No ticket numbers, no code.",
+        "visual": "reviewer-screen"
+      },
+      {
+        "n": "5",
+        "who": "You",
+        "name": "You approve",
+        "happens": "Once the expert signs off, it comes to you. Approve it and it's done. Send it back and it returns to the expert for another round.",
+        "see": "The card moves to Done, parked for your final sign-off.",
+        "visual": "board-done"
+      }
+    ],
+    "loopNote": "Reject at any point and the work loops back to “in progress” — the same way a control system re-runs its loop until the target is met."
+  },
+  "reviewer": {
+    "kicker": "What the expert sees",
+    "title": "Three <em>clicks</em>, that's it.",
+    "intro": "The reviewer's whole job is three screens. This is what they'd do for the Red Cross draft.",
+    "steps": [
+      { "n": "01", "name": "Open the queue", "desc": "They land on the review queue and see every draft waiting for them — each with a clean, human title." },
+      { "n": "02", "name": "Read the draft", "desc": "They click one and read the full proposal. No Jira key, no branch name, no jargon — just the work itself." },
+      { "n": "03", "name": "Decide", "desc": "They click Approve, or write a note and click Request Changes. Neo handles everything that happens next." }
+    ],
+    "loopNote": "Request Changes sends the note to Claude and re-opens the draft — the reviewer never has to explain it twice."
+  },
+  "tryit": {
+    "kicker": "Try it yourself",
+    "title": "Run it in <em>three steps</em>.",
+    "intro": "Want to poke at it live? Here's the whole thing, in order — no accounts or keys required. It all runs in demo mode with sample proposals; the first step needs only a terminal, the rest open in a browser.",
+    "items": [
+      { "tag": "Step 1 · terminal", "name": "Watch the loop run", "desc": "Narrate the whole loop on the Red Cross example — all five steps print out, no keys needed.", "cmd": "python -m neo --dry-run" },
+      { "tag": "Step 2 · browser", "name": "Open the app", "desc": "Start the web app with one command — it frees the port and launches in demo mode — then open the address it prints (http://127.0.0.1:8000).", "cmd": "./run-reviewer.sh", "highlight": true },
+      { "tag": "Step 3 · click around", "name": "Walk the screens", "desc": "Speak a request at /new, watch it land, then play the reviewer at /reviews — open the Red Cross draft and click Approve.", "cmd": "open http://127.0.0.1:8000" }
+    ]
+  },
+  "remember": {
+    "kicker": "What to remember",
+    "title": "Four things to <em>take away</em>.",
+    "items": [
+      { "label": "You only speak and approve", "detail": "The two ends of the loop are yours. Neo and the expert do everything in between." },
+      { "label": "Nothing goes out without a human", "detail": "AI drafts, but a real person checks every piece, and you give the final yes." },
+      { "label": "No jargon ever leaks", "detail": "The reviewer and you see clean work — never a ticket number, branch, or line of code." },
+      { "label": "Reject just loops it back", "detail": "Sending something back isn't a dead end — it re-runs the draft step automatically." }
+    ]
+  },
+  "footer": {
+    "line": "Neo — now you've seen the loop",
+    "credit": "Walkthrough by Mariah · Arlington, VA · June 15, 2026"
+  }
+}
