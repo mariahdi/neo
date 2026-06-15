@@ -139,8 +139,12 @@ async def view_proposal(proposal_id: str):
     p = get_proposal(proposal_id)
     if not p:
         raise HTTPException(status_code=404, detail="Proposal not found")
-    draft_html = "".join(f"<p style='margin-bottom:10px;'>{line}</p>" for line in p["draft"].strip().split("\n\n"))
-    tag = f'<span class="tag tag-hot">HOT</span>' if p["category"] == "HOT" else f'<span class="tag tag-std">STD</span>'
+    draft_text = (p.get("draft") or "").strip()
+    if draft_text:
+        draft_html = "".join(f"<p style='margin-bottom:10px;'>{line}</p>" for line in draft_text.split("\n\n"))
+    else:
+        draft_html = "<p style='color:#888;'>No draft text available yet — it may still be drafting, or the draft lives in the pull request.</p>"
+    tag = f'<span class="tag tag-hot">HOT</span>' if p.get("category") == "HOT" else f'<span class="tag tag-std">STD</span>'
 
     return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><title>{p["title"]} — Neo</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -149,8 +153,8 @@ async def view_proposal(proposal_id: str):
     <main>
       <a href="/reviews" class="back">← Back to My Reviews</a>
       <div class="proposal-header">
-        <h2>{p["title"]} &nbsp;{tag}</h2>
-        <div class="meta">{p["amount"]} &nbsp;·&nbsp; {p["sender"]} &nbsp;·&nbsp; Due {p["deadline"]}</div>
+        <h2>{p.get("title") or "Untitled proposal"} &nbsp;{tag}</h2>
+        <div class="meta">{p.get("amount") or "—"} &nbsp;·&nbsp; {p.get("sender") or "—"} &nbsp;·&nbsp; Due {p.get("deadline") or "—"}</div>
       </div>
       <div class="draft">
         <h3>Claude's Draft</h3>

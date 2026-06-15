@@ -7,7 +7,7 @@ No Jira keys, branch names, or raw API jargon leaks through to the caller.
 import os
 import json
 import requests
-from base64 import b64encode
+from base64 import b64encode, b64decode
 
 # ── Config (from env vars) ────────────────────────────────────────────────────
 # Read optionally: if any key is missing we fall back to demo data instead of
@@ -19,6 +19,11 @@ ANTHROPIC_KEY = os.environ.get("NEO_ANTHROPIC_API_KEY")
 
 DEMO_MODE = not all([JIRA_BASE_URL, JIRA_EMAIL, JIRA_TOKEN, ANTHROPIC_KEY])
 
+# Optional GitHub access — lets the detail view pull the real proposal draft
+# from the PR (the draft lives in the repo, not the Jira ticket description).
+GITHUB_TOKEN = os.environ.get("NEO_GITHUB_TOKEN")
+GITHUB_REPO  = os.environ.get("NEO_GITHUB_REPO")
+
 JIRA_HEADERS = {}
 if not DEMO_MODE:
     JIRA_AUTH = b64encode(f"{JIRA_EMAIL}:{JIRA_TOKEN}".encode()).decode()
@@ -26,6 +31,34 @@ if not DEMO_MODE:
         "Authorization": f"Basic {JIRA_AUTH}",
         "Content-Type": "application/json",
     }
+
+
+def _fetch_draft_from_github(ticket_key: str) -> str | None:
+    """Pull proposals/<key>.md from branch feature/<key> in the repo.
+
+    Neo writes the actual proposal draft to the GitHub PR, not the Jira
+    ticket, so the reviewer's detail view fetches it from there. Returns the
+    draft text, or None if GitHub isn't configured / the file isn't found.
+    """
+    if not (GITHUB_TOKEN and GITHUB_REPO):
+        return None
+    branch = f"feature/{ticket_key}"
+    path = f"proposals/{ticket_key}.md"
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path}"
+    headers = {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    try:
+        resp = requests.get(url, headers=headers, params={"ref": branch}, timeout=15)
+        if resp.status_code != 200:
+            return None
+        content = resp.json().get("content", "")
+        return b64decode(content).decode("utf-8", "replace") if content else None
+    except Exception as e:
+        print(f"[review] couldn't fetch draft for {ticket_key} from GitHub: {e}")
+        return None
 
 # ── Step 1: Fetch In Review tickets from Jira ─────────────────────────────────
 def fetch_in_review_tickets() -> list[dict]:
@@ -161,7 +194,13 @@ def get_proposal(proposal_id: str) -> dict | None:
     desc_obj = ticket["fields"].get("description") or {}
     description_text = _flatten_adf(desc_obj)
 
-    return extract_fields_with_claude(proposal_id, summary, description_text)
+    fields = extract_fields_with_claude(proposal_id, summary, description_text)
+    # The real draft lives in the PR, not the ticket — fetch it if missing.
+    if not fields.get("draft"):
+        gh_draft = _fetch_draft_from_github(proposal_id)
+        if gh_draft:
+            fields["draft"] = gh_draft
+    return fields
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
