@@ -5,7 +5,7 @@ Public surface:
 """
 from .config import Config
 from .loop import NeoLoop
-from .types import Category, State, WorkItem
+from .neo_types import Category, State, WorkItem
 
 __all__ = ["NeoLoop", "Config", "WorkItem", "Category", "State"]
 __version__ = "0.0.1"

@@ -25,7 +25,7 @@ from .integrations import (ConsoleReporter, DryClaudeClient, DryGitHubClient,
 from .module import Context, Module
 from .router import route
 from .skill_loader import SkillLoader
-from .types import State, WorkItem
+from .neo_types import State, WorkItem
 
 
 def _load_module(name: str) -> Module:

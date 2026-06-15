@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from .integrations import (DryClaudeClient, DryGitHubClient, DryJiraClient,
                            LiveClaudeClient, LiveGitHubClient, LiveJiraClient)
 from .skill_loader import SkillLoader
-from .types import WorkItem
+from .neo_types import WorkItem
 
 
 @dataclass

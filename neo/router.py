@@ -7,7 +7,7 @@ requests onto enabled modules.
 from __future__ import annotations
 
 from .skill_loader import infer_skill
-from .types import WorkItem
+from .neo_types import WorkItem
 
 # Keyword -> module. First match wins. Extend as modules come online.
 _MODULE_MAP: list[tuple[tuple[str, ...], str]] = [

@@ -14,7 +14,7 @@ import sys
 
 from .config import Config
 from .loop import NeoLoop
-from .types import Category, WorkItem
+from .neo_types import Category, WorkItem
 
 
 def _sample_items() -> list[WorkItem]:

@@ -11,7 +11,7 @@ The loop then moves the ticket to In Review for human sign-off.
 from __future__ import annotations
 
 from neo.module import Context, Module
-from neo.types import WorkItem
+from neo.neo_types import WorkItem
 
 
 class ProposalsModule(Module):
