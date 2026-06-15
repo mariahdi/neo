@@ -196,7 +196,17 @@ class LiveGitHubClient:
                 raw = resp.read().decode()
                 return json.loads(raw) if raw else {}
         except urllib.error.HTTPError as e:
-            raise _ApiError(e.code, e.read().decode()[:300]) from None
+            detail = e.read().decode()[:300]
+            if e.code == 403 and "not accessible by personal access token" in detail:
+                detail = (
+                    "NEO_GITHUB_TOKEN lacks write access to "
+                    f"{self.repo!r}. A fine-grained PAT needs Contents: "
+                    "Read and write (for branches/commits) and Pull "
+                    "requests: Read and write; a classic PAT needs the "
+                    "'repo' scope. (org repos may also require token "
+                    f"approval.) GitHub said: {detail}"
+                )
+            raise _ApiError(e.code, detail) from None
 
     def _ensure_base(self) -> None:
         if self._base_sha is not None:

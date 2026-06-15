@@ -1,5 +1,7 @@
-# Neo orchestrator has no hard runtime deps yet (stdlib only).
-# Add when integrations are wired in, e.g.:
-#   anthropic>=0.40
-#   requests>=2.31
-#   PyYAML>=6.0
+# Neo orchestrator core is stdlib-only.
+
+# Reviewer web app (reviewer/) + Jira/Claude integrations:
+fastapi>=0.115
+uvicorn>=0.30
+python-multipart>=0.0.9   # FastAPI form parsing (Request Changes / New Request)
+requests>=2.31
