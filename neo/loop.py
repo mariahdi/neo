@@ -19,8 +19,9 @@ import importlib
 from typing import Iterable
 
 from .config import Config
-from .integrations import (ClaudeClient, ConsoleReporter, GitHubClient,
-                           JiraClient, Reporter)
+from .integrations import (ClaudeClient, ConsoleReporter, DryGitHubClient,
+                           DryJiraClient, LiveGitHubClient, LiveJiraClient,
+                           Reporter)
 from .module import Context, Module
 from .router import route
 from .skill_loader import SkillLoader
@@ -34,12 +35,18 @@ def _load_module(name: str) -> Module:
 
 
 class NeoLoop:
-    def __init__(self, config: Config, reporter: Reporter | None = None):
+    def __init__(self, config: Config, reporter: Reporter | None = None,
+                 live: bool = False):
         self.config = config
+        self.live = live
         self.reporter = reporter or ConsoleReporter()
+        jira = (LiveJiraClient if live else DryJiraClient)(
+            config.jira_base_url, self.reporter)
+        github = (LiveGitHubClient if live else DryGitHubClient)(
+            config.github_repo, self.reporter)
         self.ctx = Context(
-            jira=JiraClient(config.jira_base_url, self.reporter),
-            github=GitHubClient(config.github_repo, self.reporter),
+            jira=jira,
+            github=github,
             claude=ClaudeClient(self.reporter),
             skills=SkillLoader(config.skills_dir),
         )
