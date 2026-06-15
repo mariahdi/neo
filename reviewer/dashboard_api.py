@@ -93,7 +93,8 @@ def get_dashboard() -> dict:
         f'project = {JIRA_PROJECT} AND status in ({statuses}) '
         f'ORDER BY updated DESC'
     )
-    url = f"{JIRA_BASE_URL}/rest/api/3/search"
+    # Jira removed GET /rest/api/3/search (returns 410 Gone). Use /search/jql.
+    url = f"{JIRA_BASE_URL}/rest/api/3/search/jql"
     params = {
         "jql": jql,
         "fields": "summary,status,duedate,priority,labels",

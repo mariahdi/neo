@@ -31,7 +31,9 @@ if not DEMO_MODE:
 def fetch_in_review_tickets() -> list[dict]:
     """Return raw Jira issues currently In Review."""
     jql = 'project = NEO AND status = "In Review" ORDER BY created DESC'
-    url = f"{JIRA_BASE_URL}/rest/api/3/search"
+    # Jira removed GET /rest/api/3/search (returns 410 Gone). Use the enhanced
+    # /search/jql endpoint — same query params, response still has "issues".
+    url = f"{JIRA_BASE_URL}/rest/api/3/search/jql"
     params = {
         "jql": jql,
         "fields": "summary,description,assignee,priority,labels,duedate",
