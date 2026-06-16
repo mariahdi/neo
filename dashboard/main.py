@@ -38,6 +38,7 @@ from . import chat, theme
 from .about import router as about_router
 from .goals import router as goals_router
 from .stocks import router as stocks_router
+from .wins import router as wins_router
 
 app = FastAPI(title="Neo", version="1.0.0")
 
@@ -79,6 +80,7 @@ app.add_middleware(BasicAuthMiddleware)
 app.include_router(about_router)
 app.include_router(stocks_router)
 app.include_router(goals_router)
+app.include_router(wins_router)
 
 # Board column keys (from dashboard_api.COLUMNS) -> the canonical labels the
 # unified dashboard shows. Same four columns the prompt asks for.
