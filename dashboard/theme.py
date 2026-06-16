@@ -10,6 +10,7 @@ from __future__ import annotations
 # (key, href, label) — extended as each module ships.
 NAV_LINKS = [
     ("dashboard", "/", "Dashboard"),
+    ("stocks", "/stocks", "Stocks"),
     ("about", "/about", "About"),
 ]
 
