@@ -27,13 +27,20 @@ Neo needs Python (a free program that runs it).
 3. Open the downloaded file and click through the installer (Continue →
    Agree → Install). Enter your Mac password if asked.
 
-### 2. Get the Neo files
+### 2. Get a GitHub account, then the Neo files
 
-1. Go to **https://github.com/mariahdi/neo**
-2. Click the green **`<> Code`** button, then **Download ZIP**.
-3. Open your **Downloads** folder and double-click the ZIP to unzip it.
+Neo's code lives in a **private** project, so you need a free GitHub account
+and Mariah has to invite you.
+
+1. Create a free account at **https://github.com/signup** (skip if you already
+   have one). Send Mariah your username — she'll add you to the project, and
+   you'll get an email invite to **Accept**.
+2. Make sure you're **signed in** at **github.com**, then open
+   **https://github.com/mariahdi/neo**.
+3. Click the green **`<> Code`** button, then **Download ZIP**.
+4. Open your **Downloads** folder and double-click the ZIP to unzip it.
    You'll get a folder called **`neo-main`**.
-4. Drag that folder somewhere easy to find — for example, your **Desktop**.
+5. Drag that folder somewhere easy to find — for example, your **Desktop**.
 
 ### 3. Open Terminal in the Neo folder
 
