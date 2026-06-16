@@ -69,18 +69,26 @@ def _category(fields: dict) -> str:
     return "STD"
 
 
-def _is_proposal(summary: str) -> bool:
-    """Only show real proposal tickets on the board.
+# Summary prefixes Neo gives the work it creates, one per module. The board
+# and review queue surface these and nothing else, so dev/build tickets and
+# project epics stay off the reviewer's screen.
+_WORK_PREFIXES = ("proposal", "usafa")
 
-    Neo creates proposals as 'Proposal — <title>'. This hides dev/build
-    tickets, project epics ('Proposals module ...'), and any VOID tickets.
+
+def _is_neo_work(summary: str) -> bool:
+    """True for a reviewer-facing Neo ticket from any enabled module.
+
+    Neo names its work '<Module> — <title>' (e.g. 'Proposal — Red Cross',
+    'USAFA — homepage banner'). This hides VOID tickets and the module epics
+    ('Proposals module ...', 'USAFA module ...'), while showing the real work
+    from every module.
     """
     s = (summary or "").strip().lower()
     if "void" in s:
         return False
-    if s.startswith("proposals "):   # e.g. the "Proposals module" epic
-        return False
-    return s.startswith("proposal")
+    if s.startswith("proposals ") or s.startswith("usafa module"):
+        return False  # the module epics, not actual work
+    return s.startswith(_WORK_PREFIXES)
 
 
 def get_dashboard() -> dict:
@@ -121,8 +129,8 @@ def get_dashboard() -> dict:
     buckets = {c["key"]: [] for c in COLUMNS}
     for issue in issues:
         f = issue["fields"]
-        if not _is_proposal(f.get("summary", "")):
-            continue  # hide VOID / dev / epic tickets — proposals only
+        if not _is_neo_work(f.get("summary", "")):
+            continue  # hide VOID / dev / epic tickets — Neo work items only
         status_name = ((f.get("status") or {}).get("name") or "").lower()
         col_key = _STATUS_TO_KEY.get(status_name)
         if col_key is None:
