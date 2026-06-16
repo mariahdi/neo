@@ -7,7 +7,7 @@ services:
   - type: web
     name: neo-dashboard
     runtime: python
-    plan: starter            # always-on. Use `free` to trial (it sleeps + cold-starts).
+    plan: free               # free tier sleeps + cold-starts. Switch to `starter` (~$7/mo) for always-on.
     branch: main             # auto-deploys on every push to main
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn dashboard.main:app --host 0.0.0.0 --port $PORT
