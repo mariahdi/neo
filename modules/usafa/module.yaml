@@ -1,0 +1,17 @@
+# USAFA module manifest
+name: usafa
+status: planned
+description: Voice request -> drafted, reviewed Air Force Academy website change.
+
+# Jira workflow this module expects (same four states as proposals).
+states: [to_do, in_progress, in_review, done]
+
+# Skills this module can load from the private data layer.
+# The skill files themselves live in personal-data/skills/ and are NOT
+# committed. Only their names are public.
+skills:
+  - usafa-web
+  - web-update
+
+# Branch naming: one feature branch per ticket.
+branch_pattern: "feature/{key}"

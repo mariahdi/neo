@@ -100,8 +100,8 @@
     "intro": "Want to poke at it live? Here's the whole thing, in order — no accounts or keys required. It all runs in demo mode with sample proposals; the first step needs only a terminal, the rest open in a browser.",
     "items": [
       { "tag": "Step 1 · terminal", "name": "Watch the loop run", "desc": "Narrate the whole loop on the Red Cross example — all five steps print out, no keys needed.", "cmd": "python -m neo --dry-run" },
-      { "tag": "Step 2 · browser", "name": "Open the app", "desc": "Start the web app with one command — it frees the port and launches in demo mode — then open the address it prints (http://127.0.0.1:8000).", "cmd": "./run-reviewer.sh", "highlight": true },
-      { "tag": "Step 3 · click around", "name": "Walk the screens", "desc": "Speak a request at /new, watch it land, then play the reviewer at /reviews — open the Red Cross draft and click Approve.", "cmd": "open http://127.0.0.1:8000" }
+      { "tag": "Step 2 · browser", "name": "Open the app", "desc": "Start the web app with one command — it frees the port and launches in demo mode — then open the address it prints (http://127.0.0.1:8000).", "cmd": "./run-dashboard.sh", "highlight": true },
+      { "tag": "Step 3 · click around", "name": "Walk the page", "desc": "Type a request in the chat bar and watch it land on the board, then play the reviewer — open the Red Cross draft in the In Review section and click Approve. All on one page.", "cmd": "open http://127.0.0.1:8000" }
     ]
   },
   "remember": {

@@ -56,7 +56,7 @@
     "intro": "Two things to watch, in order. The first needs nothing but the terminal; the second is the new web app.",
     "items": [
       { "tag": "Demo 1 · terminal", "name": "The loop narrated", "desc": "Run the proposals loop on the Red Cross example. The hot item auto-starts, the router picks the module, the nonprofit skill loads, Claude drafts, a branch + PR open, and the ticket moves to In Review.", "cmd": "python -m neo --dry-run" },
-      { "tag": "Demo 2 · web app", "name": "The reviewer dashboard", "desc": "Open the reviewer app. See a draft proposal pulled from live Jira — clean, no jargon — then click Approve or Request Changes and watch the ticket move.", "cmd": "uvicorn reviewer.main:app --reload", "highlight": true },
+      { "tag": "Demo 2 · web app", "name": "The unified dashboard", "desc": "Open the dashboard. Type a request in the chat bar, watch it land on the board, then play the reviewer — see a draft pulled from live Jira and click Approve or Request Changes, all on one page.", "cmd": "uvicorn dashboard.main:app --reload", "highlight": true },
       { "tag": "Demo 3 · going live", "name": "The real thing", "desc": "Same loop, real keys: python -m neo --live opens an actual branch, draft, and pull request. Shown only if we want to commit a live run.", "cmd": "python -m neo --live" }
     ]
   },
