@@ -13,6 +13,7 @@ from .neo_types import WorkItem
 _MODULE_MAP: list[tuple[tuple[str, ...], str]] = [
     (("proposal", "rfp", "red cross", "bid"), "proposals"),
     (("tenant", "landlord", "lease", "maintenance"), "landlord"),
+    (("usafa", "air force academy", "academy site", "academy website"), "usafa"),
     (("website", "web dev", "deploy", "air force site"), "airforce_web"),
 ]
 

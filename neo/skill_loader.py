@@ -18,6 +18,12 @@ _KEYWORD_MAP: dict[str, str] = {
     "nonprofit": "nonprofit-proposal",
     "non-profit": "nonprofit-proposal",
     "charity": "nonprofit-proposal",
+    # USAFA web skills — listed before "air force" so an academy website
+    # request maps to the web skill, not the government-contract one.
+    "usafa": "usafa-web",
+    "air force academy": "usafa-web",
+    "academy website": "usafa-web",
+    "academy site": "usafa-web",
     "government": "government-contract",
     "federal": "government-contract",
     "air force": "government-contract",

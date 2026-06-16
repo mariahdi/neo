@@ -1,6 +1,6 @@
 {
   "personal_data_dir": "personal-data",
-  "enabled_modules": ["proposals"],
+  "enabled_modules": ["proposals", "usafa"],
   "jira_base_url": "https://mariahdiharris.atlassian.net",
   "github_repo": "mariahdi/neo"
 }
