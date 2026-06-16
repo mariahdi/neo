@@ -1,16 +1,22 @@
 # Setting up your Neo dashboard
 
+> ## 🌐 Did Mariah send you a web link?
+> If you got a link like **`https://neo-dashboard-….onrender.com`** plus a
+> username and password, **that's all you need.** Open the link, type the
+> username and password once, and bookmark it. You can stop reading here —
+> the rest of this page is only for running Neo on your own Mac instead.
+
 This is the plain-English guide to getting the Neo dashboard running on your
 own Mac. No coding needed — you'll copy a few things and type two commands.
 
 When it's running you get **one page**: type (or speak) a request, Neo drafts
 it, and proposals show up under **In Review** for you to **Approve**.
 
-> **Heads up — where the dashboard "lives":** Neo runs *on your Mac*. The link
-> you open (`http://127.0.0.1:8000`) works **only on this Mac, while the
-> Terminal window is open.** It is not a website you can open from your phone
-> or another computer yet. (Ask Mariah about hosting it online if you want
-> that.)
+> **Heads up — where the dashboard "lives" (local version):** when you run it
+> yourself, Neo runs *on your Mac*. The link you open
+> (`http://127.0.0.1:8000`) works **only on this Mac, while the Terminal
+> window is open** — it's not reachable from your phone or another computer.
+> (The hosted web link above doesn't have that limitation.)
 
 ---
 

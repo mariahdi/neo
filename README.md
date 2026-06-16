@@ -10,7 +10,9 @@ The full write-up is in [`docs/PLAN.md`](docs/PLAN.md). A screen-shareable
 walkthrough lives in [`docs/plan-site/`](docs/plan-site/) (open `index.html`).
 
 **Setting it up for a non-technical reviewer?** See the plain-English
-[`docs/SETUP.md`](docs/SETUP.md).
+[`docs/SETUP.md`](docs/SETUP.md) to run it on their Mac, or
+[`docs/DEPLOY.md`](docs/DEPLOY.md) to host it (Render) so they just open a
+password-protected link — no terminal at all.
 
 ## The dashboard
 
