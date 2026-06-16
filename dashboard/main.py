@@ -254,6 +254,19 @@ PAGE = r"""<!DOCTYPE html>
   .btn-gold { background: var(--gold); border-color: var(--gold); color: #1a1305; }
   .btn-gold:hover { background: #d8b85a; border-color: #d8b85a; color: #1a1305; }
   .btn-sm { padding: 7px 12px; font-size: 12px; }
+  .btn-mic { font-size: 16px; padding: 11px 14px; line-height: 1; }
+  .btn-mic[hidden] { display: none; }
+  .btn-mic.listening {
+    background: var(--gold); border-color: var(--gold); color: #1a1305;
+    animation: mic-pulse 1.3s infinite;
+  }
+  @keyframes mic-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(200,168,75,0.5); }
+    70%  { box-shadow: 0 0 0 11px rgba(200,168,75,0); }
+    100% { box-shadow: 0 0 0 0 rgba(200,168,75,0); }
+  }
+  .voice-status { display: none; margin-top: 11px; font-size: 12.5px; color: var(--gold); letter-spacing: 0.03em; }
+  .voice-status.show { display: block; }
   #chat-reply {
     display: none; margin-top: 14px; padding: 12px 14px; border-radius: 10px;
     background: var(--gold-soft); border: 1px solid var(--gold-line);
@@ -340,11 +353,13 @@ PAGE = r"""<!DOCTYPE html>
   <!-- Chat -->
   <section class="chat">
     <h2>Ask Neo</h2>
-    <p class="hint">Type a request — Neo figures out the module, opens the ticket, and starts the draft.</p>
+    <p class="hint">Type a request — or tap the mic to speak — and Neo figures out the module, opens the ticket, and starts the draft.</p>
     <form id="chat-form" class="chat-row">
       <textarea id="chat-input" rows="1" placeholder="e.g. I need a proposal for USAFA for website development"></textarea>
+      <button type="button" id="chat-mic" class="btn btn-mic" aria-label="Speak your request" title="Speak your request">🎙</button>
       <button type="submit" id="chat-send" class="btn btn-gold">Send</button>
     </form>
+    <div id="voice-status" class="voice-status"></div>
     <div id="chat-reply"></div>
   </section>
 
@@ -523,6 +538,58 @@ chatForm.addEventListener("submit", async (e) => {
   refresh();
   setTimeout(refresh, 4000);
 });
+
+// ── Voice input (Web Speech API) ──
+// Speech is transcribed into the box so you can read it back and edit before
+// sending — voice never auto-submits. Browsers without the API (e.g. Firefox)
+// just keep typing; the mic button hides itself.
+const micBtn = $("#chat-mic");
+const voiceStatus = $("#voice-status");
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recog = null, listening = false, baseText = "", lastError = "";
+
+if (!SR) {
+  micBtn.hidden = true;
+} else {
+  recog = new SR();
+  recog.lang = "en-US";
+  recog.interimResults = true;
+  recog.continuous = false;
+
+  recog.onresult = (e) => {
+    let txt = "";
+    for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript;
+    chatInput.value = (baseText ? baseText + " " : "") + txt.trim();
+    chatInput.dispatchEvent(new Event("input"));  // re-size the textarea
+  };
+  recog.onerror = (e) => {
+    lastError = (e.error === "not-allowed" || e.error === "service-not-allowed")
+      ? "Mic blocked — allow microphone access in your browser."
+      : "Couldn't hear that — try again.";
+  };
+  recog.onend = () => {
+    listening = false;
+    micBtn.classList.remove("listening");
+    if (lastError) {
+      voiceStatus.textContent = lastError; lastError = "";
+      voiceStatus.classList.add("show");
+      setTimeout(() => voiceStatus.classList.remove("show"), 3000);
+    } else {
+      voiceStatus.classList.remove("show");
+    }
+    chatInput.focus();
+  };
+
+  micBtn.addEventListener("click", () => {
+    if (listening) { recog.stop(); return; }
+    baseText = chatInput.value.trim();
+    try { recog.start(); } catch (_) { return; }  // start() throws if already running
+    listening = true;
+    micBtn.classList.add("listening");
+    voiceStatus.textContent = "🎙 Listening… tap the mic again to stop, then review and Send.";
+    voiceStatus.classList.add("show");
+  });
+}
 
 // ── State / polling ──
 async function refresh() {
