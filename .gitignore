@@ -16,3 +16,6 @@ venv/
 # Env / secrets
 .env
 neo.env
+
+# Dashboard module data (JSON store + uploaded photos) — runtime, not committed
+dashboard/data/
