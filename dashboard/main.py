@@ -34,7 +34,8 @@ from reviewer.dashboard_api import get_dashboard
 from reviewer.review_api import DEMO_MODE as REVIEW_DEMO
 from reviewer.review_api import _fetch_draft_from_github, get_review_queue
 
-from . import chat
+from . import chat, theme
+from .about import router as about_router
 
 app = FastAPI(title="Neo", version="1.0.0")
 
@@ -71,6 +72,9 @@ class BasicAuthMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(BasicAuthMiddleware)
+
+# Module pages (About Me, and more to come) live in their own routers.
+app.include_router(about_router)
 
 # Board column keys (from dashboard_api.COLUMNS) -> the canonical labels the
 # unified dashboard shows. Same four columns the prompt asks for.
@@ -253,6 +257,10 @@ PAGE = r"""<!DOCTYPE html>
     margin-top: -4px;
   }
   .who { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+  .brand { text-decoration: none; }
+  .topnav { display: flex; gap: 22px; margin-right: auto; margin-left: 10px; }
+  .topnav a { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); text-decoration: none; padding: 6px 0; }
+  .topnav a:hover, .topnav a.active { color: var(--gold); }
 
   .demo-banner {
     display: none;
@@ -385,8 +393,12 @@ PAGE = r"""<!DOCTYPE html>
 </head>
 <body>
 <header>
-  <div class="brand">NE<b>O</b><small>Control Room</small></div>
-  <div class="who">Mariah</div>
+  <a class="brand" href="/">NE<b>O</b></a>
+  <nav class="topnav">
+    <a href="/" class="active">Dashboard</a>
+    <a href="/about">About</a>
+  </nav>
+  <div class="who">Mariah &amp; Dad</div>
 </header>
 <div id="demo-banner" class="demo-banner">
   <b>DEMO MODE</b> · showing sample data — set the Jira / GitHub / Anthropic keys to go live.
