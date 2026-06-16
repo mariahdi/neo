@@ -101,27 +101,39 @@ Please {verb} the proposal incorporating this feedback. Return only the revised 
     return resp.json()["content"][0]["text"].strip()
 
 
+# Module draft folders on the PR branch (kept in step with review_api.DRAFT_DIRS).
+DRAFT_DIRS = ("proposals", "usafa-site")
+
+
+def _locate_draft(ticket_key: str, branch: str) -> tuple[str, str | None]:
+    """Find which module folder holds this ticket's draft, so a revision is
+    written back to the same file. Returns (path, sha); falls back to
+    proposals/ with no sha if the file isn't found yet."""
+    for folder in DRAFT_DIRS:
+        path = f"{folder}/{ticket_key}.md"
+        resp = requests.get(
+            f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path}",
+            headers=GITHUB_HEADERS, params={"ref": branch})
+        if resp.status_code == 200:
+            return path, resp.json().get("sha")
+    return f"proposals/{ticket_key}.md", None
+
+
 def _update_pr_with_new_draft(ticket_key: str, new_draft: str, pr_number: int) -> bool:
-    """Commit the revised draft to the PR branch."""
+    """Commit the revised draft back to the same file on the PR branch."""
     branch = f"feature/{ticket_key}"
-    file_path = f"proposals/{ticket_key}.md"
+    file_path, sha = _locate_draft(ticket_key, branch)
 
-    # Get current file SHA (needed to update)
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{file_path}"
-    params = {"ref": branch}
-    resp = requests.get(url, headers=GITHUB_HEADERS, params=params)
-    sha = resp.json().get("sha") if resp.status_code == 200 else None
-
-    # Commit updated draft
     import base64
     body = {
-        "message": f"{ticket_key}: revise proposal per reviewer feedback",
+        "message": f"{ticket_key}: revise draft per reviewer feedback",
         "content": base64.b64encode(new_draft.encode()).decode(),
         "branch": branch,
     }
     if sha:
         body["sha"] = sha
 
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{file_path}"
     resp = requests.put(url, headers=GITHUB_HEADERS, json=body)
     return resp.status_code in (200, 201)
 

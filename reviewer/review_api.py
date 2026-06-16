@@ -33,43 +33,55 @@ if not DEMO_MODE:
     }
 
 
-def _fetch_draft_from_github(ticket_key: str) -> str | None:
-    """Pull proposals/<key>.md from branch feature/<key> in the repo.
+# Each module commits its draft into its own folder on the PR branch
+# (proposals/<key>.md, usafa-site/<key>.md). The reviewer doesn't know or care
+# which module a ticket came from, so we try each known location.
+DRAFT_DIRS = ("proposals", "usafa-site")
 
-    Neo writes the actual proposal draft to the GitHub PR, not the Jira
-    ticket, so the reviewer's detail view fetches it from there. Returns the
-    draft text, or None if GitHub isn't configured / the file isn't found.
+
+def _fetch_draft_from_github(ticket_key: str) -> str | None:
+    """Pull <dir>/<key>.md from branch feature/<key> in the repo.
+
+    Neo writes the actual draft to the GitHub PR, not the Jira ticket, so the
+    reviewer's view fetches it from there. Tries each module's folder and
+    returns the first hit, or None if GitHub isn't configured / nothing found.
     """
     if not (GITHUB_TOKEN and GITHUB_REPO):
         return None
     branch = f"feature/{ticket_key}"
-    path = f"proposals/{ticket_key}.md"
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path}"
     headers = {
         "Authorization": f"Bearer {GITHUB_TOKEN}",
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }
-    try:
-        resp = requests.get(url, headers=headers, params={"ref": branch}, timeout=15)
-        if resp.status_code != 200:
-            return None
-        content = resp.json().get("content", "")
-        return b64decode(content).decode("utf-8", "replace") if content else None
-    except Exception as e:
-        print(f"[review] couldn't fetch draft for {ticket_key} from GitHub: {e}")
-        return None
+    for folder in DRAFT_DIRS:
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{folder}/{ticket_key}.md"
+        try:
+            resp = requests.get(url, headers=headers, params={"ref": branch}, timeout=15)
+            if resp.status_code != 200:
+                continue
+            content = resp.json().get("content", "")
+            if content:
+                return b64decode(content).decode("utf-8", "replace")
+        except Exception as e:
+            print(f"[review] couldn't fetch draft for {ticket_key} from {folder}: {e}")
+    return None
 
-def _is_proposal(summary: str) -> bool:
-    """Only surface real proposal tickets. Neo creates them as
-    'Proposal — <title>'; this skips dev/build tickets, the 'Proposals
-    module' epic, and any VOID tickets."""
+# Summary prefixes Neo gives the work it creates, one per module (kept in step
+# with dashboard_api._WORK_PREFIXES).
+_WORK_PREFIXES = ("proposal", "usafa")
+
+
+def _is_neo_work(summary: str) -> bool:
+    """True for a reviewer-facing Neo ticket from any module. Neo names work
+    '<Module> — <title>' (e.g. 'Proposal — Red Cross', 'USAFA — banner');
+    this skips dev/build tickets, the module epics, and any VOID tickets."""
     s = (summary or "").strip().lower()
     if "void" in s:
         return False
-    if s.startswith("proposals "):
+    if s.startswith("proposals ") or s.startswith("usafa module"):
         return False
-    return s.startswith("proposal")
+    return s.startswith(_WORK_PREFIXES)
 
 
 # ── Step 1: Fetch In Review tickets from Jira ─────────────────────────────────
@@ -159,8 +171,8 @@ def get_review_queue() -> list[dict]:
     for ticket in tickets:
         key = ticket["key"]
         summary = ticket["fields"].get("summary", "")
-        if not _is_proposal(summary):
-            continue  # proposals only — skip VOID / dev / epic tickets
+        if not _is_neo_work(summary):
+            continue  # Neo work only — skip VOID / dev / epic tickets
 
         # Flatten description to plain text
         desc_obj = ticket["fields"].get("description") or {}
