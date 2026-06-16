@@ -12,6 +12,7 @@ NAV_LINKS = [
     ("dashboard", "/", "Dashboard"),
     ("stocks", "/stocks", "Stocks"),
     ("goals", "/goals", "Goals"),
+    ("wins", "/wins", "Wins"),
     ("about", "/about", "About"),
 ]
 
