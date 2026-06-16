@@ -93,8 +93,8 @@ def _module_widgets(board: dict) -> list[dict]:
 
     return [
         {
-            "key": "proposals",
-            "label": "Proposals",
+            "key": "tasks",
+            "label": "Tasks",
             "stat": str(in_flight),
             "note": f"{in_review} awaiting review" if in_flight else "Nothing in flight",
             "status": "live",

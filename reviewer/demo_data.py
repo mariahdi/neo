@@ -125,7 +125,7 @@ _BY_ID = {p["id"]: p for p in DEMO_PROPOSALS}
 # Mirrors dashboard_api.COLUMNS (kept here to avoid a circular import).
 _COLUMNS = [
     {"key": "queued",   "label": "Queued",      "blurb": "Just requested — waiting for Neo."},
-    {"key": "drafting", "label": "Drafting",    "blurb": "Neo is writing the proposal."},
+    {"key": "drafting", "label": "Drafting",    "blurb": "Neo is drafting it."},
     {"key": "review",   "label": "Needs Review", "blurb": "Ready for your sign-off."},
     {"key": "done",     "label": "Approved",    "blurb": "Signed off and parked."},
 ]
