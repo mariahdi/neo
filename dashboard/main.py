@@ -10,12 +10,21 @@ dashboard, reusing the existing backend APIs unchanged.
 
 With no NEO_* credentials set it runs in demo mode (sample data). Set the
 Jira / GitHub / Anthropic keys to go live.
+
+When deployed to a public URL, set DASHBOARD_USER and DASHBOARD_PASS to put a
+password prompt in front of the whole app (see docs/DEPLOY.md). Leaving them
+unset — the local/demo default — means no prompt.
 """
 from __future__ import annotations
 
+import base64
+import os
+import secrets
+
 from fastapi import BackgroundTasks, FastAPI
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from neo.config import Config
 from reviewer.actions_api import approve as do_approve
@@ -28,6 +37,40 @@ from reviewer.review_api import _fetch_draft_from_github, get_review_queue
 from . import chat
 
 app = FastAPI(title="Neo", version="1.0.0")
+
+
+# ── Login gate ────────────────────────────────────────────────────────────────
+# A single shared username/password (HTTP Basic), enough to keep the public
+# internet out of a one-reviewer control panel. Only enforced when both env
+# vars are set, so local and demo runs stay prompt-free; on the host you set
+# them and every request must authenticate.
+_AUTH_USER = os.environ.get("DASHBOARD_USER")
+_AUTH_PASS = os.environ.get("DASHBOARD_PASS")
+_AUTH_ON = bool(_AUTH_USER and _AUTH_PASS)
+
+
+class BasicAuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        if not _AUTH_ON:
+            return await call_next(request)
+        header = request.headers.get("Authorization", "")
+        if header.startswith("Basic "):
+            try:
+                user, _, pw = base64.b64decode(header[6:]).decode().partition(":")
+                # compare_digest on both fields — constant-time, no early exit.
+                if (secrets.compare_digest(user, _AUTH_USER)
+                        and secrets.compare_digest(pw, _AUTH_PASS)):
+                    return await call_next(request)
+            except Exception:
+                pass  # malformed header -> fall through to a 401 challenge
+        return Response(
+            "Authentication required.",
+            status_code=401,
+            headers={"WWW-Authenticate": 'Basic realm="Neo"'},
+        )
+
+
+app.add_middleware(BasicAuthMiddleware)
 
 # Board column keys (from dashboard_api.COLUMNS) -> the canonical labels the
 # unified dashboard shows. Same four columns the prompt asks for.

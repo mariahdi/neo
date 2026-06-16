@@ -1,0 +1,40 @@
+# Render blueprint for the Neo dashboard.
+# Create the service from this file: Render dashboard -> New -> Blueprint,
+# pick the mariahdi/neo repo. Render reads this, builds, and (for every var
+# below marked `sync: false`) prompts you to paste the value. Full walkthrough
+# in docs/DEPLOY.md.
+services:
+  - type: web
+    name: neo-dashboard
+    runtime: python
+    plan: starter            # always-on. Use `free` to trial (it sleeps + cold-starts).
+    branch: main             # auto-deploys on every push to main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn dashboard.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      # Pin the Python version (not a secret — set straight from this file).
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+
+      # Login for the deployed site — set these to whatever your reviewer types.
+      - key: DASHBOARD_USER
+        sync: false
+      - key: DASHBOARD_PASS
+        sync: false
+
+      # The same NEO_* values from your local neo.env. Paste them in Render;
+      # never commit them. `sync: false` keeps Render prompting for each.
+      - key: NEO_JIRA_BASE_URL
+        sync: false
+      - key: NEO_JIRA_EMAIL
+        sync: false
+      - key: NEO_JIRA_API_TOKEN
+        sync: false
+      - key: NEO_ANTHROPIC_API_KEY
+        sync: false
+      - key: NEO_GITHUB_TOKEN
+        sync: false
+      - key: NEO_GITHUB_REPO
+        sync: false
+      - key: NEO_JIRA_PROJECT
+        sync: false
