@@ -11,6 +11,7 @@ from __future__ import annotations
 NAV_LINKS = [
     ("dashboard", "/", "Dashboard"),
     ("stocks", "/stocks", "Stocks"),
+    ("goals", "/goals", "Goals"),
     ("about", "/about", "About"),
 ]
 
