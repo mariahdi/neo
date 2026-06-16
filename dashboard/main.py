@@ -36,6 +36,7 @@ from reviewer.review_api import _fetch_draft_from_github, get_review_queue
 
 from . import chat, theme
 from .about import router as about_router
+from .goals import router as goals_router
 from .stocks import router as stocks_router
 
 app = FastAPI(title="Neo", version="1.0.0")
@@ -77,6 +78,7 @@ app.add_middleware(BasicAuthMiddleware)
 # Module pages (About Me, Stocks, and more to come) live in their own routers.
 app.include_router(about_router)
 app.include_router(stocks_router)
+app.include_router(goals_router)
 
 # Board column keys (from dashboard_api.COLUMNS) -> the canonical labels the
 # unified dashboard shows. Same four columns the prompt asks for.
