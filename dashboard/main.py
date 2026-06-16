@@ -22,7 +22,8 @@ from reviewer.actions_api import approve as do_approve
 from reviewer.actions_api import request_changes as do_request_changes
 from reviewer.dashboard_api import DEMO_MODE as BOARD_DEMO
 from reviewer.dashboard_api import get_dashboard
-from reviewer.review_api import get_review_queue
+from reviewer.review_api import DEMO_MODE as REVIEW_DEMO
+from reviewer.review_api import _fetch_draft_from_github, get_review_queue
 
 from . import chat
 
@@ -79,6 +80,24 @@ def _module_widgets(board: dict) -> list[dict]:
     ]
 
 
+def _reviews_with_drafts() -> list[dict]:
+    """In Review proposals, each with its draft text ready to show inline.
+
+    The queue extracts ticket fields, but the real draft lives in the PR, not
+    the Jira description — so for any review missing a draft we pull it from
+    GitHub (same source the old detail view used). Demo data ships its own
+    drafts, so we only reach out when live.
+    """
+    reviews = get_review_queue()
+    if not REVIEW_DEMO:
+        for r in reviews:
+            if not (r.get("draft") or "").strip():
+                draft = _fetch_draft_from_github(r["id"])
+                if draft:
+                    r["draft"] = draft
+    return reviews
+
+
 @app.get("/api/state")
 async def state() -> JSONResponse:
     """Everything the page renders, in one payload. Polled every 30s."""
@@ -88,7 +107,7 @@ async def state() -> JSONResponse:
     return JSONResponse({
         "demo": BOARD_DEMO,
         "board": board,
-        "reviews": get_review_queue(),
+        "reviews": _reviews_with_drafts(),
         "modules": _module_widgets(board),
     })
 
