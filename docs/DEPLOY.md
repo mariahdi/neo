@@ -71,10 +71,11 @@ his own Mac.
 
 ## Good to know
 
-- **Cost / sleeping.** The **free** plan spins the app down when idle, so the
-  first visit after a quiet spell takes ~30 seconds to wake. For an
-  always-instant link, switch the service to the **Starter** plan (~$7/month)
-  in `render.yaml` (`plan: starter`, already set) or in the Render dashboard.
+- **Cost / sleeping.** The blueprint uses the **free** plan, which spins the
+  app down when idle, so the first visit after a quiet spell takes ~30 seconds
+  to wake. For an always-instant link, switch the service to the **Starter**
+  plan (~$7/month) — change `plan: free` to `plan: starter` in `render.yaml`,
+  or pick the plan in the Render dashboard.
 - **AI usage** bills to your `NEO_ANTHROPIC_API_KEY`, same as a local run.
 - **Auto-deploys.** Every push to `main` redeploys automatically.
 - **Changing the password / locking him out.** Edit `DASHBOARD_PASS` in the
