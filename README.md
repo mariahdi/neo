@@ -4,10 +4,28 @@
 > want; Neo routes it, drafts it with AI, gets it reviewed by a human, and
 > reports back for your sign-off.
 
-**Status:** pre-MVP scaffold · **Proof of concept:** proposals module
+**Status:** working MVP · **Proof of concept:** proposals + USAFA modules
 
 The full write-up is in [`docs/PLAN.md`](docs/PLAN.md). A screen-shareable
 walkthrough lives in [`docs/plan-site/`](docs/plan-site/) (open `index.html`).
+
+**Setting it up for a non-technical reviewer?** See the plain-English
+[`docs/SETUP.md`](docs/SETUP.md).
+
+## The dashboard
+
+One page does the whole job: a chat bar (type or speak a request), a live
+board (To Do → In Progress → In Review → Done), In Review cards with the draft
+and **Approve / Request Changes / Re-prompt** inline, and module widgets.
+
+```bash
+pip3 install -r requirements.txt        # one-time
+source neo.env && ./run-dashboard.sh    # → http://127.0.0.1:8000
+```
+
+With no `NEO_*` keys set it runs in **demo mode** (sample data); set the Jira /
+GitHub / Anthropic keys to go live. The dashboard reuses the same loop the CLI
+runs — see "Try the loop" and "Going live" below.
 
 ## The shape
 
@@ -17,14 +35,22 @@ neo/
 │   ├── loop.py          # the control loop, modeled on flight software
 │   ├── router.py        # request -> module + skill
 │   ├── skill_loader.py  # pulls skills from the PRIVATE data layer
-│   ├── integrations.py  # Jira / GitHub / Claude seams (stubbed)
+│   ├── integrations.py  # Jira / GitHub / Claude seams (live + dry)
 │   ├── module.py        # the contract every module implements
-│   └── types.py         # WorkItem + the state model
+│   └── neo_types.py     # WorkItem + the state model
 ├── modules/
-│   └── proposals/       # the proof-of-concept module
+│   ├── proposals/       # the proof-of-concept module
+│   └── usafa/           # Air Force Academy web-dev module
+├── dashboard/           # the unified web app (chat + board + review)
+│   ├── main.py          # the single FastAPI app and page
+│   └── chat.py          # chat bar -> ticket -> draft (onto the live loop)
+├── reviewer/            # backend read/write APIs the dashboard reuses
+│   ├── dashboard_api.py # the board (read) + create a request
+│   ├── review_api.py    # In Review proposals + drafts (read)
+│   └── actions_api.py   # approve / request changes / re-prompt (write)
 ├── personal-data/       # PRIVATE, gitignored — templates, skills, client data
 ├── config/              # neo.config.example.json
-└── docs/                # PLAN.md + the plan site
+└── docs/                # PLAN.md, SETUP.md + the plan site
 ```
 
 Two things stay strictly apart: the **infrastructure** (this repo, shareable)
