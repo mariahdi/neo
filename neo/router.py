@@ -9,11 +9,14 @@ from __future__ import annotations
 from .skill_loader import infer_skill
 from .neo_types import WorkItem
 
-# Keyword -> module. First match wins. Extend as modules come online.
+# Keyword -> module. First match wins, so the more specific modules are
+# listed first: "I need a proposal for USAFA website work" mentions both
+# "usafa" and "proposal", and we want it routed to the usafa module (the
+# concrete thing being asked for), not the generic proposals one.
 _MODULE_MAP: list[tuple[tuple[str, ...], str]] = [
+    (("usafa", "air force academy", "academy site", "academy website"), "usafa"),
     (("proposal", "rfp", "red cross", "bid"), "proposals"),
     (("tenant", "landlord", "lease", "maintenance"), "landlord"),
-    (("usafa", "air force academy", "academy site", "academy website"), "usafa"),
     (("website", "web dev", "deploy", "air force site"), "airforce_web"),
 ]
 
