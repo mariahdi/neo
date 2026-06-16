@@ -36,6 +36,7 @@ from reviewer.review_api import _fetch_draft_from_github, get_review_queue
 
 from . import chat, theme
 from .about import router as about_router
+from .stocks import router as stocks_router
 
 app = FastAPI(title="Neo", version="1.0.0")
 
@@ -73,8 +74,9 @@ class BasicAuthMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(BasicAuthMiddleware)
 
-# Module pages (About Me, and more to come) live in their own routers.
+# Module pages (About Me, Stocks, and more to come) live in their own routers.
 app.include_router(about_router)
+app.include_router(stocks_router)
 
 # Board column keys (from dashboard_api.COLUMNS) -> the canonical labels the
 # unified dashboard shows. Same four columns the prompt asks for.
@@ -392,14 +394,7 @@ PAGE = r"""<!DOCTYPE html>
 </style>
 </head>
 <body>
-<header>
-  <a class="brand" href="/">NE<b>O</b></a>
-  <nav class="topnav">
-    <a href="/" class="active">Dashboard</a>
-    <a href="/about">About</a>
-  </nav>
-  <div class="who">Mariah &amp; Dad</div>
-</header>
+<!--NAV-->
 <div id="demo-banner" class="demo-banner">
   <b>DEMO MODE</b> · showing sample data — set the Jira / GitHub / Anthropic keys to go live.
 </div>
@@ -665,3 +660,7 @@ setInterval(refresh, 30000);
 </body>
 </html>
 """
+
+# Inject the shared top nav (single source of truth in theme.NAV_LINKS) so the
+# work board's header stays in step with the module pages as modules are added.
+PAGE = PAGE.replace("<!--NAV-->", theme.nav("dashboard"))
