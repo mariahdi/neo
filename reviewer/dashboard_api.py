@@ -39,7 +39,7 @@ COLUMNS = [
     {"key": "queued",   "label": "Queued",       "status": "To Do",
      "blurb": "Just requested — waiting for Neo."},
     {"key": "drafting", "label": "Drafting",     "status": "In Progress",
-     "blurb": "Neo is writing the proposal."},
+     "blurb": "Neo is drafting it."},
     {"key": "review",   "label": "Needs Review",  "status": "In Review",
      "blurb": "Ready for your sign-off."},
     {"key": "done",     "label": "Approved",     "status": "Done",
