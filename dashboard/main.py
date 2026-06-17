@@ -33,6 +33,7 @@ from . import auth, chat, profile, theme
 from .about import router as about_router
 from .goals import router as goals_router
 from .modules_api import router as modules_router
+from .nominal import router as nominal_router
 from .stocks import router as stocks_router
 from .wins import router as wins_router
 
@@ -49,6 +50,7 @@ app.include_router(about_router)
 app.include_router(stocks_router)
 app.include_router(goals_router)
 app.include_router(wins_router)
+app.include_router(nominal_router)
 app.include_router(modules_router)
 
 # Board column keys (from dashboard_api.COLUMNS) -> the canonical labels the
