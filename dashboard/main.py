@@ -32,6 +32,7 @@ from reviewer.review_api import _fetch_draft_from_github, get_review_queue
 from . import auth, chat, profile, theme
 from .about import router as about_router
 from .body import router as body_router
+from .wealth import router as wealth_router
 from .goals import router as goals_router
 from .modules_api import router as modules_router
 from .nominal import router as nominal_router
@@ -53,6 +54,7 @@ app.include_router(goals_router)
 app.include_router(wins_router)
 app.include_router(nominal_router)
 app.include_router(body_router)
+app.include_router(wealth_router)
 app.include_router(modules_router)
 
 # Board column keys (from dashboard_api.COLUMNS) -> the canonical labels the
