@@ -636,5 +636,6 @@ PAGE = (
     .replace("<!--FONTS-->", theme.FONT_LINK)
     .replace("/*ROOTCSS*/", profile.root_css())
     .replace("/*EXTRA_CSS*/", theme.EXTRA_CSS)
-    .replace("<!--FOOTER-->", theme.footer() + f"<script>{theme.TOUR_JS}</script>")
+    .replace("<!--FOOTER-->", theme.footer()
+             + f"<script>{theme.TOUR_JS}</script><script>{theme.VIEW_JS}</script>")
 )
