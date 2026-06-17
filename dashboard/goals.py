@@ -32,24 +32,7 @@ ANTHROPIC_MODEL = os.environ.get("NEO_ANTHROPIC_MODEL", "claude-sonnet-4-6")
 CATEGORIES = ["financial", "fitness", "learning", "project"]
 
 # Seed goals (mock until edited). `start`/`current`/`target` drive the bar.
-DEFAULT = {
-    "goals": [
-        {"id": "weight", "title": "Get to 175 lbs", "category": "fitness", "unit": "lbs",
-         "start": 190, "current": 182, "target": 175,
-         "history": [{"date": "2026-06-01", "value": 190, "note": "starting point"},
-                     {"date": "2026-06-15", "value": 182, "note": ""}]},
-        {"id": "fund", "title": "Save $10,000 emergency fund", "category": "financial", "unit": "$",
-         "start": 0, "current": 3500, "target": 10000,
-         "history": [{"date": "2026-05-01", "value": 0, "note": ""},
-                     {"date": "2026-06-10", "value": 3500, "note": ""}]},
-        {"id": "books", "title": "Read 12 books this year", "category": "learning", "unit": "books",
-         "start": 0, "current": 4, "target": 12,
-         "history": [{"date": "2026-06-12", "value": 4, "note": ""}]},
-        {"id": "neo", "title": "Ship NEO v1", "category": "project", "unit": "%",
-         "start": 0, "current": 60, "target": 100,
-         "history": [{"date": "2026-06-16", "value": 60, "note": "dashboard live"}]},
-    ],
-}
+DEFAULT = {"goals": []}
 
 
 def _data() -> dict:

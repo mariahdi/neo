@@ -25,18 +25,9 @@ MAX_PHOTO_BYTES = 5 * 1024 * 1024  # 5 MB cap so the JSON store stays sane.
 
 # Mock/placeholder content shown until someone edits it.
 DEFAULT = {
-    "narrative": (
-        "NEO started as a father–daughter project — a way to turn the work we "
-        "talk through into something we can both see, steer, and sign off on. "
-        "Dad brings the domain and the judgment; I bring the build. This page "
-        "is the story of how it came together.\n\n"
-        "(Placeholder text — click Edit to make it yours.)"
-    ),
+    "narrative": "This is your space — click Edit to tell your story.",
     "photo": None,  # data URL once uploaded
-    "milestones": [
-        {"date": "2026-05-01", "label": "First line of NEO written"},
-        {"date": "2026-06-16", "label": "Unified dashboard goes live"},
-    ],
+    "milestones": [],
     "updated_by": None,
     "updated_at": None,
 }

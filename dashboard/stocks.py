@@ -32,19 +32,7 @@ ANTHROPIC_KEY = os.environ.get("NEO_ANTHROPIC_API_KEY")
 ANTHROPIC_MODEL = os.environ.get("NEO_ANTHROPIC_MODEL", "claude-sonnet-4-6")
 
 # Seed watchlist (mock until edited).
-DEFAULT = {
-    "sectors": [
-        {"id": "space", "name": "Space", "stocks": [
-            {"name": "Archer Aviation", "ticker": "ACHR", "update": None, "updated_at": None},
-            {"name": "Joby Aviation", "ticker": "JOBY", "update": None, "updated_at": None},
-            {"name": "SpaceX", "ticker": "", "update": None, "updated_at": None},
-        ]},
-        {"id": "environmental", "name": "Environmental", "stocks": [
-            {"name": "Tesla", "ticker": "TSLA", "update": None, "updated_at": None},
-        ]},
-        {"id": "misc", "name": "Miscellaneous", "stocks": []},
-    ],
-}
+DEFAULT = {"sectors": []}
 
 
 def _data() -> dict:

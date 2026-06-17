@@ -31,14 +31,7 @@ ANTHROPIC_MODEL = os.environ.get("NEO_ANTHROPIC_MODEL", "claude-sonnet-4-6")
 CATEGORIES = ["work", "life", "health", "build"]
 
 # A couple of sample wins so the page isn't empty on first load.
-DEFAULT = {
-    "wins": [
-        {"id": "seed1", "text": "Shipped the unified Neo dashboard", "category": "build",
-         "date": "2026-06-16", "source": "manual"},
-        {"id": "seed2", "text": "Called Dad to walk through the review flow", "category": "work",
-         "date": "2026-06-16", "source": "manual"},
-    ],
-}
+DEFAULT = {"wins": []}
 
 
 def _data() -> dict:

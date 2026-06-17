@@ -98,7 +98,9 @@ warm Aria OS, with its own login and data — completely separate from Neo.
   [`profiles/aria.json`](../dashboard/profiles/aria.json). All modules restyle.
 - **Add a module:** build it like the others, add a row to `registry.MODULES`,
   and add it to `theme.NAV_LINKS`. Aria (owner) gets it instantly; dad gets a
-  catalog nudge.
+  catalog nudge. **Always ship a module with an empty `DEFAULT` (a blank
+  template) plus its editing UI** — never seed it with personal data, so every
+  instance starts clean and fills its own.
 - **Make something private:** wrap values in `mask` spans / `data-views`
   blocks (see above).
 - **Another person later:** drop a `profiles/<name>.json`, deploy a service with

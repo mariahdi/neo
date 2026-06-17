@@ -16,24 +16,11 @@ from . import store, theme
 
 router = APIRouter()
 
-# Seed budget (mock until edited). amount = private/true, avg = shareable.
+# Blank template — each instance fills its own budget. amount = private/true.
 DEFAULT = {
-    "income": 10200,
-    "income_avg": 7500,
-    "categories": [
-        {"id": 1, "name": "Rent", "emoji": "🏠", "amount": 3200, "avg": 2200, "type": "fixed", "active": True},
-        {"id": 2, "name": "Car Insurance", "emoji": "🚗", "amount": 156, "avg": 150, "type": "fixed", "active": True},
-        {"id": 3, "name": "Renters Insurance", "emoji": "🛡️", "amount": 12, "avg": 15, "type": "fixed", "active": True},
-        {"id": 4, "name": "Utilities", "emoji": "💡", "amount": 250, "avg": 200, "type": "fixed", "active": True},
-        {"id": 5, "name": "Food & Dining", "emoji": "🍽️", "amount": 800, "avg": 600, "type": "loose", "active": True},
-        {"id": 6, "name": "Pocket Money", "emoji": "✨", "amount": 500, "avg": 400, "type": "loose", "active": True},
-        {"id": 7, "name": "Health & Rx", "emoji": "💊", "amount": 100, "avg": 120, "type": "loose", "active": True},
-        {"id": 8, "name": "Debt Payment", "emoji": "💳", "amount": 1500, "avg": 300, "type": "float", "active": True},
-        {"id": 9, "name": "Emergency Fund", "emoji": "🚨", "amount": 200, "avg": 200, "type": "float", "active": True},
-        {"id": 10, "name": "Vacay Fund", "emoji": "🌴", "amount": 600, "avg": 150, "type": "float", "active": True},
-        {"id": 11, "name": "Roth IRA", "emoji": "🌱", "amount": 583, "avg": 500, "type": "savings", "active": True},
-        {"id": 12, "name": "Next Spot", "emoji": "🏡", "amount": 250, "avg": 200, "type": "float", "active": True},
-    ],
+    "income": 0,
+    "income_avg": 0,
+    "categories": [],
 }
 
 
@@ -139,7 +126,7 @@ _BODY = r"""
 
 <main>
   <div class="nom-head"><h1>Nominal <b>💰</b></h1></div>
-  <p class="nom-sub">take-home · <span class="mask" data-type="currency" id="inc-sub">$0</span>/mo</p>
+  <p class="nom-sub">take-home / mo: <input type="number" id="income" placeholder="0" style="width:130px;display:inline-block"></p>
 
   <div id="leftover"></div>
   <div class="glance"><div class="gl-row" id="glance"></div>
@@ -251,10 +238,10 @@ function renderBreakdown() {
 }
 
 function render() {
-  $("#inc-sub").dataset.real = incomeNow();
+  if (document.activeElement !== $("#income")) $("#income").value = data.income || "";
   renderLeftover(); renderGlance(); renderGroups(); renderBreakdown();
-  if (window.neoMaskScan) window.neoMaskScan();
 }
+$("#income").addEventListener("change", () => { data.income = Math.max(0, parseInt($("#income").value) || 0); save(); });
 
 async function save() {
   data = await (await fetch("/api/nominal", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(data) })).json();
