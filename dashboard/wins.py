@@ -98,6 +98,31 @@ def _suggest_mock(text: str) -> list[dict]:
     return out[:6]
 
 
+def log_from_text(text: str) -> dict:
+    """Recognize the wins in a free-text message and log them — used by the
+    top-level assistant so 'track my wins' lands here, not in proposals."""
+    text = (text or "").strip()
+    if not text:
+        return {"ok": False, "message": "Tell me about your day first."}
+    demo = not ANTHROPIC_KEY
+    try:
+        suggestions = _suggest_mock(text) if demo else _suggest_claude(text)
+    except Exception as e:
+        print(f"[wins] assistant log failed: {e}")
+        return {"ok": False, "message": "Couldn't read that — try again."}
+    if not suggestions:
+        return {"ok": True, "message": "I didn't spot a clear win there — add one from the Wins page if you like."}
+    data = _data()
+    for s in suggestions:
+        data["wins"].insert(0, {"id": uuid.uuid4().hex[:8], "text": s["text"],
+                                "category": _norm_cat(s["category"]),
+                                "date": date.today().isoformat(), "source": "ai"})
+    store.save("wins", data)
+    n = len(suggestions)
+    names = "; ".join(s["text"] for s in suggestions)
+    return {"ok": True, "message": f"Logged {n} win{'s' if n != 1 else ''} to your Wins — {names}"}
+
+
 # ── API ───────────────────────────────────────────────────────────────────────
 @router.get("/api/wins")
 async def get_wins() -> JSONResponse:

@@ -12,11 +12,17 @@ which module it picked and what it *would* do, but makes no network calls.
 from __future__ import annotations
 
 import os
+import re
+
+import requests
 
 from neo.config import Config
 from neo.loop import NeoLoop
 from neo.neo_types import Category, State, WorkItem
 from neo.router import route
+
+ANTHROPIC_KEY = os.environ.get("NEO_ANTHROPIC_API_KEY")
+ANTHROPIC_MODEL = os.environ.get("NEO_ANTHROPIC_MODEL", "claude-sonnet-4-6")
 
 # How each module wants its Jira summary to read. The board only surfaces
 # tickets whose summary starts with "Proposal", so proposals get that prefix;
@@ -154,3 +160,81 @@ def run_draft(ticket: str, title: str, text: str, module: str) -> None:
             _new_loop().ctx.jira.transition(ticket, State.TODO.value)
         except Exception:
             pass
+
+
+# ── Intent routing ────────────────────────────────────────────────────────────
+# The top-level "Ask Neo" assistant routes by intent across modules, instead of
+# defaulting everything to proposals.
+_INTENTS = ("wins", "goals", "proposal", "usafa", "none")
+
+
+def _classify_keyword(text: str) -> str:
+    t = (text or "").lower()
+    if any(k in t for k in ("proposal", "rfp", "grant", "bid", "red cross")):
+        return "proposal"
+    if any(k in t for k in ("usafa", "air force academy", "academy site", "academy website")):
+        return "usafa"
+    if any(k in t for k in ("win", "accomplish", "today i", "got done", "i made", "i finished", "proud")):
+        return "wins"
+    if re.search(r"\d", t) and any(k in t for k in ("weigh", "lbs", "pounds", "goal", "saved", "read", "progress")):
+        return "goals"
+    return "none"
+
+
+def classify(text: str) -> str:
+    """Which module/action this request is for. Uses Claude when available, with
+    a keyword fallback."""
+    if not ANTHROPIC_KEY:
+        return _classify_keyword(text)
+    prompt = (
+        "Classify the user's request into exactly one of: wins, goals, proposal, usafa, none.\n"
+        "- wins: logging accomplishments or describing their day "
+        "(\"track my wins\", \"today I made the call and went to the gym\")\n"
+        "- goals: reporting measurable progress toward a goal "
+        "(\"weighed myself, 182\", \"read 2 more books\")\n"
+        "- proposal: asking to draft a proposal, grant, bid, or document\n"
+        "- usafa: a change to the USAFA / Air Force Academy website\n"
+        "- none: anything else\n"
+        f'Request: "{text}"\n'
+        "Reply with only the one word."
+    )
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01",
+                     "content-type": "application/json"},
+            json={"model": ANTHROPIC_MODEL, "max_tokens": 8,
+                  "messages": [{"role": "user", "content": prompt}]},
+            timeout=20,
+        )
+        resp.raise_for_status()
+        word = re.sub(r"[^a-z]", "", resp.json()["content"][0]["text"].strip().lower())
+        return word if word in _INTENTS else "none"
+    except Exception as e:
+        print(f"[chat] classify failed ({e}); using keywords")
+        return _classify_keyword(text)
+
+
+def handle(text: str, background) -> dict:
+    """Route one assistant request by intent: wins/goals log to their modules;
+    proposal/usafa open a ticket + draft; anything else asks to clarify."""
+    text = (text or "").strip()
+    if not text:
+        return {"ok": False, "message": "Type a request first."}
+
+    intent = classify(text)
+    if intent == "wins":
+        from . import wins
+        return wins.log_from_text(text)
+    if intent == "goals":
+        from . import goals
+        return goals.log_from_text(text)
+    if intent in ("proposal", "usafa"):
+        result = start_request(text)
+        if result.get("ok") and not result.get("demo"):
+            background.add_task(run_draft, result["ticket"], result["title"], text, result["module"])
+        return result
+    return {"ok": True, "message": (
+        "I can log a win, update a goal, or draft a proposal / USAFA task — "
+        "tell me which, or use a module's own box on its page."
+    )}

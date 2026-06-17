@@ -100,6 +100,33 @@ def _infer_mock(text: str, goals: list[dict]) -> dict:
     return {"matched": False, "message": "I couldn't tell which goal that's about."}
 
 
+def log_from_text(text: str) -> dict:
+    """Infer a goal update from free text and apply it — used by the top-level
+    assistant so 'weighed myself, 182' lands here, not in proposals."""
+    text = (text or "").strip()
+    if not text:
+        return {"ok": False, "message": "Type an update first."}
+    data = _data()
+    goals = data["goals"]
+    demo = not ANTHROPIC_KEY
+    try:
+        result = _infer_mock(text, goals) if demo else _infer_claude(text, goals)
+    except Exception as e:
+        print(f"[goals] assistant log failed: {e}")
+        return {"ok": False, "message": "Couldn't read that update — try again."}
+    if not result.get("matched"):
+        return {"ok": True, "message": result.get("message") or "That didn't match a goal."}
+    goal = next((g for g in goals if g["id"] == result.get("goal_id")), None)
+    value = _num(result.get("value"))
+    if goal is None or value is None:
+        return {"ok": True, "message": "I couldn't apply that update."}
+    goal["current"] = value
+    goal["history"].append({"date": date.today().isoformat(), "value": value,
+                            "note": (result.get("note") or "").strip()})
+    store.save("goals", data)
+    return {"ok": True, "message": f"Logged {value} {goal['unit']} on “{goal['title']}.”"}
+
+
 # ── API ───────────────────────────────────────────────────────────────────────
 @router.get("/api/goals")
 async def get_goals() -> JSONResponse:
