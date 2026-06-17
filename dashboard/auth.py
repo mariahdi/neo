@@ -147,10 +147,8 @@ _LOGIN_PAGE = (
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sign in — Neo</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Sign in — <!--LNAME--></title>
+<!--LFONTS-->
 <style>"""
     + theme.BASE_CSS
     + """
@@ -169,8 +167,8 @@ _LOGIN_PAGE = (
 </head>
 <body>
   <form class="login" id="login-form">
-    <span class="brand">NE<b>O</b></span>
-    <div class="tag">Control Room</div>
+    <span class="brand"><!--LWORD--></span>
+    <div class="tag"><!--LTAG--></div>
     <div class="card">
       <div class="err" id="err"></div>
       <label for="u">Username</label>
@@ -202,4 +200,12 @@ _LOGIN_PAGE = (
 </script>
 </body>
 </html>"""
+)
+
+# Brand the login screen for the active profile (wordmark, name, fonts, tagline).
+_LOGIN_PAGE = (
+    _LOGIN_PAGE.replace("<!--LNAME-->", theme.ACTIVE["name"])
+    .replace("<!--LFONTS-->", theme.FONT_LINK)
+    .replace("<!--LWORD-->", theme.ACTIVE["wordmark"])
+    .replace("<!--LTAG-->", theme.ACTIVE["tagline"])
 )

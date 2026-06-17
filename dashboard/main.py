@@ -29,7 +29,7 @@ from reviewer.dashboard_api import get_dashboard
 from reviewer.review_api import DEMO_MODE as REVIEW_DEMO
 from reviewer.review_api import _fetch_draft_from_github, get_review_queue
 
-from . import auth, chat, theme
+from . import auth, chat, profile, theme
 from .about import router as about_router
 from .goals import router as goals_router
 from .stocks import router as stocks_router
@@ -178,36 +178,21 @@ PAGE = r"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Neo</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title><!--TITLE--></title>
+<!--FONTS-->
 <style>
-  :root {
-    --bg: #0a0e1a;
-    --bg-2: #0e1424;
-    --panel: #121a2e;
-    --panel-2: #16203a;
-    --line: #243150;
-    --line-soft: #1b2540;
-    --text: #e9ecf4;
-    --muted: #8794b3;
-    --gold: #c8a84b;
-    --gold-soft: rgba(200,168,75,0.14);
-    --gold-line: rgba(200,168,75,0.45);
-    --hot: #d98a3a;
-  }
+  /*ROOTCSS*/
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: 'Inter', system-ui, sans-serif;
-    background: radial-gradient(1200px 600px at 70% -10%, #15203a 0%, var(--bg) 55%) fixed;
+    font-family: var(--font-body);
+    background: radial-gradient(1200px 600px at 70% -10%, var(--bg-glow) 0%, var(--bg) 55%) fixed;
     color: var(--text);
     min-height: 100vh;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
   h1, h2, h3, .bebas {
-    font-family: 'Bebas Neue', 'Inter', sans-serif;
+    font-family: var(--font-head);
     font-weight: 400;
     letter-spacing: 0.04em;
   }
@@ -225,7 +210,7 @@ PAGE = r"""<!DOCTYPE html>
   .brand { font-size: 30px; letter-spacing: 0.12em; }
   .brand b { color: var(--gold); font-weight: 400; }
   .brand small {
-    display: block; font-family: 'Inter', sans-serif; font-size: 10px;
+    display: block; font-family: var(--font-body); font-size: 10px;
     letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted);
     margin-top: -4px;
   }
@@ -264,27 +249,27 @@ PAGE = r"""<!DOCTYPE html>
   .chat .hint { font-size: 12.5px; color: var(--muted); margin: 2px 0 14px; }
   .chat-row { display: flex; gap: 10px; }
   #chat-input {
-    flex: 1; background: #0c1322; border: 1px solid var(--line);
+    flex: 1; background: var(--field); border: 1px solid var(--line);
     border-radius: 10px; color: var(--text); font-family: inherit;
     font-size: 14px; padding: 13px 15px; resize: none;
   }
   #chat-input:focus { outline: none; border-color: var(--gold-line); }
   #chat-input::placeholder { color: #5d6b8c; }
   .btn {
-    border: 1px solid var(--line); background: #0f1830; color: var(--text);
+    border: 1px solid var(--line); background: var(--btn-bg); color: var(--text);
     font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
     border-radius: 10px; padding: 11px 18px; transition: all 0.15s;
     letter-spacing: 0.02em; white-space: nowrap;
   }
   .btn:hover { border-color: var(--gold-line); color: var(--gold); }
   .btn:disabled { opacity: 0.5; cursor: default; }
-  .btn-gold { background: var(--gold); border-color: var(--gold); color: #1a1305; }
-  .btn-gold:hover { background: #d8b85a; border-color: #d8b85a; color: #1a1305; }
+  .btn-gold { background: var(--gold); border-color: var(--gold); color: var(--on-gold); }
+  .btn-gold:hover { background: var(--gold-hover); border-color: var(--gold-hover); color: var(--on-gold); }
   .btn-sm { padding: 7px 12px; font-size: 12px; }
   .btn-mic { font-size: 16px; padding: 11px 14px; line-height: 1; }
   .btn-mic[hidden] { display: none; }
   .btn-mic.listening {
-    background: var(--gold); border-color: var(--gold); color: #1a1305;
+    background: var(--gold); border-color: var(--gold); color: var(--on-gold);
     animation: mic-pulse 1.3s infinite;
   }
   @keyframes mic-pulse {
@@ -324,7 +309,7 @@ PAGE = r"""<!DOCTYPE html>
   .col { background: var(--bg-2); border: 1px solid var(--line-soft); border-radius: 12px; padding: 13px; }
   .col-head { display: flex; align-items: center; justify-content: space-between; }
   .col-head h3 { font-size: 16px; letter-spacing: 0.08em; }
-  .col-count { font-size: 11px; font-weight: 700; color: #1a1305; background: var(--gold); border-radius: 20px; padding: 1px 9px; }
+  .col-count { font-size: 11px; font-weight: 700; color: var(--on-gold); background: var(--gold); border-radius: 20px; padding: 1px 9px; }
   .col-blurb { font-size: 11px; color: #5f6d8e; margin: 4px 0 11px; }
   .mini {
     display: block; background: var(--panel); border: 1px solid var(--line-soft);
@@ -344,7 +329,7 @@ PAGE = r"""<!DOCTYPE html>
   .review-head h3 { font-size: 21px; letter-spacing: 0.03em; }
   .review-head .meta { font-size: 12px; color: var(--muted); margin-top: 5px; }
   .tag { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 20px; padding: 3px 10px; }
-  .tag-hot { background: var(--hot); color: #1a1305; }
+  .tag-hot { background: var(--hot); color: var(--on-gold); }
   .tag-std { background: #1c2741; border: 1px solid var(--line); color: var(--muted); }
   .draft {
     background: #0b1120; border: 1px solid var(--line-soft); border-radius: 10px;
@@ -356,7 +341,7 @@ PAGE = r"""<!DOCTYPE html>
   .feedback { display: none; margin-top: 12px; }
   .feedback.show { display: block; }
   .feedback textarea {
-    width: 100%; min-height: 92px; background: #0c1322; border: 1px solid var(--line);
+    width: 100%; min-height: 92px; background: var(--field); border: 1px solid var(--line);
     border-radius: 10px; color: var(--text); font-family: inherit; font-size: 13px;
     padding: 12px; resize: vertical; margin-bottom: 10px;
   }
@@ -640,7 +625,10 @@ setInterval(refresh, 30000);
 # engine — all single-sourced in theme.py — so the work board stays in step
 # with the module pages.
 PAGE = (
-    PAGE.replace("<!--NAV-->", theme.nav("dashboard"))
+    PAGE.replace("<!--TITLE-->", profile.ACTIVE["name"])
+    .replace("<!--FONTS-->", theme.FONT_LINK)
+    .replace("/*ROOTCSS*/", profile.root_css())
+    .replace("<!--NAV-->", theme.nav("dashboard"))
     .replace("/*EXTRA_CSS*/", theme.EXTRA_CSS)
     .replace("<!--FOOTER-->", theme.footer() + f"<script>{theme.TOUR_JS}</script>")
 )

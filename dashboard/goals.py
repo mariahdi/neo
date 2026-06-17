@@ -213,7 +213,7 @@ _BODY = r"""
   .goal-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .goal-title { font-size: 14.5px; font-weight: 700; }
   .goal-pct { font-size: 13px; color: var(--gold); font-weight: 700; }
-  .bar { height: 8px; border-radius: 6px; background: #0c1322; border: 1px solid var(--line-soft); overflow: hidden; margin: 11px 0 8px; }
+  .bar { height: 8px; border-radius: 6px; background: var(--field); border: 1px solid var(--line-soft); overflow: hidden; margin: 11px 0 8px; }
   .bar > span { display: block; height: 100%; background: var(--gold); border-radius: 6px; }
   .goal-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
   .spark { display: block; margin-top: 10px; }

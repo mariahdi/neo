@@ -112,7 +112,7 @@ _BODY = r"""
   .grid { display: grid; grid-template-columns: 280px 1fr; gap: 22px; align-items: start; }
   @media (max-width: 740px) { .grid { grid-template-columns: 1fr; } }
   .photo-card { text-align: center; }
-  .photo-frame { width: 100%; aspect-ratio: 4 / 5; border-radius: 12px; overflow: hidden; background: #0c1322; border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; }
+  .photo-frame { width: 100%; aspect-ratio: 4 / 5; border-radius: 12px; overflow: hidden; background: var(--field); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; }
   .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
   .photo-frame .ph { color: #4f5d7e; font-size: 12px; padding: 20px; }
   .photo-card label.btn { display: inline-block; margin-top: 12px; }
