@@ -49,15 +49,9 @@ def nav(active: str = "") -> str:
         f'<a class="brand" href="/">{ACTIVE["wordmark"]}</a>'
         f'<nav class="topnav">{links}</nav>'
         f'<div class="who">{ACTIVE["who"]}</div>'
-        f"{VIEW_BADGE}"
         f"{LOGOUT_BTN}"
         "</header>"
     )
-
-
-# Audience view selector — cycles Private → Friends → Coworker → Public. Its
-# label/color are set by VIEW_JS from the saved view; clicking cycles.
-VIEW_BADGE = '<button class="view-badge" id="view-badge" title="Audience view — who can see this">🔒 Private ↻</button>'
 
 
 # Self-contained so it works on every page without a shared script: clears the
@@ -167,7 +161,6 @@ EXTRA_CSS = """
   .footer-links a:hover { color: var(--gold); }
   .footer-tour { background: none; border: 1px solid var(--gold-line); color: var(--gold); font-family: inherit; font-size: 11.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 8px 16px; border-radius: 9px; cursor: pointer; }
   .footer-tour:hover { background: var(--gold-soft); }
-  .view-badge { background: var(--vc, var(--gold-soft)); border: 1px solid var(--vc-line, var(--gold-line)); color: var(--vc-line, var(--gold)); font-family: inherit; font-size: 10px; letter-spacing: 0.05em; padding: 5px 12px; border-radius: 20px; cursor: pointer; white-space: nowrap; user-select: none; transition: all 0.15s; }
   #tour-ov { position: fixed; inset: 0; z-index: 9999; pointer-events: none; }
   .tour-block { position: absolute; inset: 0; pointer-events: auto; }
   .tour-spot { position: absolute; border-radius: 10px; border: 2px solid var(--gold); box-shadow: 0 0 0 9999px rgba(6,9,18,0.74); transition: all 0.2s ease; pointer-events: none; }
@@ -289,73 +282,6 @@ TOUR_JS = r"""
 })();
 """
 
-# Audience view-modes engine (NEO-38). A header badge cycles the view
-# (Private → Friends → Coworker → Public); the choice persists in localStorage
-# and sets data-view on <html>. Any module opts into masking by rendering a
-# value as:  <span class="mask" data-real="3200" data-avg="2200" data-type="currency">…</span>
-# and calling window.neoMaskScan() after it (re)renders. The engine then shows:
-#   private  → the real value · friends/public → the average (or rounded) ·
-#   coworker → "—" · public + currency → playful "monopoly money".
-# Elements with data-views="private friends" are hidden in other views.
-VIEW_JS = r"""
-(function(){
-  const VIEWS = ["private","friends","coworker","public"];
-  const META = {
-    private:  {label:"🔒 Private",  c:"rgba(208,176,240,0.16)", l:"#D0B0F0"},
-    friends:  {label:"👥 Friends",  c:"rgba(128,212,160,0.16)", l:"#80D4A0"},
-    coworker: {label:"💼 Coworker", c:"rgba(128,184,240,0.16)", l:"#80B8F0"},
-    public:   {label:"🌍 Public",   c:"rgba(232,168,124,0.16)", l:"#E8A87C"},
-  };
-  const get = () => { const v = localStorage.getItem("neo-view"); return VIEWS.includes(v) ? v : "private"; };
-
-  const fmtCur = (n) => "$" + Math.round(Number(n)||0).toLocaleString();
-  const roundK = (n) => { n = Number(n)||0; return Math.abs(n) >= 1000 ? Math.round(n/1000)*1000 : Math.round(n/10)*10; };
-  let seed = 42;
-  function monopoly(n){
-    seed = (seed*1664525 + 1013904223) & 0xffffffff;
-    const mag = Math.max(1, Math.floor(Math.log10(Math.abs(Number(n))||1)));
-    const fake = Math.round((3 + (Math.abs(seed)%7)) * Math.pow(10, mag-1)) * 10;
-    const e = ["🐨","🎩","🚧","❤️","🔥","🐙","🦄","🍕"][Math.abs(seed)%8];
-    return "$" + fake.toLocaleString() + " " + e;
-  }
-  function maskValue(real, avg, type, v){
-    if(v === "private")  return type === "currency" ? fmtCur(real) : String(real);
-    if(v === "coworker") return "—";
-    if(v === "public" && type === "currency") return monopoly(real);
-    const base = (avg !== undefined && avg !== "") ? avg : roundK(real);
-    return type === "currency" ? fmtCur(base) : String(base);
-  }
-
-  function scan(v){
-    v = v || get();
-    document.querySelectorAll(".mask").forEach(el => {
-      el.textContent = maskValue(el.dataset.real, el.dataset.avg, el.dataset.type || "text", v);
-    });
-    document.querySelectorAll("[data-views]").forEach(el => {
-      el.style.display = el.getAttribute("data-views").split(/\s+/).includes(v) ? "" : "none";
-    });
-  }
-  function apply(v){
-    document.documentElement.setAttribute("data-view", v);
-    const b = document.getElementById("view-badge");
-    if(b){ b.textContent = META[v].label + " ↻"; b.style.setProperty("--vc", META[v].c); b.style.setProperty("--vc-line", META[v].l); }
-    scan(v);
-    window.dispatchEvent(new CustomEvent("neo:view", { detail: v }));
-  }
-  function set(v){ if(!VIEWS.includes(v)) return; localStorage.setItem("neo-view", v); apply(v); }
-  function cycle(){ set(VIEWS[(VIEWS.indexOf(get()) + 1) % VIEWS.length]); }
-
-  window.neoView = get;
-  window.neoSetView = set;
-  window.neoMaskScan = () => scan();   // modules call this after (re)rendering
-  function init(){
-    const b = document.getElementById("view-badge");
-    if(b) b.addEventListener("click", cycle);
-    apply(get());
-  }
-  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
-})();
-"""
 
 BASE_CSS = BASE_CSS + EXTRA_CSS
 
@@ -385,6 +311,5 @@ def page(title: str, body: str, active: str = "") -> str:
 {body}
 {footer()}
 <script>{TOUR_JS}</script>
-<script>{VIEW_JS}</script>
 </body>
 </html>"""

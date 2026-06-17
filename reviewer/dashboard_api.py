@@ -76,19 +76,19 @@ _WORK_PREFIXES = ("proposal", "usafa")
 
 
 def _is_neo_work(summary: str) -> bool:
-    """True for a reviewer-facing Neo ticket from any enabled module.
+    """True for any real ticket the board should show — the board mirrors the
+    Jira project so all your work (proposals, USAFA, and dev tickets) appears.
 
-    Neo names its work '<Module> — <title>' (e.g. 'Proposal — Red Cross',
-    'USAFA — homepage banner'). This hides VOID tickets and the module epics
-    ('Proposals module ...', 'USAFA module ...'), while showing the real work
-    from every module.
+    Only VOID/discarded tickets and the module epics are hidden. (The In Review
+    *review* queue in review_api stays proposal-only — that's the approval flow,
+    not the board.)
     """
     s = (summary or "").strip().lower()
     if "void" in s:
         return False
     if s.startswith("proposals ") or s.startswith("usafa module"):
         return False  # the module epics, not actual work
-    return s.startswith(_WORK_PREFIXES)
+    return bool(s)
 
 
 def get_dashboard() -> dict:

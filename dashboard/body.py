@@ -119,24 +119,20 @@ _BODY = r"""
   <div class="body-head"><h1>Body <b>🫀</b></h1></div>
 
   <div class="sec-label">Medications</div>
-  <div data-views="private" id="meds"></div>
-  <div data-views="friends coworker public" class="private-note">🔒 Medications are private.</div>
+  <div id="meds"></div>
 
   <div class="sec-label">Weight Journey</div>
   <div class="wt">
     <div class="wt-row">
-      <div><div class="lab">Now</div><div class="v" style="color:#F08080"><span class="mask" data-type="text" id="w-now">—</span></div></div>
-      <div style="text-align:center"><div class="lab">To lose</div><div class="v" style="color:var(--gold)"><span class="mask" data-type="text" id="w-lose">—</span></div></div>
-      <div style="text-align:right"><div class="lab">Target</div><div class="v" style="color:#80D4A0"><span class="mask" data-type="text" id="w-target">—</span></div></div>
+      <div><div class="lab">Now</div><div class="v" style="color:#F08080" id="w-now">—</div></div>
+      <div style="text-align:center"><div class="lab">To lose</div><div class="v" style="color:var(--gold)" id="w-lose">—</div></div>
+      <div style="text-align:right"><div class="lab">Target</div><div class="v" style="color:#80D4A0" id="w-target">—</div></div>
     </div>
-    <div data-views="private">
-      <div id="w-chart"></div>
-      <div class="weigh">
-        <input type="number" id="weigh-input" placeholder="Log today's weight">
-        <button class="btn btn-gold btn-sm" id="weigh-btn">Log</button>
-      </div>
+    <div id="w-chart"></div>
+    <div class="weigh">
+      <input type="number" id="weigh-input" placeholder="Log today's weight">
+      <button class="btn btn-gold btn-sm" id="weigh-btn">Log</button>
     </div>
-    <div data-views="friends coworker public" class="private-note">🔒 Weight history is private.</div>
     <div class="note">Prozac + Abilify can affect weight. This is biology, not willpower. 🤍</div>
   </div>
 
