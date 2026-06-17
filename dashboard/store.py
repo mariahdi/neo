@@ -9,8 +9,11 @@ key/value table instead, so About/Stocks/Goals/Wins survive redeploys with no
 paid disk. Same load()/save() interface, so the modules don't change. Setup is
 in docs/DEPLOY.md.
 
-The store never crashes the app on a storage hiccup: a failed read returns the
-default, a failed write is logged and skipped.
+The store never crashes the app on a storage hiccup. When Postgres is the
+backend it also mirrors every value to the local file as a last-known-good
+cache, so a database that's down or paused doesn't look like data loss: a
+failed read falls back to the cache (not an empty default), and a failed write
+still lands in the cache (loudly logged) instead of being silently dropped.
 """
 from __future__ import annotations
 
@@ -23,6 +26,7 @@ DB_URL = os.environ.get("DATABASE_URL")
 _DATA_DIR = Path(os.environ.get("NEO_DATA_DIR") or (Path(__file__).resolve().parent / "data"))
 _TABLE = "neo_store"
 _pg_ready = False
+_MISSING = object()  # distinguishes "no row / no cache" from a real default value
 
 
 # ── File backend (default) ────────────────────────────────────────────────────
@@ -86,23 +90,56 @@ def _pg_save(name: str, data: Any) -> None:
 
 # ── Public interface ──────────────────────────────────────────────────────────
 def load(name: str, default: Any) -> Any:
-    """Return the stored value for `name`, or `default` if absent/unreadable."""
-    if DB_URL:
-        try:
-            return _pg_load(name, default)
-        except Exception as e:
-            print(f"[store] Postgres load '{name}' failed ({e}); using default")
-            return default
-    return _file_load(name, default)
+    """Return the stored value for `name`, or `default` if absent.
+
+    With Postgres: read from the DB and mirror the result to the file cache. If
+    the DB is unreachable, serve the last-known-good cache instead of silently
+    returning empty — a paused/down database no longer looks like data loss.
+    Without Postgres: read the file directly.
+    """
+    if not DB_URL:
+        return _file_load(name, default)
+    try:
+        val = _pg_load(name, _MISSING)
+    except Exception as e:
+        cached = _file_load(name, _MISSING)
+        if cached is not _MISSING:
+            print(f"[store] Postgres load '{name}' failed ({e}); serving last-known-good file cache")
+            return cached
+        print(f"[store] Postgres load '{name}' failed ({e}); no cache yet, using default")
+        return default
+    if val is _MISSING:
+        # Not in the DB — but a value may sit in the cache from a write made
+        # while the DB was down. Prefer that over the bare default.
+        return _file_load(name, default)
+    try:
+        _file_save(name, val)  # refresh the cache so it's ready for the next outage
+    except Exception:
+        pass
+    return val
 
 
 def save(name: str, data: Any) -> None:
-    """Persist `data` for `name`. Never raises — a write failure is logged."""
-    if DB_URL:
+    """Persist `data` for `name`. Never raises.
+
+    With Postgres: write to the DB and mirror to the file cache. If the DB write
+    fails, the data still lands in the cache (and is loudly logged) so the edit
+    isn't silently lost within the session. Without Postgres: write the file.
+    """
+    if not DB_URL:
+        _file_save(name, data)
+        return
+    try:
+        _pg_save(name, data)
+    except Exception as e:
+        print(f"[store] Postgres save '{name}' FAILED ({e}); writing to file cache so the edit "
+              "isn't lost — the database needs attention")
         try:
-            _pg_save(name, data)
-            return
-        except Exception as e:
-            print(f"[store] Postgres save '{name}' failed: {e}")
-            return
-    _file_save(name, data)
+            _file_save(name, data)
+        except Exception as e2:
+            print(f"[store] file-cache save '{name}' also failed: {e2}")
+        return
+    try:
+        _file_save(name, data)  # mirror the successful write into the cache
+    except Exception:
+        pass
