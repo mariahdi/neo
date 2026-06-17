@@ -90,19 +90,21 @@ def _summary_for(module: str, text: str) -> str:
     return body
 
 
-def start_request(text: str) -> dict:
+def start_request(text: str, module: str | None = None) -> dict:
     """Open the ticket (fast) and report what happened.
 
     Returns {ok, ticket, module, module_label, title, demo, message}. The slow
     part — drafting and opening the PR — is handed off to run_draft() in the
-    background so the chat replies immediately.
+    background so the chat replies immediately. Pass `module` to force a target
+    (e.g. the USAFA page routes every request to "usafa"); otherwise the module
+    is detected from the text.
     """
     text = (text or "").strip()
     if not text:
         return {"ok": False, "message": "Type a request first — e.g. "
                 "“I need a proposal for USAFA for website development.”"}
 
-    module = detect_module(text)
+    module = module or detect_module(text)
     label = _MODULE_LABEL.get(module, module)
     title = _summary_for(module, text)
 

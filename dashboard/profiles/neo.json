@@ -5,6 +5,11 @@
   "who": "Hello Chuck",
   "tagline": "Control Room",
   "role": "member",
+  "work_nav": [
+    ["usafa", "/usafa", "USAFA"],
+    ["proposals", "/proposals", "Proposals"],
+    ["dev", "/dev", "Dev"]
+  ],
   "modules": [
     "about",
     "stocks",
@@ -32,5 +37,5 @@
     "font-head": "'Bebas Neue', 'Inter', sans-serif",
     "font-body": "'Inter', system-ui, sans-serif"
   },
-  "home": "board"
+  "home": "usafa"
 }

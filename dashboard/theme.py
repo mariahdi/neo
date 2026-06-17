@@ -35,7 +35,16 @@ def nav(active: str = "") -> str:
     new modules are available to opt into."""
     enabled = set(registry.enabled_keys())
     links = ""
+    # Work-board instances (e.g. Neo) split their Jira work into dedicated tabs —
+    # USAFA / Proposals / Dev — instead of one generic "Dashboard" board.
+    work_nav = ACTIVE.get("work_nav")
+    if work_nav:
+        for key, href, label in work_nav:
+            cls = ' class="active"' if key == active else ""
+            links += f'<a href="{href}"{cls}>{label}</a>'
     for key, href, label in NAV_LINKS:
+        if key == "dashboard" and work_nav:
+            continue  # replaced by the work tabs above
         if key != "dashboard" and key not in enabled:
             continue  # not enabled on this instance — hidden until opted in
         cls = ' class="active"' if key == active else ""
