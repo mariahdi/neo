@@ -5,6 +5,7 @@
   "who": "Mariah &amp; Dad",
   "tagline": "Control Room",
   "role": "member",
+  "modules": ["about", "stocks", "goals", "wins"],
   "tokens": {
     "bg": "#0a0e1a",
     "bg-2": "#0e1424",

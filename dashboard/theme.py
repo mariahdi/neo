@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import os
 
-from . import profile
+from . import profile, registry
 
 ACTIVE = profile.ACTIVE
 
@@ -25,11 +25,20 @@ NAV_LINKS = [
 
 
 def nav(active: str = "") -> str:
-    """The shared top bar. `active` is the key of the current page."""
+    """The shared top bar. `active` is the key of the current page. Module links
+    are gated to the instance's enabled set; a Modules link carries a badge when
+    new modules are available to opt into."""
+    enabled = set(registry.enabled_keys())
     links = ""
     for key, href, label in NAV_LINKS:
+        if key != "dashboard" and key not in enabled:
+            continue  # not enabled on this instance — hidden until opted in
         cls = ' class="active"' if key == active else ""
         links += f'<a href="{href}"{cls}>{label}</a>'
+    new = registry.new_count()
+    badge = f'<span class="nav-badge">{new}</span>' if new else ""
+    mcls = ' class="active"' if active == "modules" else ""
+    links += f'<a href="/modules"{mcls}>Modules{badge}</a>'
     return (
         "<header>"
         f'<a class="brand" href="/">{ACTIVE["wordmark"]}</a>'
@@ -56,6 +65,7 @@ TOPNAV_CSS = """
   .topnav { display: flex; gap: 22px; margin-right: auto; margin-left: 10px; }
   .topnav a { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); text-decoration: none; padding: 6px 0; }
   .topnav a:hover, .topnav a.active { color: var(--gold); }
+  .nav-badge { display: inline-block; background: var(--gold); color: var(--on-gold); font-size: 9px; font-weight: 700; border-radius: 10px; padding: 0 5px; margin-left: 5px; vertical-align: 1px; }
   .logout { background: none; border: 1px solid var(--line); color: var(--muted); font-family: inherit; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 8px; padding: 5px 11px; }
   .logout:hover { border-color: var(--gold-line); color: var(--gold); }
 """
