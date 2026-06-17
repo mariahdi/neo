@@ -18,7 +18,7 @@ docs/DEPLOY.md). Leaving them unset — the local/demo default — means no logi
 from __future__ import annotations
 
 from fastapi import BackgroundTasks, FastAPI
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 
 from neo.config import Config
@@ -29,7 +29,7 @@ from reviewer.dashboard_api import JIRA_BASE_URL, get_dashboard
 from reviewer.review_api import DEMO_MODE as REVIEW_DEMO
 from reviewer.review_api import _fetch_draft_from_github, get_review_queue
 
-from . import auth, chat, profile, registry, theme
+from . import auth, chat, profile, registry, theme, work
 from .about import router as about_router
 from .body import router as body_router
 from .trips import router as trips_router
@@ -60,6 +60,8 @@ app.include_router(wealth_router)
 app.include_router(trips_router)
 app.include_router(wellness_router)
 app.include_router(modules_router)
+# USAFA + Dev work surfaces (the Proposals board stays here in main.py).
+app.include_router(work.router)
 
 # Board column keys (from dashboard_api.COLUMNS) -> the canonical labels the
 # unified dashboard shows. Same four columns the prompt asks for.
@@ -132,10 +134,17 @@ def _reviews_with_drafts() -> list[dict]:
 
 @app.get("/api/state")
 async def state() -> JSONResponse:
-    """Everything the page renders, in one payload. Polled every 30s."""
+    """Everything the Proposals page renders, in one payload. Polled every 30s.
+
+    USAFA and Dev tickets have their own pages (/usafa, /dev), so this board is
+    filtered to proposals only — the three surfaces no longer overlap.
+    """
     board = get_dashboard()
     for col in board["columns"]:
+        col["items"] = [it for it in col["items"] if work.classify(it.get("title", "")) == "proposal"]
+        col["count"] = len(col["items"])
         col["label"] = _COLUMN_LABELS.get(col["key"], col["label"])
+    board["total"] = sum(col["count"] for col in board["columns"])
     return JSONResponse({
         "demo": BOARD_DEMO,
         "board": board,
@@ -203,14 +212,28 @@ def _launcher() -> str:
     return theme.page(profile.ACTIVE.get("name", ""), body, active="dashboard")
 
 
-@app.get("/", response_class=HTMLResponse)
-async def index() -> HTMLResponse:
-    # Profiles choose their home: a module launcher (Aria) or the work board (Neo).
-    if profile.ACTIVE.get("home") == "modules":
+@app.get("/")
+async def index():
+    # Profiles choose their home: a module launcher (Aria), the USAFA workspace
+    # (Neo — dad's headline use case), or the Proposals board.
+    home = profile.ACTIVE.get("home")
+    if home == "modules":
         return HTMLResponse(_launcher())
+    if home == "usafa":
+        return RedirectResponse("/usafa")
+    # Board-home profiles (e.g. Aria) land here; their nav tab is "Dashboard".
+    return HTMLResponse(_proposals_page("dashboard"))
+
+
+def _proposals_page(active: str) -> str:
     # Nav is rendered per-request so module gating + the "new modules" badge
     # stay live (the rest of the shell is baked once at import).
-    return HTMLResponse(PAGE.replace("<!--NAV-->", theme.nav("dashboard")))
+    return PAGE.replace("<!--NAV-->", theme.nav(active))
+
+
+@app.get("/proposals", response_class=HTMLResponse)
+async def proposals_page() -> HTMLResponse:
+    return HTMLResponse(_proposals_page("proposals"))
 
 
 # ── The page ──────────────────────────────────────────────────────────────────
@@ -427,7 +450,7 @@ PAGE = r"""<!DOCTYPE html>
   <div id="widgets" class="widgets"></div>
 
   <!-- Board -->
-  <div class="section-label">Board</div>
+  <div class="section-label">Proposals</div>
   <div id="board" class="board"><div class="loading">Loading board…</div></div>
 
   <!-- In Review -->
