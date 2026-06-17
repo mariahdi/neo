@@ -151,15 +151,9 @@ class ChatIn(BaseModel):
 
 @app.post("/api/chat")
 async def chat_send(body: ChatIn, background: BackgroundTasks) -> JSONResponse:
-    """Chat bar: route the request, open a ticket, kick off the draft."""
-    result = chat.start_request(body.text)
-    if result.get("ok") and not result.get("demo"):
-        # Draft + open PR + move to In Review, off the request thread.
-        background.add_task(
-            chat.run_draft,
-            result["ticket"], result["title"], body.text, result["module"],
-        )
-    return JSONResponse(result)
+    """Ask Neo: route by intent — wins/goals log to their modules; proposal /
+    USAFA open a ticket + draft; anything else asks to clarify."""
+    return JSONResponse(chat.handle(body.text, background))
 
 
 class ChangesIn(BaseModel):
