@@ -1,12 +1,1 @@
-I'd love to help you update your About Me section! However, I don't have any details about you or your dad's background to work from.
-
-Could you share some information like:
-
-- **Your name** and what you do
-- **Your dad's name** and his background/career
-- **How you work together** (is this a family business?)
-- **Key highlights** you want featured (experience, skills, values, fun facts)
-- **The tone** you're going for (professional, warm and personal, casual)
-- **Any existing text** you'd like me to build on or replace
-
-Once you give me those details, I'll draft the updated About Me section right away!
+I need to see the original proposal text in order to revise it. Could you please share the current proposal that needs to be updated? Once you provide it, I'll incorporate Mariah and Chuck's personal background, their warm father-daughter dynamic, and the lifestyle details into the revision.
