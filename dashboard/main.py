@@ -21,7 +21,6 @@ from fastapi import BackgroundTasks, FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 
-from neo.config import Config
 from reviewer.actions_api import approve as do_approve
 from reviewer.actions_api import request_changes as do_request_changes
 from reviewer.dashboard_api import DEMO_MODE as BOARD_DEMO
@@ -73,47 +72,6 @@ _COLUMN_LABELS = {
 }
 
 
-def _module_widgets(board: dict) -> list[dict]:
-    """Summary cards for each module. Counts come from the live board where we
-    have them; Calendar and Landlord are placeholders for modules not built
-    yet."""
-    enabled = set(Config.load().enabled_modules)
-    by_key = {c["key"]: c for c in board["columns"]}
-    in_review = by_key.get("review", {}).get("count", 0)
-    in_flight = board.get("total", 0)
-
-    return [
-        {
-            "key": "tasks",
-            "label": "Tasks",
-            "stat": str(in_flight),
-            "note": f"{in_review} awaiting review" if in_flight else "Nothing in flight",
-            "status": "live",
-        },
-        {
-            "key": "usafa",
-            "label": "USAFA",
-            "stat": "On" if "usafa" in enabled else "Off",
-            "note": "Web-dev module" + (" · enabled" if "usafa" in enabled else " · disabled"),
-            "status": "live" if "usafa" in enabled else "off",
-        },
-        {
-            "key": "calendar",
-            "label": "Calendar",
-            "stat": "—",
-            "note": "Coming soon",
-            "status": "placeholder",
-        },
-        {
-            "key": "landlord",
-            "label": "Landlord",
-            "stat": "—",
-            "note": "Coming soon",
-            "status": "placeholder",
-        },
-    ]
-
-
 def _reviews_with_drafts() -> list[dict]:
     """In Review proposals, each with its draft text ready to show inline.
 
@@ -149,7 +107,6 @@ async def state() -> JSONResponse:
         "demo": BOARD_DEMO,
         "board": board,
         "reviews": _reviews_with_drafts(),
-        "modules": _module_widgets(board),
         "jira_base": (JIRA_BASE_URL or "").rstrip("/"),  # board cards link to Jira
     })
 
@@ -445,10 +402,6 @@ PAGE = r"""<!DOCTYPE html>
     <div id="chat-reply"></div>
   </section>
 
-  <!-- Module widgets -->
-  <div class="section-label">Modules</div>
-  <div id="widgets" class="widgets"></div>
-
   <!-- Board -->
   <div class="section-label">Proposals</div>
   <div id="board" class="board"><div class="loading">Loading board…</div></div>
@@ -471,15 +424,6 @@ function fmtDate(iso) {
   if (p.length < 3) return iso;
   const mo = m[parseInt(p[1],10)-1];
   return mo ? `${mo} ${parseInt(p[2],10)}, ${p[0]}` : iso;
-}
-
-function renderWidgets(mods) {
-  $("#widgets").innerHTML = mods.map(w => `
-    <div class="widget ${esc(w.status)}">
-      <div class="wlabel">${esc(w.label)}</div>
-      <div class="wstat">${esc(w.stat)}</div>
-      <div class="wnote">${esc(w.note)}</div>
-    </div>`).join("");
 }
 
 function renderBoard(board) {
@@ -707,7 +651,6 @@ async function refresh() {
   } catch (err) { return; }
   jiraBase = s.jira_base || "";
   $("#demo-banner").classList.toggle("show", !!s.demo);
-  renderWidgets(s.modules);
   renderBoard(s.board);
   // Don't re-render reviews while a Re-prompt / Request-Changes box is open —
   // a 30s auto-refresh would otherwise wipe what you're typing mid-thought.
