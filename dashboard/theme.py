@@ -182,10 +182,15 @@ TOUR_JS = r"""
     {sel:".logout", title:"You're set", body:"You stay signed in between visits — sign out here whenever. That's the tour!"},
   ];
   const KEY = "neo_tour";
-  let cur = 0;
+  let cur = 0, ro = null, onReflow = null;
   const esc = (s) => (s==null?"":String(s)).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-  function teardown(){ const o=document.getElementById("tour-ov"); if(o) o.remove(); document.removeEventListener("keydown", onKey); }
+  function teardown(){
+    const o=document.getElementById("tour-ov"); if(o) o.remove();
+    document.removeEventListener("keydown", onKey);
+    if(ro){ ro.disconnect(); ro=null; }
+    if(onReflow){ window.removeEventListener("scroll", onReflow, true); window.removeEventListener("resize", onReflow); onReflow=null; }
+  }
   function end(){ sessionStorage.removeItem(KEY); teardown(); }
 
   function go(i){
@@ -219,7 +224,15 @@ TOUR_JS = r"""
     }));
     if(el){
       el.scrollIntoView({behavior:"smooth", block:"center"});
-      setTimeout(()=>place(spot,pop,el), 320);
+      const reflow = () => place(spot, pop, el);
+      setTimeout(reflow, 320);
+      // Re-measure when the target grows (cards/data load async) or on scroll/resize,
+      // so the spotlight wraps the real element, not an empty container.
+      onReflow = reflow;
+      window.addEventListener("scroll", reflow, true);
+      window.addEventListener("resize", reflow);
+      if(window.ResizeObserver){ ro = new ResizeObserver(reflow); ro.observe(el); }
+      else { setTimeout(reflow, 900); }
     } else {
       spot.style.display="none";
       pop.style.left="50%"; pop.style.top="42%"; pop.style.transform="translate(-50%,-50%)";
