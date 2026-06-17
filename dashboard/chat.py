@@ -192,9 +192,12 @@ def classify(text: str) -> str:
         "(\"track my wins\", \"today I made the call and went to the gym\")\n"
         "- goals: reporting measurable progress toward a goal "
         "(\"weighed myself, 182\", \"read 2 more books\")\n"
-        "- proposal: asking to draft a proposal, grant, bid, or document\n"
-        "- usafa: a change to the USAFA / Air Force Academy website\n"
-        "- none: anything else\n"
+        "- proposal: asking to draft a proposal, grant, bid, or funding document\n"
+        "- usafa: a change to the USAFA / Air Force Academy website — ONLY if it "
+        "explicitly names USAFA or the Air Force Academy\n"
+        "- none: anything else — INCLUDING editing a personal page or module "
+        "(About / About Me, Body, budget, Stocks, Trips, Wealth, Wellness); those "
+        "are edited on their own pages, not by this assistant\n"
         f'Request: "{text}"\n'
         "Reply with only the one word."
     )
