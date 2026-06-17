@@ -29,7 +29,7 @@ from reviewer.dashboard_api import JIRA_BASE_URL, get_dashboard
 from reviewer.review_api import DEMO_MODE as REVIEW_DEMO
 from reviewer.review_api import _fetch_draft_from_github, get_review_queue
 
-from . import auth, chat, profile, theme
+from . import auth, chat, profile, registry, theme
 from .about import router as about_router
 from .body import router as body_router
 from .trips import router as trips_router
@@ -177,8 +177,43 @@ async def review_changes(proposal_id: str, body: ChangesIn) -> JSONResponse:
     return JSONResponse(do_request_changes(proposal_id, body.feedback, body.mode))
 
 
+def _launcher() -> str:
+    """A clean module home — tiles for the enabled modules. Used by profiles
+    whose `home` is "modules" (e.g. Aria), instead of the proposal work board."""
+    tiles = "".join(
+        f'<a class="tile" href="{m["path"]}">'
+        f'<span class="tile-ic">{m.get("icon", "•")}</span>'
+        f'<span class="tile-name">{m["name"]}</span>'
+        f'<span class="tile-desc">{m["description"]}</span></a>'
+        for m in registry.enabled_modules()
+    )
+    body = f"""
+<style>
+  .launch-head {{ padding: 8px 0 26px; }}
+  .launch-head h1 {{ font-size: 46px; }} .launch-head h1 b {{ color: var(--gold); font-weight: 400; font-style: italic; }}
+  .launch-sub {{ font-size: 12.5px; color: var(--muted); margin-top: 8px; letter-spacing: 0.04em; }}
+  .tiles {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }}
+  .tile {{ display: flex; flex-direction: column; gap: 7px; background: var(--panel); border: 1px solid var(--line-soft);
+           border-left: 3px solid var(--gold); border-radius: 14px; padding: 20px; text-decoration: none; color: inherit;
+           transition: border-color 0.15s, transform 0.15s; }}
+  .tile:hover {{ border-color: var(--gold-line); transform: translateY(-2px); }}
+  .tile-ic {{ font-size: 28px; }} .tile-name {{ font-size: 16px; font-weight: 700; }}
+  .tile-desc {{ font-size: 12px; color: var(--muted); line-height: 1.5; }}
+  .tiles-empty {{ color: var(--muted); font-style: italic; }}
+</style>
+<main>
+  <div class="launch-head"><h1>Welcome back, <b>{profile.ACTIVE.get("who", "")}</b></h1>
+    <p class="launch-sub">{profile.ACTIVE.get("tagline", "")} · pick a space</p></div>
+  <div class="tiles">{tiles or '<div class="tiles-empty">No modules enabled yet — add some from Modules.</div>'}</div>
+</main>"""
+    return theme.page(profile.ACTIVE.get("name", ""), body, active="dashboard")
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index() -> HTMLResponse:
+    # Profiles choose their home: a module launcher (Aria) or the work board (Neo).
+    if profile.ACTIVE.get("home") == "modules":
+        return HTMLResponse(_launcher())
     # Nav is rendered per-request so module gating + the "new modules" badge
     # stay live (the rest of the shell is baked once at import).
     return HTMLResponse(PAGE.replace("<!--NAV-->", theme.nav("dashboard")))

@@ -5,7 +5,12 @@
   "who": "Mariah &amp; Dad",
   "tagline": "Control Room",
   "role": "member",
-  "modules": ["about", "stocks", "goals", "wins"],
+  "modules": [
+    "about",
+    "stocks",
+    "goals",
+    "wins"
+  ],
   "tokens": {
     "bg": "#0a0e1a",
     "bg-2": "#0e1424",
@@ -26,5 +31,6 @@
     "btn-bg": "#0f1830",
     "font-head": "'Bebas Neue', 'Inter', sans-serif",
     "font-body": "'Inter', system-ui, sans-serif"
-  }
+  },
+  "home": "board"
 }
