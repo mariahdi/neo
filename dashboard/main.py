@@ -356,6 +356,9 @@ PAGE = r"""<!DOCTYPE html>
   .col-head h3 { font-size: 16px; letter-spacing: 0.08em; }
   .col-count { font-size: 11px; font-weight: 700; color: var(--on-gold); background: var(--gold); border-radius: 20px; padding: 1px 9px; }
   .col-blurb { font-size: 11px; color: #5f6d8e; margin: 4px 0 11px; }
+  .col-cards { max-height: 56vh; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+  .col-cards::-webkit-scrollbar { width: 6px; }
+  .col-cards::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
   .mini {
     display: block; background: var(--panel); border: 1px solid var(--line-soft);
     border-radius: 9px; padding: 10px 11px; margin-bottom: 8px; cursor: default;
@@ -471,7 +474,7 @@ function renderBoard(board) {
     return `<div class="col">
       <div class="col-head"><h3>${esc(col.label)}</h3><span class="col-count">${col.count}</span></div>
       <div class="col-blurb">${esc(col.blurb)}</div>
-      ${cards}
+      <div class="col-cards">${cards}</div>
     </div>`;
   }).join("");
 }
