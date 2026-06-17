@@ -270,7 +270,7 @@ function fmtWhen(iso) {
 
 function renderNote() {
   $("#note").innerHTML = liveMode
-    ? 'Prices are <b>live</b> (real-time US quotes). Hit Refresh on a card for an AI briefing on top.'
+    ? `Prices are <b>live</b> (real-time US quotes)${pricesAt ? ` · as of ${pricesAt}, auto-refreshing every minute` : ""}. Hit Refresh on a card for an AI briefing on top.`
     : 'Briefings are a live <b>AI preview</b> (Claude text). For live <b>prices</b> on each card, add a free <code>NEO_STOCK_API_KEY</code> (finnhub.io).';
 }
 
@@ -310,7 +310,7 @@ function render() {
   loadQuotes();
 }
 
-let liveMode = false;
+let liveMode = false, pricesAt = "";
 async function loadQuotes() {
   const tickers = [...new Set(data.sectors.flatMap(s => s.stocks.map(st => (st.ticker || "").trim().toUpperCase())).filter(Boolean))];
   if (!tickers.length) return;
@@ -327,6 +327,7 @@ async function loadQuotes() {
       el.innerHTML = liveMode ? '<span class="px-none">— no live price</span>' : '<span class="px-none">add a market-data key for live prices</span>';
     }
   });
+  if (liveMode && Object.keys(res.quotes).length) pricesAt = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   renderNote();
 }
 
@@ -410,5 +411,6 @@ $("#save-manage").addEventListener("click", async () => {
 });
 
 load();
+setInterval(loadQuotes, 60000);  // keep live prices fresh while the page is open
 </script>
 """
