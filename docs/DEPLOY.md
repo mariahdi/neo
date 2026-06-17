@@ -87,13 +87,32 @@ his own Mac.
 
 ---
 
-## Optional: make edited data durable (persistent disk)
+## Optional: make edited data durable
 
 By default the module data (About text/photo, Stocks, Goals, Wins) lives in
-JSON files inside the container, which Render **wipes on every redeploy**. To
-keep it, give the service a persistent disk. This needs a **paid instance**
-(disks aren't on the free plan) — the Starter plan (~$7/mo) also makes the app
-always-on, so cold starts go away too.
+JSON files inside the container, which Render **wipes on every redeploy**. Two
+ways to keep it — **Option A (free Postgres) is recommended.**
+
+### Option A — Free Postgres (recommended, no monthly cost)
+
+1. Create a free Postgres database:
+   - **Supabase** (supabase.com) → New project, or
+   - **Neon** (neon.tech) → New project.
+2. Copy its **connection string** (a `postgresql://user:password@host:5432/db`
+   URI). In Supabase it's **Project Settings → Database → Connection string →
+   URI**; in Neon it's shown on the project dashboard.
+3. Render → your **neo-dashboard** service → **Environment** → add
+   `DATABASE_URL` = that string → **Save** (it redeploys).
+
+Done. The app creates a small `neo_store` table on first write and keeps
+everything there, surviving redeploys — no code change, and you stay on the
+free Render plan. (Heads-up: free databases may pause after a long idle stretch
+and take a few seconds to wake on the next visit.)
+
+### Option B — Render persistent disk (paid)
+
+Keeps the JSON files on a mounted disk instead. Needs a **paid instance**
+(~$7/mo Starter, which also makes the app always-on, so cold starts go away):
 
 1. Render → your **neo-dashboard** service → **Settings** → set **Instance
    Type** to **Starter**.
@@ -101,9 +120,8 @@ always-on, so cold starts go away too.
    Size `1 GB`.
 3. **Environment** → add `NEO_DATA_DIR` = `/var/data` → Save (it redeploys).
 
-That's it — the app already reads `NEO_DATA_DIR` (code is ready), so edits now
-survive redeploys. The photo rides along in the same store. (A database is the
-alternative if you outgrow this; the disk is the simplest durable option.)
+The app already reads `NEO_DATA_DIR`, so edits then survive redeploys. (If you
+set both, `DATABASE_URL` wins.)
 
 ## Optional: automate the daily stock briefings (cron)
 
