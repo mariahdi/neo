@@ -24,6 +24,8 @@ from pydantic import BaseModel
 
 from reviewer.dashboard_api import DEMO_MODE as BOARD_DEMO
 from reviewer.dashboard_api import JIRA_BASE_URL, get_dashboard
+from reviewer.review_api import DEMO_MODE as REVIEW_DEMO
+from reviewer.review_api import _fetch_draft_from_github, get_review_queue
 
 from . import chat, theme
 
@@ -38,6 +40,25 @@ def classify(title: str) -> str:
     if s.startswith("proposal"):
         return "proposal"
     return "dev"
+
+
+def reviews_with_drafts(kind: str | None = None) -> list[dict]:
+    """In Review items, each with its draft text, optionally filtered to one
+    surface (usafa / proposal / dev) so each page only shows its own sign-offs.
+
+    The draft lives in the PR, not the Jira description, so for any review
+    missing a draft we pull it from GitHub (demo data ships its own drafts).
+    """
+    reviews = get_review_queue()
+    if kind:
+        reviews = [r for r in reviews if classify(r.get("title", "")) == kind]
+    if not REVIEW_DEMO:
+        for r in reviews:
+            if not (r.get("draft") or "").strip():
+                draft = _fetch_draft_from_github(r["id"])
+                if draft:
+                    r["draft"] = draft
+    return reviews
 
 
 def filtered_board(kind: str) -> dict:
@@ -59,6 +80,7 @@ async def work_state(kind: str) -> JSONResponse:
     return JSONResponse({
         "demo": BOARD_DEMO,
         "board": filtered_board(kind),
+        "reviews": reviews_with_drafts(kind),  # only this surface's sign-offs
         "jira_base": (JIRA_BASE_URL or "").rstrip("/"),
     })
 
@@ -140,6 +162,27 @@ def _body(kind: str) -> str:
   .card .cm {{ font-size: 10px; color: var(--muted); margin-top: 6px; letter-spacing: 0.04em; }}
   .col-empty {{ font-size: 12px; color: var(--muted); font-style: italic; padding: 4px 2px; }}
   .loading {{ color: var(--muted); font-style: italic; }}
+  /* In Review — sign-off cards (mirrors the Proposals page) */
+  .rev-label {{ font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); margin: 36px 0 14px; }}
+  .review {{ background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 16px; }}
+  .review-head {{ display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; border-bottom: 1px solid var(--line-soft); padding-bottom: 14px; margin-bottom: 14px; }}
+  .review-head h3 {{ font-size: 20px; letter-spacing: 0.03em; }}
+  .review-head .meta {{ font-size: 12px; color: var(--muted); margin-top: 5px; }}
+  .tag {{ font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 20px; padding: 3px 10px; }}
+  .tag-hot {{ background: var(--hot); color: var(--on-gold); }}
+  .tag-std {{ background: var(--field); border: 1px solid var(--line); color: var(--muted); }}
+  .draft-label {{ font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); margin-bottom: 9px; }}
+  .draft {{ background: var(--field); border: 1px solid var(--line-soft); border-radius: 10px; padding: 16px 18px; font-size: 13px;
+    line-height: 1.75; color: var(--text); white-space: pre-wrap; max-height: 320px; overflow-y: auto; margin-bottom: 16px; }}
+  .actions {{ display: flex; gap: 9px; flex-wrap: wrap; }}
+  .feedback {{ display: none; margin-top: 12px; }} .feedback.show {{ display: block; }}
+  .feedback textarea {{ width: 100%; min-height: 92px; background: var(--field); border: 1px solid var(--line); border-radius: 10px;
+    color: var(--text); font-family: inherit; font-size: 13px; padding: 12px; resize: vertical; margin-bottom: 10px; box-sizing: border-box; }}
+  .feedback textarea:focus {{ outline: none; border-color: var(--gold-line); }}
+  .fb-actions {{ display: flex; gap: 8px; align-items: center; }}
+  .review-result {{ font-size: 12.5px; color: var(--gold); margin-top: 10px; display: none; }}
+  .review-result.show {{ display: block; }}
+  .empty-reviews {{ color: var(--muted); font-style: italic; font-size: 13px; padding: 14px 2px; }}
 </style>
 
 <main>
@@ -148,6 +191,9 @@ def _body(kind: str) -> str:
   <div id="demo-tag"></div>
 {request_bar}
   <div id="board" class="board"><div class="loading">Loading board…</div></div>
+
+  <div class="rev-label">In Review — needs your sign-off</div>
+  <div id="reviews"><div class="loading">Loading…</div></div>
 </main>
 
 <script>
@@ -178,7 +224,78 @@ async function load() {{
     jiraBase = s.jira_base || "";
     $("#demo-tag").innerHTML = s.demo ? '<span class="demo-tag">Demo mode</span>' : "";
     renderBoard(s.board);
+    // Don't wipe an open feedback box mid-typing on the 30s auto-refresh.
+    if (!document.querySelector("#reviews .feedback.show")) renderReviews(s.reviews || []);
   }} catch (_) {{}}
+}}
+
+function renderReviews(reviews) {{
+  const wrap = $("#reviews");
+  if (!reviews.length) {{ wrap.innerHTML = '<div class="empty-reviews">Nothing waiting for review right now.</div>'; return; }}
+  wrap.innerHTML = reviews.map(p => {{
+    const tag = p.category === "HOT" ? '<span class="tag tag-hot">Hot</span>' : '<span class="tag tag-std">Std</span>';
+    const metaBits = [p.sender, p.amount, p.deadline ? "Due " + p.deadline : ""].filter(Boolean).map(esc);
+    const draft = (p.draft || "").trim() || "No draft text yet — it may still be drafting, or the draft lives in the pull request.";
+    return `<div class="review" id="review-${{esc(p.id)}}">
+      <div class="review-head"><div><h3>${{esc(p.title || "Untitled")}}</h3>
+        <div class="meta">${{metaBits.join(" &nbsp;·&nbsp; ")}}</div></div>${{tag}}</div>
+      <div class="draft-label">Claude's draft</div>
+      <div class="draft">${{esc(draft)}}</div>
+      <div class="actions">
+        <button class="btn btn-gold btn-sm" data-act="approve" data-id="${{esc(p.id)}}">✓ Approve</button>
+        <button class="btn btn-sm" data-act="toggle" data-id="${{esc(p.id)}}" data-mode="changes">✎ Request Changes</button>
+        <button class="btn btn-sm" data-act="toggle" data-id="${{esc(p.id)}}" data-mode="reprompt">↺ Re-prompt</button>
+      </div>
+      <div class="feedback" id="fb-${{esc(p.id)}}">
+        <textarea placeholder="What should Claude change? (or tap the mic to speak)"></textarea>
+        <div class="fb-actions">
+          <button type="button" class="btn btn-mic" data-mic="${{esc(p.id)}}" title="Speak your feedback">🎙</button>
+          <button class="btn btn-gold btn-sm" data-act="send" data-id="${{esc(p.id)}}">Send to Claude →</button>
+        </div>
+      </div>
+      <div class="review-result" id="res-${{esc(p.id)}}"></div>
+    </div>`;
+  }}).join("");
+  wrap.querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", onReviewAction));
+  wrap.querySelectorAll("[data-mic]").forEach(btn => {{
+    const ta = document.getElementById("fb-" + btn.dataset.mic).querySelector("textarea");
+    attachVoice(btn, ta);
+  }});
+}}
+
+function attachVoice(btn, textarea) {{
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {{ btn.style.display = "none"; return; }}
+  let recog = null, listening = false, base = "";
+  btn.addEventListener("click", () => {{
+    if (listening) {{ try {{ recog.stop(); }} catch (_) {{}} return; }}
+    recog = new SR(); recog.lang = "en-US"; recog.interimResults = true; recog.continuous = false;
+    base = textarea.value.trim();
+    recog.onresult = (e) => {{ let t = ""; for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript; textarea.value = (base ? base + " " : "") + t.trim(); }};
+    recog.onend = () => {{ listening = false; btn.classList.remove("rec"); textarea.focus(); }};
+    recog.onerror = () => {{ listening = false; btn.classList.remove("rec"); }};
+    try {{ recog.start(); }} catch (_) {{ return; }}
+    listening = true; btn.classList.add("rec");
+  }});
+}}
+
+let _mode = {{}};
+async function onReviewAction(e) {{
+  const btn = e.currentTarget, id = btn.dataset.id, act = btn.dataset.act;
+  const res = document.getElementById("res-" + id), fb = document.getElementById("fb-" + id);
+  if (act === "toggle") {{ _mode[id] = btn.dataset.mode; fb.classList.toggle("show"); if (fb.classList.contains("show")) fb.querySelector("textarea").focus(); return; }}
+  if (act === "approve") {{ btn.disabled = true; const out = await postJSON(`/api/reviews/${{encodeURIComponent(id)}}/approve`, {{}}); showResult(res, out.message || "Done."); setTimeout(load, 600); return; }}
+  if (act === "send") {{
+    const text = fb.querySelector("textarea").value.trim(); if (!text) {{ fb.querySelector("textarea").focus(); return; }}
+    btn.disabled = true;
+    const out = await postJSON(`/api/reviews/${{encodeURIComponent(id)}}/changes`, {{ feedback: text, mode: _mode[id] || "changes" }});
+    showResult(res, out.message || "Sent."); fb.classList.remove("show"); setTimeout(load, 600);
+  }}
+}}
+function showResult(el, msg) {{ el.textContent = msg; el.classList.add("show"); }}
+async function postJSON(url, body) {{
+  try {{ const r = await fetch(url, {{ method:"POST", headers:{{"Content-Type":"application/json"}}, body: JSON.stringify(body) }}); return await r.json(); }}
+  catch (_) {{ return {{ ok: false, message: "Network error." }}; }}
 }}
 
 // USAFA request bar (only present on /usafa)
