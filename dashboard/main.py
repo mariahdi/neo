@@ -544,6 +544,7 @@ async function onReviewAction(e) {
     const out = await postJSON(`/api/reviews/${encodeURIComponent(id)}/changes`,
       { feedback: text, mode: _mode[id] || "changes" });
     showResult(res, out.message || "Sent.");
+    fb.classList.remove("show");  // close the box so the refresh can update the card
     setTimeout(refresh, 600);
   }
 }
@@ -651,7 +652,9 @@ async function refresh() {
   $("#demo-banner").classList.toggle("show", !!s.demo);
   renderWidgets(s.modules);
   renderBoard(s.board);
-  renderReviews(s.reviews);
+  // Don't re-render reviews while a Re-prompt / Request-Changes box is open —
+  // a 30s auto-refresh would otherwise wipe what you're typing mid-thought.
+  if (!document.querySelector("#reviews .feedback.show")) renderReviews(s.reviews);
 }
 
 refresh();
