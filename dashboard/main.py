@@ -25,7 +25,7 @@ from neo.config import Config
 from reviewer.actions_api import approve as do_approve
 from reviewer.actions_api import request_changes as do_request_changes
 from reviewer.dashboard_api import DEMO_MODE as BOARD_DEMO
-from reviewer.dashboard_api import get_dashboard
+from reviewer.dashboard_api import JIRA_BASE_URL, get_dashboard
 from reviewer.review_api import DEMO_MODE as REVIEW_DEMO
 from reviewer.review_api import _fetch_draft_from_github, get_review_queue
 
@@ -141,6 +141,7 @@ async def state() -> JSONResponse:
         "board": board,
         "reviews": _reviews_with_drafts(),
         "modules": _module_widgets(board),
+        "jira_base": (JIRA_BASE_URL or "").rstrip("/"),  # board cards link to Jira
     })
 
 
@@ -331,10 +332,11 @@ PAGE = r"""<!DOCTYPE html>
     border-radius: 9px; padding: 10px 11px; margin-bottom: 8px; cursor: default;
     transition: border-color 0.15s;
   }
-  .mini.clickable { cursor: pointer; }
-  .mini.clickable:hover { border-color: var(--gold-line); }
+  a.mini { text-decoration: none; color: inherit; cursor: pointer; }
+  a.mini:hover { border-color: var(--gold-line); }
   .mini-title { font-size: 12.5px; font-weight: 600; line-height: 1.35; }
-  .mini-meta { font-size: 11px; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 7px; }
+  .mini-meta { font-size: 11px; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .mini-key { color: var(--gold); font-weight: 700; letter-spacing: 0.02em; }
   .dot-hot { width: 7px; height: 7px; border-radius: 50%; background: var(--hot); display: inline-block; }
   .col-empty { font-size: 11px; color: #45506e; font-style: italic; padding: 5px 2px; }
 
@@ -404,6 +406,7 @@ PAGE = r"""<!DOCTYPE html>
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => (s == null ? "" : String(s).replace(/[&<>"]/g, c => (
   {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])));
+let jiraBase = "";  // set from /api/state; board cards link to <base>/browse/<key>
 
 function fmtDate(iso) {
   if (!iso) return "";
@@ -426,13 +429,15 @@ function renderWidgets(mods) {
 function renderBoard(board) {
   $("#board").innerHTML = board.columns.map(col => {
     const cards = col.items.length ? col.items.map(it => {
+      const key = esc(it.id);
       const hot = it.category === "HOT" ? '<span class="dot-hot"></span>HOT' : "";
       const due = it.deadline ? "Due " + esc(fmtDate(it.deadline)) : "";
-      const sep = hot && due ? " · " : "";
-      const meta = (hot || due) ? `<div class="mini-meta">${hot}${sep}${due}</div>` : "";
-      const clickable = col.key === "review";
-      const attr = clickable ? `class="mini clickable" data-review="${esc(it.id)}"` : 'class="mini"';
-      return `<div ${attr}><div class="mini-title">${esc(it.title)}</div>${meta}</div>`;
+      const metaInner = [`<span class="mini-key">${key} ↗</span>`, hot, due].filter(Boolean).join(" · ");
+      const inner = `<div class="mini-title">${esc(it.title)}</div><div class="mini-meta">${metaInner}</div>`;
+      // Each card opens its Jira ticket in a new tab (when we know the Jira URL).
+      return jiraBase
+        ? `<a class="mini" href="${jiraBase}/browse/${key}" target="_blank" rel="noopener">${inner}</a>`
+        : `<div class="mini">${inner}</div>`;
     }).join("") : '<div class="col-empty">Nothing here yet.</div>';
     return `<div class="col">
       <div class="col-head"><h3>${esc(col.label)}</h3><span class="col-count">${col.count}</span></div>
@@ -440,15 +445,6 @@ function renderBoard(board) {
       ${cards}
     </div>`;
   }).join("");
-  // Clicking an In Review card on the board jumps to its full card below.
-  document.querySelectorAll('.mini.clickable').forEach(el => {
-    el.addEventListener('click', () => {
-      const card = document.getElementById('review-' + el.dataset.review);
-      if (card) { card.scrollIntoView({behavior:'smooth', block:'center'});
-                  card.style.borderColor = 'var(--gold-line)';
-                  setTimeout(() => card.style.borderColor = '', 1200); }
-    });
-  });
 }
 
 function renderReviews(reviews) {
@@ -622,6 +618,7 @@ async function refresh() {
     const r = await fetch("/api/state");
     s = await r.json();
   } catch (err) { return; }
+  jiraBase = s.jira_base || "";
   $("#demo-banner").classList.toggle("show", !!s.demo);
   renderWidgets(s.modules);
   renderBoard(s.board);
