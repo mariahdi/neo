@@ -1,0 +1,29 @@
+{
+  "key": "neo",
+  "name": "Neo",
+  "wordmark": "NE<b>O</b>",
+  "who": "Mariah &amp; Dad",
+  "tagline": "Control Room",
+  "role": "member",
+  "tokens": {
+    "bg": "#0a0e1a",
+    "bg-2": "#0e1424",
+    "bg-glow": "#15203a",
+    "panel": "#121a2e",
+    "panel-2": "#16203a",
+    "line": "#243150",
+    "line-soft": "#1b2540",
+    "text": "#e9ecf4",
+    "muted": "#8794b3",
+    "gold": "#c8a84b",
+    "gold-soft": "rgba(200,168,75,0.14)",
+    "gold-line": "rgba(200,168,75,0.45)",
+    "hot": "#d98a3a",
+    "gold-hover": "#d8b85a",
+    "on-gold": "#1a1305",
+    "field": "#0c1322",
+    "btn-bg": "#0f1830",
+    "font-head": "'Bebas Neue', 'Inter', sans-serif",
+    "font-body": "'Inter', system-ui, sans-serif"
+  }
+}

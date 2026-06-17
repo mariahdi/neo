@@ -184,7 +184,7 @@ _BODY = r"""
   .teller-row { display: flex; gap: 10px; } .teller textarea { flex: 1; min-height: 46px; resize: none; }
   .suggests { margin-top: 14px; display: none; } .suggests.show { display: block; }
   .suggests .stitle { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; display: flex; gap: 10px; align-items: center; }
-  .sug { display: flex; align-items: center; gap: 10px; background: #0c1322; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; margin-bottom: 8px; }
+  .sug { display: flex; align-items: center; gap: 10px; background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; margin-bottom: 8px; }
   .sug .txt { flex: 1; font-size: 13.5px; }
   .sug.added { opacity: 0.5; }
   .quick { display: flex; gap: 8px; margin-bottom: 28px; }
