@@ -269,9 +269,12 @@ function fmtWhen(iso) {
 }
 
 function renderNote() {
-  $("#note").innerHTML = liveMode
-    ? `Prices are <b>live</b> (real-time US quotes)${pricesAt ? ` · as of ${pricesAt}, auto-refreshing every minute` : ""}. Hit Refresh on a card for an AI briefing on top.`
-    : 'Briefings are a live <b>AI preview</b> (Claude text). For live <b>prices</b> on each card, add a free <code>NEO_STOCK_API_KEY</code> (finnhub.io).';
+  const msg = {
+    live: `Prices are <b>live</b> (real-time US quotes)${pricesAt ? ` · as of ${pricesAt}, auto-refreshing every minute` : ""}. Hit Refresh on a card for an AI briefing on top.`,
+    loggedout: 'Briefings are a live <b>AI preview</b> (Claude text). <b>Log in</b> to see live <b>prices</b> on each card.',
+    nokey: 'Briefings are a live <b>AI preview</b> (Claude text). For live <b>prices</b> on each card, add a free <code>NEO_STOCK_API_KEY</code> (finnhub.io).',
+  };
+  $("#note").innerHTML = msg[priceState] || msg.nokey;
 }
 
 function stockCard(sec, st) {
@@ -310,24 +313,35 @@ function render() {
   loadQuotes();
 }
 
-let liveMode = false, pricesAt = "";
+let priceState = "nokey", pricesAt = "";
 async function loadQuotes() {
   const tickers = [...new Set(data.sectors.flatMap(s => s.stocks.map(st => (st.ticker || "").trim().toUpperCase())).filter(Boolean))];
   if (!tickers.length) return;
   let res;
   try { res = await (await fetch("/api/stocks/quotes?symbols=" + encodeURIComponent(tickers.join(",")))).json(); }
   catch (_) { return; }
-  liveMode = !!res.live;
+  // Live prices need an authenticated session; logged-out gets a clear prompt
+  // instead of the misleading "add a key" hint.
+  if (res && res.error === "unauthorized") {
+    priceState = "loggedout";
+    document.querySelectorAll("[data-px]").forEach(el => {
+      el.innerHTML = '<span class="px-none">log in to see live prices</span>';
+    });
+    renderNote();
+    return;
+  }
+  priceState = res.live ? "live" : "nokey";
+  const quotes = res.quotes || {};
   document.querySelectorAll("[data-px]").forEach(el => {
-    const q = res.quotes[el.dataset.px];
+    const q = quotes[el.dataset.px];
     if (q) {
       const up = q.change >= 0;
       el.innerHTML = `<span class="px">$${q.price.toLocaleString()}</span> <span class="chg ${up ? "up" : "down"}">${up ? "▲ +" : "▼ "}${q.pct}%</span>`;
     } else {
-      el.innerHTML = liveMode ? '<span class="px-none">— no live price</span>' : '<span class="px-none">add a market-data key for live prices</span>';
+      el.innerHTML = priceState === "live" ? '<span class="px-none">— no live price</span>' : '<span class="px-none">add a market-data key for live prices</span>';
     }
   });
-  if (liveMode && Object.keys(res.quotes).length) pricesAt = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (priceState === "live" && Object.keys(quotes).length) pricesAt = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   renderNote();
 }
 
