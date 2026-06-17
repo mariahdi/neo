@@ -31,6 +31,29 @@ router = APIRouter()
 ANTHROPIC_KEY = os.environ.get("NEO_ANTHROPIC_API_KEY")
 ANTHROPIC_MODEL = os.environ.get("NEO_ANTHROPIC_MODEL", "claude-sonnet-4-6")
 
+# Live market data via Finnhub (finnhub.io) — free real-time US quotes.
+STOCK_API_KEY = os.environ.get("NEO_STOCK_API_KEY")
+
+
+def _quote(ticker: str) -> dict | None:
+    """Live quote for a US ticker. Returns {price, change, pct} or None
+    (no key, network error, or a symbol with no price — e.g. a private company)."""
+    ticker = (ticker or "").strip().upper()
+    if not (ticker and STOCK_API_KEY):
+        return None
+    try:
+        r = requests.get("https://finnhub.io/api/v1/quote",
+                         params={"symbol": ticker, "token": STOCK_API_KEY}, timeout=15)
+        r.raise_for_status()
+        d = r.json()
+        if not d.get("c"):  # current price 0/None -> unknown symbol
+            return None
+        return {"price": round(d["c"], 2), "change": round(d.get("d") or 0, 2),
+                "pct": round(d.get("dp") or 0, 2)}
+    except Exception as e:
+        print(f"[stocks] quote {ticker} failed: {e}")
+        return None
+
 # Seed watchlist (mock until edited).
 DEFAULT = {"sectors": []}
 
@@ -96,6 +119,17 @@ def _claude_update(name: str, ticker: str) -> str:
 @router.get("/api/stocks")
 async def get_stocks() -> JSONResponse:
     return JSONResponse(_data())
+
+
+@router.get("/api/stocks/quotes")
+async def get_quotes(symbols: str = "") -> JSONResponse:
+    """Live quotes for the given comma-separated tickers."""
+    out = {}
+    for t in {s.strip().upper() for s in symbols.split(",") if s.strip()}:
+        q = _quote(t)
+        if q:
+            out[t] = q
+    return JSONResponse({"quotes": out, "live": bool(STOCK_API_KEY)})
 
 
 class StocksIn(BaseModel):
@@ -180,6 +214,11 @@ _BODY = r"""
   .stock-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .stock-name { font-size: 15px; font-weight: 700; }
   .stock-ticker { font-size: 11px; color: var(--gold); font-weight: 700; letter-spacing: 0.06em; }
+  .stock-price { margin: 9px 0 2px; min-height: 18px; }
+  .stock-price .px { font-size: 19px; font-weight: 700; }
+  .stock-price .chg { font-size: 12px; margin-left: 7px; font-weight: 600; }
+  .stock-price .chg.up { color: #80D4A0; } .stock-price .chg.down { color: #F08080; }
+  .stock-price .px-none { font-size: 10.5px; color: var(--muted); }
   .stock-update { font-size: 13px; line-height: 1.65; color: #cdd5e8; margin: 12px 0; white-space: pre-wrap; }
   .stock-update.empty { color: #56638a; font-style: italic; }
   .stock-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -230,9 +269,9 @@ function fmtWhen(iso) {
 }
 
 function renderNote() {
-  $("#note").innerHTML = demoMode
-    ? 'Daily briefings are <b>sample text</b> right now — set the Anthropic key to get real AI previews.'
-    : 'Each briefing is a live <b>AI preview</b> (real Claude text, generated on demand). It reflects general knowledge, not today’s live price — a scheduled daily job + market-data feed comes later.';
+  $("#note").innerHTML = liveMode
+    ? 'Prices are <b>live</b> (real-time US quotes). Hit Refresh on a card for an AI briefing on top.'
+    : 'Briefings are a live <b>AI preview</b> (Claude text). For live <b>prices</b> on each card, add a free <code>NEO_STOCK_API_KEY</code> (finnhub.io).';
 }
 
 function stockCard(sec, st) {
@@ -241,11 +280,14 @@ function stockCard(sec, st) {
     ? `<div class="stock-update">${esc(upd)}</div>`
     : '<div class="stock-update empty">No briefing yet — hit Refresh for an AI preview.</div>';
   const stamp = st.updated_at ? `<span class="stamp">Updated ${esc(fmtWhen(st.updated_at))}</span>` : '<span></span>';
+  const tkr = (st.ticker || "").trim().toUpperCase();
+  const px = tkr ? `<div class="stock-price" data-px="${esc(tkr)}"></div>` : "";
   return `<div class="stock">
     <div class="stock-top">
       <span class="stock-name">${esc(st.name)}</span>
       <span class="stock-ticker">${esc(st.ticker || "")}</span>
     </div>
+    ${px}
     ${body}
     <div class="stock-foot">
       ${stamp}
@@ -265,6 +307,27 @@ function render() {
         : '<div class="sector-empty">No stocks in this sector yet — use Manage to add one.</div>'}
     </div>`).join("");
   v.querySelectorAll(".refresh").forEach(b => b.addEventListener("click", onRefresh));
+  loadQuotes();
+}
+
+let liveMode = false;
+async function loadQuotes() {
+  const tickers = [...new Set(data.sectors.flatMap(s => s.stocks.map(st => (st.ticker || "").trim().toUpperCase())).filter(Boolean))];
+  if (!tickers.length) return;
+  let res;
+  try { res = await (await fetch("/api/stocks/quotes?symbols=" + encodeURIComponent(tickers.join(",")))).json(); }
+  catch (_) { return; }
+  liveMode = !!res.live;
+  document.querySelectorAll("[data-px]").forEach(el => {
+    const q = res.quotes[el.dataset.px];
+    if (q) {
+      const up = q.change >= 0;
+      el.innerHTML = `<span class="px">$${q.price.toLocaleString()}</span> <span class="chg ${up ? "up" : "down"}">${up ? "▲ +" : "▼ "}${q.pct}%</span>`;
+    } else {
+      el.innerHTML = liveMode ? '<span class="px-none">— no live price</span>' : '<span class="px-none">add a market-data key for live prices</span>';
+    }
+  });
+  renderNote();
 }
 
 async function load() {
