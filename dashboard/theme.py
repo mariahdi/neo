@@ -107,11 +107,11 @@ BASE_CSS = (
 
 # ── Footer (quick links + tour button) ────────────────────────────────────────
 # Links default to this project's Jira / GitHub; override the Jira board URL
-# with NEO_JIRA_BOARD_URL if your board id isn't 1.
+# with NEO_JIRA_BOARD_URL if your board id differs.
 _JIRA_BASE = os.environ.get("NEO_JIRA_BASE_URL", "https://mariahdiharris.atlassian.net").rstrip("/")
 _PROJECT = os.environ.get("NEO_JIRA_PROJECT", "NEO")
 _REPO = os.environ.get("NEO_GITHUB_REPO", "mariahdi/neo")
-_JIRA_BOARD = os.environ.get("NEO_JIRA_BOARD_URL") or f"{_JIRA_BASE}/jira/software/projects/{_PROJECT}/boards/1"
+_JIRA_BOARD = os.environ.get("NEO_JIRA_BOARD_URL") or f"{_JIRA_BASE}/jira/software/projects/{_PROJECT}/boards/67"
 
 
 def footer() -> str:
