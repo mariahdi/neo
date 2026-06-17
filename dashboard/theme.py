@@ -17,6 +17,7 @@ ACTIVE = profile.ACTIVE
 # (key, href, label) — extended as each module ships.
 NAV_LINKS = [
     ("dashboard", "/", "Dashboard"),
+    ("nominal", "/nominal", "Nominal"),
     ("stocks", "/stocks", "Stocks"),
     ("goals", "/goals", "Goals"),
     ("wins", "/wins", "Wins"),
