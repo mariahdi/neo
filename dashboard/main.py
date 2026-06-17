@@ -32,6 +32,7 @@ from reviewer.review_api import _fetch_draft_from_github, get_review_queue
 from . import auth, chat, profile, theme
 from .about import router as about_router
 from .goals import router as goals_router
+from .modules_api import router as modules_router
 from .stocks import router as stocks_router
 from .wins import router as wins_router
 
@@ -48,6 +49,7 @@ app.include_router(about_router)
 app.include_router(stocks_router)
 app.include_router(goals_router)
 app.include_router(wins_router)
+app.include_router(modules_router)
 
 # Board column keys (from dashboard_api.COLUMNS) -> the canonical labels the
 # unified dashboard shows. Same four columns the prompt asks for.
@@ -166,7 +168,9 @@ async def review_changes(proposal_id: str, body: ChangesIn) -> JSONResponse:
 
 @app.get("/", response_class=HTMLResponse)
 async def index() -> HTMLResponse:
-    return HTMLResponse(PAGE)
+    # Nav is rendered per-request so module gating + the "new modules" badge
+    # stay live (the rest of the shell is baked once at import).
+    return HTMLResponse(PAGE.replace("<!--NAV-->", theme.nav("dashboard")))
 
 
 # ── The page ──────────────────────────────────────────────────────────────────
@@ -219,6 +223,7 @@ PAGE = r"""<!DOCTYPE html>
   .topnav { display: flex; gap: 22px; margin-right: auto; margin-left: 10px; }
   .topnav a { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); text-decoration: none; padding: 6px 0; }
   .topnav a:hover, .topnav a.active { color: var(--gold); }
+  .nav-badge { display: inline-block; background: var(--gold); color: var(--on-gold); font-size: 9px; font-weight: 700; border-radius: 10px; padding: 0 5px; margin-left: 5px; vertical-align: 1px; }
   .logout { background: none; border: 1px solid var(--line); color: var(--muted); font-family: inherit; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 8px; padding: 5px 11px; }
   .logout:hover { border-color: var(--gold-line); color: var(--gold); }
   /*EXTRA_CSS*/
@@ -624,11 +629,12 @@ setInterval(refresh, 30000);
 # Inject the shared top nav, footer (quick links + tour button) and the tour
 # engine — all single-sourced in theme.py — so the work board stays in step
 # with the module pages.
+# Bake the static shell once; <!--NAV--> is left in place and filled per-request
+# in index() so module gating + the catalog badge stay live.
 PAGE = (
     PAGE.replace("<!--TITLE-->", profile.ACTIVE["name"])
     .replace("<!--FONTS-->", theme.FONT_LINK)
     .replace("/*ROOTCSS*/", profile.root_css())
-    .replace("<!--NAV-->", theme.nav("dashboard"))
     .replace("/*EXTRA_CSS*/", theme.EXTRA_CSS)
     .replace("<!--FOOTER-->", theme.footer() + f"<script>{theme.TOUR_JS}</script>")
 )
