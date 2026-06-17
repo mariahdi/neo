@@ -14,6 +14,9 @@ walkthrough lives in [`docs/plan-site/`](docs/plan-site/) (open `index.html`).
 [`docs/DEPLOY.md`](docs/DEPLOY.md) to host it (Render) so they just open a
 password-protected link — no terminal at all.
 
+**Want your own personalized instance?** One codebase runs many instances via
+profiles (own theme, login, data, modules) — no fork. See [`docs/ARIA.md`](docs/ARIA.md).
+
 ## The dashboard
 
 One page does the whole job: a chat bar (type or speak a request), a live
