@@ -20,6 +20,7 @@ NAV_LINKS = [
     ("nominal", "/nominal", "Nominal"),
     ("body", "/body", "Body"),
     ("wealth", "/wealth", "Wealth"),
+    ("trips", "/trips", "Trips"),
     ("stocks", "/stocks", "Stocks"),
     ("goals", "/goals", "Goals"),
     ("wins", "/wins", "Wins"),

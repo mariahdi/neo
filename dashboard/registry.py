@@ -38,6 +38,9 @@ MODULES = [
     {"key": "wealth", "name": "Wealth", "path": "/wealth",
      "description": "Investments + retirement projections, with audience masking.",
      "version": "1.0", "released": "2026-06-17", "requires": []},
+    {"key": "trips", "name": "Trips", "path": "/trips",
+     "description": "Travel planner with per-audience notes and to-dos.",
+     "version": "1.0", "released": "2026-06-17", "requires": []},
 ]
 _BY_KEY = {m["key"]: m for m in MODULES}
 ALL_KEYS = [m["key"] for m in MODULES]
