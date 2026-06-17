@@ -373,8 +373,8 @@ async function onRefresh(e) {
 function stockRow(st = {name:"", ticker:""}) {
   const row = document.createElement("div");
   row.className = "mrow";
-  row.innerHTML = `<input class="n" type="text" placeholder="Company name" value="${esc(st.name)}">
-                   <input class="t" type="text" placeholder="TICKER" value="${esc(st.ticker||"")}">
+  row.innerHTML = `<input class="n" type="text" placeholder="Company name — e.g. Archer Aviation" value="${esc(st.name)}">
+                   <input class="t" type="text" placeholder="Ticker — e.g. ACHR" title="The stock symbol — this is what powers live prices" value="${esc(st.ticker||"")}">
                    <button class="btn btn-sm" type="button" title="Remove">✕</button>`;
   row.dataset.update = st.update || "";
   row.dataset.updatedAt = st.updated_at || "";
