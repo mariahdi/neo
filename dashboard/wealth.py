@@ -15,17 +15,7 @@ from . import store, theme
 
 router = APIRouter()
 
-DEFAULT = {
-    "age": 28,
-    "monthly": 1300,
-    "return": 8,
-    "accounts": [
-        {"id": 1, "name": "Northrop 401k", "balance": 104936, "icon": "🏦"},
-        {"id": 2, "name": "Roth IRA", "balance": 3116, "icon": "🌱"},
-        {"id": 3, "name": "HSA (Fidelity)", "balance": 5867, "icon": "🏥"},
-        {"id": 4, "name": "Individual Invest", "balance": 69, "icon": "📈"},
-    ],
-}
+DEFAULT = {"age": 30, "monthly": 0, "return": 8, "accounts": []}
 
 
 def _data() -> dict:

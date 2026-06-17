@@ -18,27 +18,11 @@ from . import store, theme
 
 router = APIRouter()
 
+# Blank template — each instance fills its own health data.
 DEFAULT = {
-    "meds": [
-        {"name": "Prozac", "dose": "80mg", "time": "morning"},
-        {"name": "Abilify", "dose": "5mg", "time": "morning"},
-        {"name": "Vitamin D3", "dose": "—", "time": "morning"},
-        {"name": "Lo Loestrin", "dose": "—", "time": "daily"},
-    ],
-    "weight": {
-        "current": 265, "target": 230,
-        "history": [
-            {"date": "2026-04-01", "value": 230},
-            {"date": "2026-05-01", "value": 250},
-            {"date": "2026-06-01", "value": 265},
-        ],
-    },
-    "habits": [
-        {"icon": "🏐", "label": "Sand Volleyball", "freq": "Tuesdays"},
-        {"icon": "🚶🏾", "label": "Metro Walk", "freq": "Daily ~10min"},
-        {"icon": "🧠", "label": "Therapy", "freq": "Every 1-2 wks"},
-        {"icon": "🍳", "label": "Cook at home", "freq": "Goal: 1x/week"},
-    ],
+    "meds": [],
+    "weight": {"current": 0, "target": 0, "history": []},
+    "habits": [],
 }
 
 
@@ -51,30 +35,27 @@ async def get_body() -> JSONResponse:
     return JSONResponse(_data())
 
 
-class BodyIn(BaseModel):
-    meds: list[dict] = []
-    weight: dict = {}
-    habits: list[dict] = []
-
-
 @router.post("/api/body")
-async def save_body(body: BodyIn) -> JSONResponse:
-    d = _data()
-    if body.meds:
-        d["meds"] = [{"name": (m.get("name") or "").strip(),
-                      "dose": (m.get("dose") or "—").strip(),
-                      "time": (m.get("time") or "").strip()}
-                     for m in body.meds if (m.get("name") or "").strip()]
-    if body.weight:
-        w = d["weight"]
-        w["current"] = body.weight.get("current", w["current"])
-        w["target"] = body.weight.get("target", w["target"])
-        if isinstance(body.weight.get("history"), list):
-            w["history"] = body.weight["history"]
-    if body.habits:
-        d["habits"] = body.habits
-    store.save("body", d)
-    return JSONResponse(d)
+async def save_body(body: dict) -> JSONResponse:
+    """Full-state save (so lists can be cleared, target set, etc.)."""
+    w = body.get("weight") or {}
+    data = {
+        "meds": [{"name": (m.get("name") or "").strip(),
+                  "dose": (m.get("dose") or "—").strip(),
+                  "time": (m.get("time") or "").strip()}
+                 for m in body.get("meds", []) if (m.get("name") or "").strip()],
+        "weight": {
+            "current": round(float(w.get("current", 0) or 0)),
+            "target": round(float(w.get("target", 0) or 0)),
+            "history": w.get("history") if isinstance(w.get("history"), list) else [],
+        },
+        "habits": [{"icon": (h.get("icon") or "•").strip(),
+                    "label": (h.get("label") or "").strip(),
+                    "freq": (h.get("freq") or "").strip()}
+                   for h in body.get("habits", []) if (h.get("label") or "").strip()],
+    }
+    store.save("body", data)
+    return JSONResponse(data)
 
 
 class WeighIn(BaseModel):
@@ -111,8 +92,13 @@ _BODY = r"""
   .note { font-size: 11px; color: var(--muted); margin-top: 10px; line-height: 1.6; }
   .habits { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .habit { background: var(--panel); border: 1px solid var(--line-soft); border-radius: 12px; padding: 15px; border-top: 2px solid var(--gold); }
-  .habit .ic { font-size: 22px; margin-bottom: 8px; } .habit .hl { font-size: 13px; } .habit .hf { font-size: 10px; color: var(--muted); margin-top: 3px; }
+  .habit .ic { font-size: 22px; } .habit .hl { font-size: 13px; } .habit .hf { font-size: 10px; color: var(--muted); margin-top: 3px; }
   .spark { display: block; margin-top: 8px; }
+  .addrow { display: flex; gap: 8px; margin: 10px 0 4px; flex-wrap: wrap; }
+  .addrow input { flex: 1; min-width: 90px; }
+  .x { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; }
+  .x:hover { color: #F08080; }
+  .empty { color: var(--muted); font-style: italic; font-size: 13px; padding: 4px 0; }
 </style>
 
 <main>
@@ -120,24 +106,35 @@ _BODY = r"""
 
   <div class="sec-label">Medications</div>
   <div id="meds"></div>
+  <div class="addrow">
+    <input id="m-name" type="text" placeholder="Medication">
+    <input id="m-dose" type="text" placeholder="Dose" style="flex:0 0 80px;min-width:0">
+    <input id="m-time" type="text" placeholder="When" style="flex:0 0 100px;min-width:0">
+    <button class="btn btn-gold btn-sm" id="m-add">Add</button>
+  </div>
 
   <div class="sec-label">Weight Journey</div>
   <div class="wt">
     <div class="wt-row">
       <div><div class="lab">Now</div><div class="v" style="color:#F08080" id="w-now">—</div></div>
       <div style="text-align:center"><div class="lab">To lose</div><div class="v" style="color:var(--gold)" id="w-lose">—</div></div>
-      <div style="text-align:right"><div class="lab">Target</div><div class="v" style="color:#80D4A0" id="w-target">—</div></div>
+      <div style="text-align:right"><div class="lab">Target</div><input type="number" id="w-target" placeholder="—" style="width:78px;text-align:right;font-size:20px;font-weight:700;color:#80D4A0;padding:4px 6px"></div>
     </div>
     <div id="w-chart"></div>
     <div class="weigh">
       <input type="number" id="weigh-input" placeholder="Log today's weight">
       <button class="btn btn-gold btn-sm" id="weigh-btn">Log</button>
     </div>
-    <div class="note">Prozac + Abilify can affect weight. This is biology, not willpower. 🤍</div>
   </div>
 
   <div class="sec-label">Weekly Habits</div>
   <div class="habits" id="habits"></div>
+  <div class="addrow">
+    <input id="h-icon" type="text" value="✅" style="flex:0 0 48px;min-width:0;text-align:center">
+    <input id="h-label" type="text" placeholder="Habit">
+    <input id="h-freq" type="text" placeholder="How often" style="flex:0 0 120px;min-width:0">
+    <button class="btn btn-gold btn-sm" id="h-add">Add</button>
+  </div>
 </main>
 
 <script>
@@ -154,23 +151,28 @@ function sparkline(history) {
 }
 
 function render() {
-  $("#meds").innerHTML = data.meds.map(m => `<div class="med">
+  $("#meds").innerHTML = data.meds.length ? data.meds.map((m, i) => `<div class="med">
     <div><div class="nm">${esc(m.name)}</div><div class="tm">${esc(m.time)}</div></div>
-    <div class="ds">${esc(m.dose)}</div></div>`).join("") || '<div class="private-note">No meds logged.</div>';
+    <div style="display:flex;align-items:center;gap:12px"><div class="ds">${esc(m.dose)}</div><button class="x" data-rm-med="${i}">✕</button></div></div>`).join("")
+    : '<div class="empty">No meds yet — add one below.</div>';
 
   const w = data.weight || {};
   const lose = Math.max(0, (Number(w.current)||0) - (Number(w.target)||0));
-  $("#w-now").dataset.real = w.current; $("#w-now").textContent = w.current;
-  $("#w-lose").dataset.real = lose; $("#w-lose").textContent = lose;
-  $("#w-target").dataset.real = w.target; $("#w-target").textContent = w.target;
+  $("#w-now").textContent = w.current || "—";
+  $("#w-lose").textContent = lose || "—";
+  if (document.activeElement !== $("#w-target")) $("#w-target").value = w.target || "";
   $("#w-chart").innerHTML = sparkline(w.history);
 
-  $("#habits").innerHTML = (data.habits || []).map(h => `<div class="habit">
-    <div class="ic">${esc(h.icon)}</div><div class="hl">${esc(h.label)}</div><div class="hf">${esc(h.freq)}</div></div>`).join("");
+  $("#habits").innerHTML = (data.habits || []).length ? data.habits.map((h, i) => `<div class="habit">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="ic">${esc(h.icon)}</div><button class="x" data-rm-habit="${i}">✕</button></div>
+    <div class="hl">${esc(h.label)}</div><div class="hf">${esc(h.freq)}</div></div>`).join("")
+    : '<div class="empty">No habits yet — add one below.</div>';
 
-  if (window.neoMaskScan) window.neoMaskScan();
+  document.querySelectorAll("[data-rm-med]").forEach(b => b.addEventListener("click", () => { data.meds.splice(+b.dataset.rmMed, 1); save(); }));
+  document.querySelectorAll("[data-rm-habit]").forEach(b => b.addEventListener("click", () => { data.habits.splice(+b.dataset.rmHabit, 1); save(); }));
 }
 
+async function save() { data = await (await fetch("/api/body", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(data) })).json(); render(); }
 async function load() { try { data = await (await fetch("/api/body")).json(); } catch (_) {} render(); }
 
 $("#weigh-btn").addEventListener("click", async () => {
@@ -178,8 +180,17 @@ $("#weigh-btn").addEventListener("click", async () => {
   data = await (await fetch("/api/body/weigh", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ value: v }) })).json();
   $("#weigh-input").value = ""; render();
 });
-
-window.addEventListener("neo:view", () => { if (window.neoMaskScan) window.neoMaskScan(); });
+$("#w-target").addEventListener("change", () => { data.weight.target = Math.max(0, parseInt($("#w-target").value) || 0); save(); });
+$("#m-add").addEventListener("click", () => {
+  const name = $("#m-name").value.trim(); if (!name) return;
+  data.meds.push({ name, dose: $("#m-dose").value.trim() || "—", time: $("#m-time").value.trim() });
+  $("#m-name").value = ""; $("#m-dose").value = ""; $("#m-time").value = ""; save();
+});
+$("#h-add").addEventListener("click", () => {
+  const label = $("#h-label").value.trim(); if (!label) return;
+  data.habits.push({ icon: $("#h-icon").value.trim() || "✅", label, freq: $("#h-freq").value.trim() });
+  $("#h-label").value = ""; $("#h-freq").value = ""; $("#h-icon").value = "✅"; save();
+});
 load();
 </script>
 """

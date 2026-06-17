@@ -15,30 +15,7 @@ from . import store, theme
 
 router = APIRouter()
 
-DEFAULT = {
-    "trips": [
-        {"id": 1, "city": "Austin, TX", "emoji": "🤠", "status": "booked", "dates": "Aug 28–30, 2026",
-         "flight": "UA 2337 · IAD→AUS · Aug 28\nUA 525 · AUS→IAD · Aug 30", "confirmation": "E1C3ZG",
-         "notes": {"private": "Taylor's 26th birthday 🎂 — she asked you to come. One full day Aug 29.",
-                   "friends": "Taylor's 26th birthday 🎂 in Austin!",
-                   "coworker": "Traveling to Austin end of August.",
-                   "public": "Trip coming up ✈️"},
-         "todos": [{"id": 1, "text": "Confirm plans with Taylor 🎂", "done": False, "views": ["private", "friends"]},
-                   {"id": 2, "text": "Book hotel / Airbnb", "done": False, "views": ["private", "friends"]},
-                   {"id": 3, "text": "Get Taylor a birthday gift", "done": False, "views": ["private"]}]},
-        {"id": 2, "city": "Arizona", "emoji": "🏜️", "status": "planning", "dates": "TBD",
-         "flight": "", "confirmation": "",
-         "notes": {"private": "Still planning — dates TBD.", "friends": "Planning an Arizona trip!",
-                   "coworker": "Planning some travel.", "public": ""},
-         "todos": [{"id": 1, "text": "Pick dates", "done": False, "views": ["private", "friends"]},
-                   {"id": 2, "text": "Book flights", "done": False, "views": ["private", "friends"]}]},
-        {"id": 3, "city": "New Orleans, LA", "emoji": "🎷", "status": "planning", "dates": "TBD",
-         "flight": "", "confirmation": "",
-         "notes": {"private": "NOLA deserves a proper trip.", "friends": "Planning NOLA 🎷",
-                   "coworker": "Planning some travel.", "public": ""},
-         "todos": [{"id": 1, "text": "Pick dates", "done": False, "views": ["private", "friends"]}]},
-    ],
-}
+DEFAULT = {"trips": []}
 
 
 def _data() -> dict:
