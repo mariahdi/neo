@@ -395,6 +395,7 @@ PAGE = r"""<!DOCTYPE html>
     padding: 12px; resize: vertical; margin-bottom: 10px;
   }
   .feedback textarea:focus { outline: none; border-color: var(--gold-line); }
+  .fb-actions { display: flex; gap: 8px; align-items: center; }
   .review-result { font-size: 12.5px; color: var(--gold); margin-top: 10px; display: none; }
   .review-result.show { display: block; }
   .empty-reviews { color: #56638a; font-style: italic; font-size: 13px; padding: 18px 2px; }
@@ -507,13 +508,43 @@ function renderReviews(reviews) {
         <button class="btn btn-sm" data-act="toggle" data-id="${esc(p.id)}" data-mode="reprompt">↺ Re-prompt</button>
       </div>
       <div class="feedback" id="fb-${esc(p.id)}">
-        <textarea placeholder="What should Claude change?"></textarea>
-        <button class="btn btn-gold btn-sm" data-act="send" data-id="${esc(p.id)}">Send to Claude →</button>
+        <textarea placeholder="What should Claude change? (or tap the mic to speak)"></textarea>
+        <div class="fb-actions">
+          <button type="button" class="btn btn-mic" data-mic="${esc(p.id)}" aria-label="Speak your feedback" title="Speak your feedback">🎙</button>
+          <button class="btn btn-gold btn-sm" data-act="send" data-id="${esc(p.id)}">Send to Claude →</button>
+        </div>
       </div>
       <div class="review-result" id="res-${esc(p.id)}"></div>
     </div>`;
   }).join("");
   wrap.querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", onReviewAction));
+  wrap.querySelectorAll("[data-mic]").forEach(btn => {
+    const ta = document.getElementById("fb-" + btn.dataset.mic).querySelector("textarea");
+    attachVoice(btn, ta);
+  });
+}
+
+// Reusable mic → textarea dictation (Web Speech API). Used by the review
+// feedback boxes; browsers without it just hide the mic.
+function attachVoice(btn, textarea) {
+  const SR2 = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR2) { btn.hidden = true; return; }
+  let recog = null, listening = false, base = "";
+  btn.addEventListener("click", () => {
+    if (listening) { try { recog.stop(); } catch (_) {} return; }
+    recog = new SR2();
+    recog.lang = "en-US"; recog.interimResults = true; recog.continuous = false;
+    base = textarea.value.trim();
+    recog.onresult = (e) => {
+      let txt = "";
+      for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript;
+      textarea.value = (base ? base + " " : "") + txt.trim();
+    };
+    recog.onend = () => { listening = false; btn.classList.remove("listening"); textarea.focus(); };
+    recog.onerror = () => { listening = false; btn.classList.remove("listening"); };
+    try { recog.start(); } catch (_) { return; }
+    listening = true; btn.classList.add("listening");
+  });
 }
 
 let _mode = {};  // proposal id -> "changes" | "reprompt"
