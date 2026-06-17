@@ -130,6 +130,9 @@ def _body(kind: str) -> str:
     text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }}
   .col-head .n {{ background: var(--field); border-radius: 20px; padding: 1px 8px; color: var(--text); }}
   .col.review .col-head {{ color: var(--gold); }}
+  .col-cards {{ max-height: 62vh; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }}
+  .col-cards::-webkit-scrollbar {{ width: 6px; }}
+  .col-cards::-webkit-scrollbar-thumb {{ background: var(--line); border-radius: 3px; }}
   .card {{ display: block; background: var(--field); border: 1px solid var(--line-soft); border-left: 3px solid var(--gold);
     border-radius: 10px; padding: 11px 13px; margin-bottom: 9px; text-decoration: none; color: inherit; transition: border-color 0.15s; }}
   .card:hover {{ border-color: var(--gold-line); }}
@@ -165,7 +168,7 @@ function renderBoard(board) {{
   $("#board").innerHTML = board.columns.map(col => `
     <div class="col ${{col.key === "review" ? "review" : ""}}">
       <div class="col-head"><span>${{esc(col.label)}}</span><span class="n">${{col.count}}</span></div>
-      ${{col.items.length ? col.items.map(card).join("") : '<div class="col-empty">—</div>'}}
+      <div class="col-cards">${{col.items.length ? col.items.map(card).join("") : '<div class="col-empty">—</div>'}}</div>
     </div>`).join("");
 }}
 
