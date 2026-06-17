@@ -236,6 +236,7 @@ PAGE = r"""<!DOCTYPE html>
   .topnav a:hover, .topnav a.active { color: var(--gold); }
   .logout { background: none; border: 1px solid var(--line); color: var(--muted); font-family: inherit; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 8px; padding: 5px 11px; }
   .logout:hover { border-color: var(--gold-line); color: var(--gold); }
+  /*EXTRA_CSS*/
 
   .demo-banner {
     display: none;
@@ -630,10 +631,16 @@ async function refresh() {
 refresh();
 setInterval(refresh, 30000);
 </script>
+<!--FOOTER-->
 </body>
 </html>
 """
 
-# Inject the shared top nav (single source of truth in theme.NAV_LINKS) so the
-# work board's header stays in step with the module pages as modules are added.
-PAGE = PAGE.replace("<!--NAV-->", theme.nav("dashboard"))
+# Inject the shared top nav, footer (quick links + tour button) and the tour
+# engine — all single-sourced in theme.py — so the work board stays in step
+# with the module pages.
+PAGE = (
+    PAGE.replace("<!--NAV-->", theme.nav("dashboard"))
+    .replace("/*EXTRA_CSS*/", theme.EXTRA_CSS)
+    .replace("<!--FOOTER-->", theme.footer() + f"<script>{theme.TOUR_JS}</script>")
+)
