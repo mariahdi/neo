@@ -12,19 +12,14 @@ With no NEO_* credentials set it runs in demo mode (sample data). Set the
 Jira / GitHub / Anthropic keys to go live.
 
 When deployed to a public URL, set DASHBOARD_USER and DASHBOARD_PASS to put a
-password prompt in front of the whole app (see docs/DEPLOY.md). Leaving them
-unset — the local/demo default — means no prompt.
+login screen in front of the whole app (see dashboard/auth.py and
+docs/DEPLOY.md). Leaving them unset — the local/demo default — means no login.
 """
 from __future__ import annotations
 
-import base64
-import os
-import secrets
-
 from fastapi import BackgroundTasks, FastAPI
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
-from starlette.middleware.base import BaseHTTPMiddleware
 
 from neo.config import Config
 from reviewer.actions_api import approve as do_approve
@@ -34,7 +29,7 @@ from reviewer.dashboard_api import get_dashboard
 from reviewer.review_api import DEMO_MODE as REVIEW_DEMO
 from reviewer.review_api import _fetch_draft_from_github, get_review_queue
 
-from . import chat, theme
+from . import auth, chat, theme
 from .about import router as about_router
 from .goals import router as goals_router
 from .stocks import router as stocks_router
@@ -42,39 +37,11 @@ from .wins import router as wins_router
 
 app = FastAPI(title="Neo", version="1.0.0")
 
-
-# ── Login gate ────────────────────────────────────────────────────────────────
-# A single shared username/password (HTTP Basic), enough to keep the public
-# internet out of a one-reviewer control panel. Only enforced when both env
-# vars are set, so local and demo runs stay prompt-free; on the host you set
-# them and every request must authenticate.
-_AUTH_USER = os.environ.get("DASHBOARD_USER")
-_AUTH_PASS = os.environ.get("DASHBOARD_PASS")
-_AUTH_ON = bool(_AUTH_USER and _AUTH_PASS)
-
-
-class BasicAuthMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        if not _AUTH_ON:
-            return await call_next(request)
-        header = request.headers.get("Authorization", "")
-        if header.startswith("Basic "):
-            try:
-                user, _, pw = base64.b64decode(header[6:]).decode().partition(":")
-                # compare_digest on both fields — constant-time, no early exit.
-                if (secrets.compare_digest(user, _AUTH_USER)
-                        and secrets.compare_digest(pw, _AUTH_PASS)):
-                    return await call_next(request)
-            except Exception:
-                pass  # malformed header -> fall through to a 401 challenge
-        return Response(
-            "Authentication required.",
-            status_code=401,
-            headers={"WWW-Authenticate": 'Basic realm="Neo"'},
-        )
-
-
-app.add_middleware(BasicAuthMiddleware)
+# Persistent session login (NEO-33): a /login screen + signed session cookie
+# instead of a re-prompting Basic-Auth popup. Enforced only when
+# DASHBOARD_USER/DASHBOARD_PASS are set; local/demo runs stay open.
+app.add_middleware(auth.SessionMiddleware)
+app.include_router(auth.router)
 
 # Module pages (About Me, Stocks, and more to come) live in their own routers.
 app.include_router(about_router)
@@ -267,6 +234,8 @@ PAGE = r"""<!DOCTYPE html>
   .topnav { display: flex; gap: 22px; margin-right: auto; margin-left: 10px; }
   .topnav a { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); text-decoration: none; padding: 6px 0; }
   .topnav a:hover, .topnav a.active { color: var(--gold); }
+  .logout { background: none; border: 1px solid var(--line); color: var(--muted); font-family: inherit; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 8px; padding: 5px 11px; }
+  .logout:hover { border-color: var(--gold-line); color: var(--gold); }
 
   .demo-banner {
     display: none;

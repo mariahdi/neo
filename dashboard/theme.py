@@ -28,8 +28,18 @@ def nav(active: str = "") -> str:
         '<a class="brand" href="/">NE<b>O</b></a>'
         f'<nav class="topnav">{links}</nav>'
         '<div class="who">Mariah &amp; Dad</div>'
+        f"{LOGOUT_BTN}"
         "</header>"
     )
+
+
+# Self-contained so it works on every page without a shared script: clears the
+# localStorage token, drops the session cookie server-side, returns to /login.
+LOGOUT_BTN = (
+    '<button class="logout" onclick="localStorage.removeItem(\'neo_session\');'
+    "fetch('/api/logout',{method:'POST'}).finally(function(){location.href='/login'})\">"
+    "Log out</button>"
+)
 
 
 # Just the nav pieces — injected into the legacy work-board page, which already
@@ -39,6 +49,8 @@ TOPNAV_CSS = """
   .topnav { display: flex; gap: 22px; margin-right: auto; margin-left: 10px; }
   .topnav a { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); text-decoration: none; padding: 6px 0; }
   .topnav a:hover, .topnav a.active { color: var(--gold); }
+  .logout { background: none; border: 1px solid var(--line); color: var(--muted); font-family: inherit; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 8px; padding: 5px 11px; }
+  .logout:hover { border-color: var(--gold-line); color: var(--gold); }
 """
 
 # Full shared stylesheet for new module pages.
