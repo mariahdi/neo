@@ -18,6 +18,7 @@ ACTIVE = profile.ACTIVE
 NAV_LINKS = [
     ("dashboard", "/", "Dashboard"),
     ("nominal", "/nominal", "Nominal"),
+    ("body", "/body", "Body"),
     ("stocks", "/stocks", "Stocks"),
     ("goals", "/goals", "Goals"),
     ("wins", "/wins", "Wins"),
