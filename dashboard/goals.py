@@ -273,7 +273,7 @@ function goalCard(g) {
   return `<div class="goal">
     <div class="goal-top"><span class="goal-title">${esc(g.title)}</span><span class="goal-pct">${pct(g)}%</span></div>
     <div class="bar"><span style="width:${pct(g)}%"></span></div>
-    <div class="goal-meta"><span>${esc(String(g.current))} / ${esc(String(g.target))} ${esc(g.unit)}</span>
+    <div class="goal-meta"><span><span class="mask" data-real="${esc(String(g.current))}">${esc(String(g.current))}</span> / <span class="mask" data-real="${esc(String(g.target))}">${esc(String(g.target))}</span> ${esc(g.unit)}</span>
       <span>${g.history && g.history.length ? esc(g.history[g.history.length-1].date) : ""}</span></div>
     ${sparkline(g.history)}
   </div>`;
@@ -286,6 +286,7 @@ function render() {
     <div class="cat"><h2>${esc(c)}</h2>
       <div class="goals-grid">${data.goals.filter(g => g.category === c).map(goalCard).join("")}</div>
     </div>`).join("");
+  if (window.neoMaskScan) window.neoMaskScan();  // re-mask numbers for the current audience view
 }
 async function load() { try { data = await (await fetch("/api/goals")).json(); } catch (_) {} render(); }
 
