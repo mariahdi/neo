@@ -84,3 +84,43 @@ his own Mac.
 - **It still works locally.** Without `DASHBOARD_USER` / `DASHBOARD_PASS` set
   (i.e. your own `neo.env` runs) there's no password prompt, so
   `./run-dashboard.sh` is unchanged.
+
+---
+
+## Optional: make edited data durable (persistent disk)
+
+By default the module data (About text/photo, Stocks, Goals, Wins) lives in
+JSON files inside the container, which Render **wipes on every redeploy**. To
+keep it, give the service a persistent disk. This needs a **paid instance**
+(disks aren't on the free plan) — the Starter plan (~$7/mo) also makes the app
+always-on, so cold starts go away too.
+
+1. Render → your **neo-dashboard** service → **Settings** → set **Instance
+   Type** to **Starter**.
+2. **Settings → Disks → Add Disk:** Name `neo-data`, Mount Path `/var/data`,
+   Size `1 GB`.
+3. **Environment** → add `NEO_DATA_DIR` = `/var/data` → Save (it redeploys).
+
+That's it — the app already reads `NEO_DATA_DIR` (code is ready), so edits now
+survive redeploys. The photo rides along in the same store. (A database is the
+alternative if you outgrow this; the disk is the simplest durable option.)
+
+## Optional: automate the daily stock briefings (cron)
+
+The Stocks page has a manual "Refresh" button; this runs it for every stock
+once a day automatically. The job (`dashboard/jobs/refresh_stocks.py`) calls
+the live app's API, so it needs no direct data access. Render **Cron Jobs are
+a paid feature**.
+
+1. Render → **New → Cron Job** → connect **`mariahdi/neo`**.
+2. **Build command:** `pip install -r requirements.txt`
+   **Command:** `python -m dashboard.jobs.refresh_stocks`
+   **Schedule:** `0 13 * * *` (daily 13:00 UTC — adjust to taste).
+3. **Environment** → add `NEO_APP_URL` (your `https://neo-dashboard-….onrender.com`),
+   plus `DASHBOARD_USER` and `DASHBOARD_PASS` (the same login).
+4. Create. It refreshes every stock's briefing each day; run it by hand from the
+   service page any time to test.
+
+> Heads-up: each run makes one Anthropic call per stock, so it bills a little
+> daily. Real-time prices still need a market-data feed — this gives a daily
+> AI-written briefing, not live quotes.
