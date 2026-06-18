@@ -54,6 +54,42 @@ def _quote(ticker: str) -> dict | None:
         print(f"[stocks] quote {ticker} failed: {e}")
         return None
 
+# Price history for the on-card sparkline. Finnhub's free tier doesn't include
+# candles, so we pull free daily history (no key) from Yahoo Finance's chart
+# endpoint and cache it for the day — the client only asks for a stock's history
+# when its card is expanded, so this is never called for the compact view.
+_history_cache: dict[str, tuple[str, list[float]]] = {}
+
+
+def _history(ticker: str) -> list[float]:
+    """Last ~30 daily closes for a US ticker, or [] if unavailable. Cached per day."""
+    ticker = (ticker or "").strip().upper()
+    if not ticker:
+        return []
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    cached = _history_cache.get(ticker)
+    if cached and cached[0] == today:
+        return cached[1]
+    closes: list[float] = []
+    try:
+        r = requests.get(
+            f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}",
+            params={"range": "1mo", "interval": "1d"},
+            headers={"User-Agent": "Mozilla/5.0"},  # Yahoo blocks bare clients
+            timeout=15,
+        )
+        r.raise_for_status()
+        result = (r.json().get("chart") or {}).get("result") or []
+        if result:
+            raw = result[0]["indicators"]["quote"][0].get("close") or []
+            closes = [round(float(x), 2) for x in raw if x is not None and float(x) > 0][-30:]
+    except Exception as e:
+        print(f"[stocks] history {ticker} failed: {e}")
+        closes = []
+    _history_cache[ticker] = (today, closes)
+    return closes
+
+
 # Seed watchlist (mock until edited).
 DEFAULT = {"sectors": []}
 
@@ -130,6 +166,12 @@ async def get_quotes(symbols: str = "") -> JSONResponse:
         if q:
             out[t] = q
     return JSONResponse({"quotes": out, "live": bool(STOCK_API_KEY)})
+
+
+@router.get("/api/stocks/history")
+async def get_history(symbol: str = "") -> JSONResponse:
+    """Daily close history for one ticker's sparkline (lazy-loaded on expand)."""
+    return JSONResponse({"points": _history(symbol)})
 
 
 class StocksIn(BaseModel):
@@ -222,6 +264,12 @@ _BODY = r"""
   .stock-price .chg { font-size: 12px; margin-left: 7px; font-weight: 600; }
   .stock-price .chg.up { color: #80D4A0; } .stock-price .chg.down { color: #F08080; }
   .stock-price .px-none { font-size: 10.5px; color: var(--muted); }
+  /* 30-day sparkline — lazy-loaded only when a card is expanded */
+  .spark { display: none; margin: 11px 0 0; }
+  .stock.open .spark { display: block; }
+  .spark-cap { font-size: 8.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+  .spark-svg { width: 100%; height: 40px; display: block; }
+  .spark-msg { font-size: 11px; color: var(--muted); font-style: italic; }
   /* Briefing text is retractable — collapsed by default to keep the page compact */
   .stock-update { font-size: 13px; line-height: 1.65; color: #cdd5e8; margin: 11px 0 0; white-space: pre-wrap; display: none; }
   .stock.open .stock-update { display: block; }
@@ -302,6 +350,7 @@ function stockCard(sec, st) {
       <span class="stock-ticker">${esc(st.ticker || "")}</span>
     </div>
     ${px}
+    ${tkr ? `<div class="spark" data-ticker="${esc(tkr)}"></div>` : ""}
     ${body}
     <div class="stock-foot">
       ${stamp}
@@ -327,17 +376,51 @@ function render() {
     const key = el.dataset.toggle;
     const card = el.closest(".stock");
     if (openStocks.has(key)) { openStocks.delete(key); card.classList.remove("open"); }
-    else { openStocks.add(key); card.classList.add("open"); }
+    else { openStocks.add(key); card.classList.add("open"); loadSpark(card); }
   }));
   // Expand all / collapse all per sector.
   v.querySelectorAll(".expand-all").forEach(btn => btn.addEventListener("click", () => {
     const cards = [...btn.closest(".sector").querySelectorAll(".stock")];
     const anyClosed = cards.some(c => !c.classList.contains("open"));
-    cards.forEach(c => { if (anyClosed) { c.classList.add("open"); openStocks.add(c.dataset.key); }
+    cards.forEach(c => { if (anyClosed) { c.classList.add("open"); openStocks.add(c.dataset.key); loadSpark(c); }
                          else { c.classList.remove("open"); openStocks.delete(c.dataset.key); } });
     btn.textContent = anyClosed ? "Collapse all" : "Expand all";
   }));
+  v.querySelectorAll(".stock.open").forEach(loadSpark);  // re-draw charts for cards left open
   loadQuotes();
+}
+
+// 30-day sparkline — fetched only when a card is open, cached per ticker so a
+// re-render (or re-expand) is instant.
+const sparkData = {};
+async function loadSpark(card) {
+  const el = card.querySelector(".spark");
+  if (!el || el.dataset.done) return;
+  const tkr = el.dataset.ticker; if (!tkr) return;
+  el.dataset.done = "1";
+  if (sparkData[tkr]) { el.innerHTML = renderSpark(sparkData[tkr]); return; }
+  el.innerHTML = '<span class="spark-msg">loading chart…</span>';
+  try {
+    const res = await (await fetch("/api/stocks/history?symbol=" + encodeURIComponent(tkr))).json();
+    sparkData[tkr] = res.points || [];
+    el.innerHTML = renderSpark(sparkData[tkr]);
+  } catch (_) { el.innerHTML = '<span class="spark-msg">chart unavailable</span>'; el.dataset.done = ""; }
+}
+
+function renderSpark(pts) {
+  if (!pts || pts.length < 2) return '<span class="spark-msg">no chart data</span>';
+  const w = 240, h = 40, pad = 3;
+  const min = Math.min(...pts), max = Math.max(...pts), range = (max - min) || 1;
+  const stepX = (w - pad * 2) / (pts.length - 1);
+  const coords = pts.map((p, i) => `${(pad + i * stepX).toFixed(1)},${(pad + (h - pad * 2) * (1 - (p - min) / range)).toFixed(1)}`);
+  const up = pts[pts.length - 1] >= pts[0];
+  const color = up ? "#80D4A0" : "#F08080";
+  const last = coords[coords.length - 1].split(",");
+  return `<div class="spark-cap">30-day · close</div>
+    <svg class="spark-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+      <polyline points="${coords.join(" ")}" fill="none" stroke="${color}" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+      <circle cx="${last[0]}" cy="${last[1]}" r="2.5" fill="${color}"/>
+    </svg>`;
 }
 
 let priceState = "nokey", pricesAt = "";
