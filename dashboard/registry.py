@@ -44,6 +44,9 @@ MODULES = [
     {"key": "wellness", "icon": "🌸", "name": "Wellness", "path": "/wellness",
      "description": "Daily non-negotiables, routine, and life rules.",
      "version": "1.0", "released": "2026-06-17", "requires": []},
+    {"key": "career", "icon": "💼", "name": "Career", "path": "/career",
+     "description": "Job search: applications, prep notes, and a to-do checklist.",
+     "version": "1.0", "released": "2026-06-18", "requires": []},
 ]
 _BY_KEY = {m["key"]: m for m in MODULES}
 ALL_KEYS = [m["key"] for m in MODULES]
