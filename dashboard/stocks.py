@@ -305,7 +305,7 @@ function stockCard(sec, st) {
     ${body}
     <div class="stock-foot">
       ${stamp}
-      <button class="btn btn-sm refresh" data-sec="${esc(sec.id)}" data-name="${esc(st.name)}" data-ticker="${esc(st.ticker||"")}">↻ Refresh</button>
+      <button class="btn btn-sm refresh icon" title="Refresh briefing" data-sec="${esc(sec.id)}" data-name="${esc(st.name)}" data-ticker="${esc(st.ticker||"")}">↻</button>
     </div>
   </div>`;
 }
@@ -363,7 +363,9 @@ async function loadQuotes() {
     const q = quotes[el.dataset.px];
     if (q) {
       const up = q.change >= 0;
-      el.innerHTML = `<span class="px">$${q.price.toLocaleString()}</span> <span class="chg ${up ? "up" : "down"}">${up ? "▲ +" : "▼ "}${q.pct}%</span>`;
+      const dol = (up ? "+" : "−") + "$" + Math.abs(q.change).toFixed(2);
+      const pct = (up ? "+" : "−") + Math.abs(q.pct).toFixed(2) + "%";
+      el.innerHTML = `<span class="px">$${q.price.toLocaleString()}</span> <span class="chg ${up ? "up" : "down"}">${up ? "▲" : "▼"} ${dol} · ${pct}</span>`;
     } else {
       el.innerHTML = priceState === "live" ? '<span class="px-none">— no live price</span>' : '<span class="px-none">add a market-data key for live prices</span>';
     }
@@ -379,7 +381,7 @@ async function load() {
 
 async function onRefresh(e) {
   const b = e.currentTarget;
-  b.disabled = true; b.innerHTML = '<span class="spin"></span> Briefing…';
+  b.disabled = true; b.innerHTML = '<span class="spin"></span>';
   try {
     const r = await fetch("/api/stocks/refresh", {
       method: "POST", headers: {"Content-Type":"application/json"},
@@ -392,8 +394,8 @@ async function onRefresh(e) {
       const st = sec && sec.stocks.find(x => x.name === b.dataset.name && (x.ticker||"") === b.dataset.ticker);
       if (st) { st.update = out.update; st.updated_at = out.updated_at; openStocks.add(skey(sec, st)); }  // show the fresh briefing
       render();
-    } else { alert(out.message || "Failed."); b.disabled = false; b.textContent = "↻ Refresh"; }
-  } catch (_) { b.disabled = false; b.textContent = "↻ Refresh"; }
+    } else { alert(out.message || "Failed."); b.disabled = false; b.textContent = "↻"; }
+  } catch (_) { b.disabled = false; b.textContent = "↻"; }
 }
 
 // ── Manage mode (add/swap/remove sectors + stocks) ──
