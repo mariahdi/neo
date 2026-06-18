@@ -47,6 +47,7 @@ async def save_career(body: dict) -> JSONResponse:
     apps = [{
         "id": (a.get("id") or _id()),
         "company": (a.get("company") or "").strip(),
+        "stage": (a.get("stage") or "Interested").strip(),
         "status": (a.get("status") or "").strip(),
         "note": (a.get("note") or "").strip(),
     } for a in body.get("applications", []) if (a.get("company") or "").strip()]
@@ -80,10 +81,20 @@ _BODY = r"""
   .ed:hover { border-color: var(--line-soft); }
   .ed:focus { outline: none; border-color: var(--gold-line); background: var(--field); }
   textarea.ed { resize: vertical; line-height: 1.6; }
-  .app { background: var(--panel); border: 1px solid var(--line-soft); border-left: 3px solid var(--gold); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+  .app { background: var(--panel); border: 1px solid var(--line-soft); border-left: 3px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+  .app[data-stage="Interested"]      { border-left-color: #8794b3; }
+  .app[data-stage="Applied"]         { border-left-color: #6b8cce; }
+  .app[data-stage="Referral"]        { border-left-color: #b07cd8; }
+  .app[data-stage="Recruiter call"]  { border-left-color: var(--gold); }
+  .app[data-stage="Hiring manager"]  { border-left-color: #E8A87C; }
+  .app[data-stage="Onsite"]          { border-left-color: #5bc0be; }
+  .app[data-stage="Offer"]           { border-left-color: #80D4A0; }
+  .app[data-stage="On hold"]         { border-left-color: #6b7280; }
+  .app[data-stage="Rejected"]        { border-left-color: #F08080; }
   .app-top { display: flex; align-items: center; gap: 8px; }
   .app-top .company { font-size: 15px; font-weight: 600; flex: 1; }
-  .app-top .status { flex: 0 0 230px; color: var(--gold); font-size: 12px; }
+  .ed.stage { flex: 0 0 150px; color: var(--gold); cursor: pointer; }
+  .app .status { color: var(--muted); font-size: 12px; }
   .app .note { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
   .todo { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
   .todo .box { width: 18px; height: 18px; border-radius: 6px; border: 2px solid var(--line); flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; }
@@ -132,15 +143,18 @@ const $ = (s) => document.querySelector(s);
 const esc = (s) => (s == null ? "" : String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])));
 let data = { applications: [], todos: [], notes: [] };
 const find = (list, id) => data[list].find(x => x.id === id);
+const STAGES = ["Interested", "Applied", "Referral", "Recruiter call", "Hiring manager", "Onsite", "Offer", "On hold", "Rejected"];
+const stageOpts = (sel) => STAGES.map(s => `<option ${s === sel ? "selected" : ""}>${s}</option>`).join("");
 
 function render() {
   // Applications
-  $("#apps").innerHTML = data.applications.length ? data.applications.map(a => `<div class="app">
+  $("#apps").innerHTML = data.applications.length ? data.applications.map(a => `<div class="app" data-stage="${esc(a.stage || "Interested")}">
     <div class="app-top">
       <input class="ed company" data-list="applications" data-f="company" data-id="${esc(a.id)}" value="${esc(a.company)}" placeholder="Company">
-      <input class="ed status" data-list="applications" data-f="status" data-id="${esc(a.id)}" value="${esc(a.status)}" placeholder="Status">
+      <select class="ed stage" data-list="applications" data-f="stage" data-id="${esc(a.id)}">${stageOpts(a.stage || "Interested")}</select>
       <button class="x" data-rm="applications" data-id="${esc(a.id)}">✕</button>
     </div>
+    <input class="ed status" data-list="applications" data-f="status" data-id="${esc(a.id)}" value="${esc(a.status)}" placeholder="Detail — e.g. Recruiter call Tue Jun 24, 4PM">
     <textarea class="ed note" data-list="applications" data-f="note" data-id="${esc(a.id)}" rows="2" placeholder="Recruiter, contact, next step…">${esc(a.note)}</textarea>
   </div>`).join("") : '<div class="empty">No applications yet — add one below.</div>';
 
@@ -163,7 +177,7 @@ function render() {
   // Inline field edits — persist on blur, no re-render (stay in flow)
   document.querySelectorAll("[data-f]").forEach(el => el.addEventListener("change", () => {
     const item = find(el.dataset.list, el.dataset.id); if (!item) return;
-    item[el.dataset.f] = el.value; persist(false);
+    item[el.dataset.f] = el.value; persist(el.dataset.f === "stage");  // stage recolors the card
   }));
   // To-do toggle
   document.querySelectorAll("[data-toggle]").forEach(el => el.addEventListener("click", () => {
@@ -184,7 +198,7 @@ const save = () => persist(true);
 
 function addApp() {
   const company = $("#a-company").value.trim(); if (!company) return;
-  data.applications.push({ id: rid(), company, status: $("#a-status").value.trim(), note: "" });
+  data.applications.push({ id: rid(), company, stage: "Interested", status: $("#a-status").value.trim(), note: "" });
   $("#a-company").value = ""; $("#a-status").value = ""; save();
 }
 function addTodo() {

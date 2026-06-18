@@ -208,18 +208,23 @@ _BODY = r"""
   .sector { margin-bottom: 26px; }
   .sector-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
   .sector-head h2 { font-size: 22px; letter-spacing: 0.05em; }
+  .sector-head .expand-all { margin-left: auto; }
   .sector-head .count { font-size: 11px; font-weight: 700; color: #1a1305; background: var(--gold); border-radius: 20px; padding: 1px 9px; }
-  .stocks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
-  .stock { background: var(--panel); border: 1px solid var(--line-soft); border-radius: 12px; padding: 16px; }
-  .stock-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-  .stock-name { font-size: 15px; font-weight: 700; }
-  .stock-ticker { font-size: 11px; color: var(--gold); font-weight: 700; letter-spacing: 0.06em; }
-  .stock-price { margin: 9px 0 2px; min-height: 18px; }
-  .stock-price .px { font-size: 19px; font-weight: 700; }
+  .stocks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(236px, 1fr)); gap: 12px; align-items: start; }
+  .stock { background: var(--panel); border: 1px solid var(--line-soft); border-radius: 12px; padding: 13px 14px; }
+  .stock-top { display: flex; align-items: baseline; gap: 8px; cursor: pointer; }
+  .stock-chev { color: var(--muted); font-size: 10px; transition: transform 0.15s; margin-right: 1px; align-self: center; }
+  .stock.open .stock-chev { transform: rotate(90deg); }
+  .stock-name { font-size: 14.5px; font-weight: 700; }
+  .stock-ticker { font-size: 11px; color: var(--gold); font-weight: 700; letter-spacing: 0.06em; margin-left: auto; }
+  .stock-price { margin: 7px 0 0; min-height: 16px; }
+  .stock-price .px { font-size: 18px; font-weight: 700; }
   .stock-price .chg { font-size: 12px; margin-left: 7px; font-weight: 600; }
   .stock-price .chg.up { color: #80D4A0; } .stock-price .chg.down { color: #F08080; }
   .stock-price .px-none { font-size: 10.5px; color: var(--muted); }
-  .stock-update { font-size: 13px; line-height: 1.65; color: #cdd5e8; margin: 12px 0; white-space: pre-wrap; }
+  /* Briefing text is retractable — collapsed by default to keep the page compact */
+  .stock-update { font-size: 13px; line-height: 1.65; color: #cdd5e8; margin: 11px 0 0; white-space: pre-wrap; display: none; }
+  .stock.open .stock-update { display: block; }
   .stock-update.empty { color: #56638a; font-style: italic; }
   .stock-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .stamp { font-size: 11px; color: var(--muted); }
@@ -277,6 +282,9 @@ function renderNote() {
   $("#note").innerHTML = msg[priceState] || msg.nokey;
 }
 
+const skey = (sec, st) => `${sec.id}|${st.name}|${st.ticker || ""}`;
+let openStocks = new Set();
+
 function stockCard(sec, st) {
   const upd = (st.update || "").trim();
   const body = upd
@@ -285,8 +293,11 @@ function stockCard(sec, st) {
   const stamp = st.updated_at ? `<span class="stamp">Updated ${esc(fmtWhen(st.updated_at))}</span>` : '<span></span>';
   const tkr = (st.ticker || "").trim().toUpperCase();
   const px = tkr ? `<div class="stock-price" data-px="${esc(tkr)}"></div>` : "";
-  return `<div class="stock">
-    <div class="stock-top">
+  const key = skey(sec, st);
+  const open = openStocks.has(key) ? " open" : "";
+  return `<div class="stock${open}" data-key="${esc(key)}">
+    <div class="stock-top" data-toggle="${esc(key)}">
+      <span class="stock-chev">▶</span>
       <span class="stock-name">${esc(st.name)}</span>
       <span class="stock-ticker">${esc(st.ticker || "")}</span>
     </div>
@@ -304,12 +315,28 @@ function render() {
   const v = $("#view");
   v.innerHTML = data.sectors.map(sec => `
     <div class="sector">
-      <div class="sector-head"><h2>${esc(sec.name)}</h2><span class="count">${sec.stocks.length}</span><span class="preview-tag">AI preview</span></div>
+      <div class="sector-head"><h2>${esc(sec.name)}</h2><span class="count">${sec.stocks.length}</span><span class="preview-tag">AI preview</span>
+        <button class="btn btn-sm expand-all" type="button">Expand all</button></div>
       ${sec.stocks.length
         ? `<div class="stocks-grid">${sec.stocks.map(st => stockCard(sec, st)).join("")}</div>`
         : '<div class="sector-empty">No stocks in this sector yet — use Manage to add one.</div>'}
     </div>`).join("");
   v.querySelectorAll(".refresh").forEach(b => b.addEventListener("click", onRefresh));
+  // Click a card header to retract / expand its briefing.
+  v.querySelectorAll("[data-toggle]").forEach(el => el.addEventListener("click", () => {
+    const key = el.dataset.toggle;
+    const card = el.closest(".stock");
+    if (openStocks.has(key)) { openStocks.delete(key); card.classList.remove("open"); }
+    else { openStocks.add(key); card.classList.add("open"); }
+  }));
+  // Expand all / collapse all per sector.
+  v.querySelectorAll(".expand-all").forEach(btn => btn.addEventListener("click", () => {
+    const cards = [...btn.closest(".sector").querySelectorAll(".stock")];
+    const anyClosed = cards.some(c => !c.classList.contains("open"));
+    cards.forEach(c => { if (anyClosed) { c.classList.add("open"); openStocks.add(c.dataset.key); }
+                         else { c.classList.remove("open"); openStocks.delete(c.dataset.key); } });
+    btn.textContent = anyClosed ? "Collapse all" : "Expand all";
+  }));
   loadQuotes();
 }
 
@@ -363,7 +390,7 @@ async function onRefresh(e) {
       demoMode = out.demo;
       const sec = data.sectors.find(s => s.id === b.dataset.sec);
       const st = sec && sec.stocks.find(x => x.name === b.dataset.name && (x.ticker||"") === b.dataset.ticker);
-      if (st) { st.update = out.update; st.updated_at = out.updated_at; }
+      if (st) { st.update = out.update; st.updated_at = out.updated_at; openStocks.add(skey(sec, st)); }  // show the fresh briefing
       render();
     } else { alert(out.message || "Failed."); b.disabled = false; b.textContent = "↻ Refresh"; }
   } catch (_) { b.disabled = false; b.textContent = "↻ Refresh"; }
