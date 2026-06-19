@@ -4,7 +4,8 @@
 > want; Neo routes it, drafts it with AI, gets it reviewed by a human, and
 > reports back for your sign-off.
 
-**Status:** working MVP · **Proof of concept:** proposals + USAFA modules
+**Status:** working app · proposals + USAFA web-dev on the live loop, plus a
+suite of personal modules · runs as multiple themed instances via profiles (no fork)
 
 The full write-up is in [`docs/PLAN.md`](docs/PLAN.md). A screen-shareable
 walkthrough lives in [`docs/plan-site/`](docs/plan-site/) (open `index.html`).
@@ -19,9 +20,25 @@ profiles (own theme, login, data, modules) — no fork. See [`docs/ARIA.md`](doc
 
 ## The dashboard
 
-One page does the whole job: a chat bar (type or speak a request), a live
-board (To Do → In Progress → In Review → Done), In Review cards with the draft
-and **Approve / Request Changes / Re-prompt** inline, and module widgets.
+The everyday surface is a personalized web app (FastAPI, server-rendered) that
+one codebase serves as many **instances** via profiles — each with its own
+theme, identity, login, data, and module set. No fork.
+
+A chat bar (**Ask Neo**, type or speak) routes a request by intent — log a win,
+update a goal, or open a ticket and draft it on the live loop.
+
+**Work surfaces** — the Jira-driven side, split by type so each has its own home:
+
+- **USAFA** — a request bar + a USAFA-only board for Air Force Academy web-dev
+  tasks, with its own sign-off queue.
+- **Proposals** — the proposal-drafting board plus the **Approve / Request
+  Changes / Re-prompt** review queue.
+- **Dev** — the app's own build / maintenance tickets.
+
+**Personal modules** — each ships blank, edits inline, and persists to the
+store: About, Stocks (live prices + AI briefings + 30-day sparklines), Goals,
+Wins, Nominal (budget), Body, Wealth, Trips, Wellness, Career. New modules show
+up in an in-app catalog — the owner instance auto-gets them; members opt in.
 
 ```bash
 pip3 install -r requirements.txt        # one-time
@@ -29,8 +46,11 @@ source neo.env && ./run-dashboard.sh    # → http://127.0.0.1:8000
 ```
 
 With no `NEO_*` keys set it runs in **demo mode** (sample data); set the Jira /
-GitHub / Anthropic keys to go live. The dashboard reuses the same loop the CLI
-runs — see "Try the loop" and "Going live" below.
+GitHub / Anthropic keys to go live. Data persists to JSON files by default, or
+set `DATABASE_URL` (Postgres) for storage that survives redeploys, with a local
+file cache as a fallback. The dashboard reuses the same loop the CLI runs — see
+"Try the loop" and "Going live" below, and [`docs/ARIA.md`](docs/ARIA.md) for
+profiles + deployment.
 
 ## The shape
 
@@ -46,9 +66,18 @@ neo/
 ├── modules/
 │   ├── proposals/       # the proof-of-concept module
 │   └── usafa/           # Air Force Academy web-dev module
-├── dashboard/           # the unified web app (chat + board + review)
-│   ├── main.py          # the single FastAPI app and page
-│   └── chat.py          # chat bar -> ticket -> draft (onto the live loop)
+├── dashboard/           # the personalized web app (work surfaces + modules)
+│   ├── main.py          # FastAPI app: the Proposals page + home routing
+│   ├── work.py          # USAFA + Dev surfaces (filtered boards, sign-off)
+│   ├── chat.py          # "Ask Neo" — intent routing -> ticket -> draft
+│   ├── profile.py       # active instance profile (theme/identity/nav/home)
+│   ├── profiles/        # neo.json, aria.json — per-instance config
+│   ├── registry.py      # module catalog (owner auto-enables; members opt in)
+│   ├── store.py         # key/value store: JSON files or Postgres + cache
+│   ├── auth.py          # session login (when DASHBOARD_USER/PASS set)
+│   ├── theme.py         # shared nav + page shell, themed per profile
+│   └── about.py · stocks.py · goals.py · wins.py · nominal.py · body.py
+│       · wealth.py · trips.py · wellness.py · career.py   # the modules
 ├── reviewer/            # backend read/write APIs the dashboard reuses
 │   ├── dashboard_api.py # the board (read) + create a request
 │   ├── review_api.py    # In Review proposals + drafts (read)
