@@ -221,6 +221,33 @@ async def save_photos(body: dict) -> JSONResponse:
     return JSONResponse({**d, "featured_id": _featured_id(d)})
 
 
+@router.post("/api/daily-bread/prayers")
+async def save_prayers(body: dict) -> JSONResponse:
+    """Replace the prayer list. Empty entries are dropped; ids are preserved (or
+    minted). `answered_at` is stamped the moment an entry first flips answered,
+    so the answered section reads like a record to look back on."""
+    d = _data()
+    prev = {p["id"]: p for p in d["prayers"]}
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    out = []
+    for p in body.get("prayers", []):
+        text = (p.get("text") or "").strip()
+        if not text:
+            continue
+        pid = p.get("id") or _id()
+        answered = bool(p.get("answered"))
+        was = prev.get(pid, {})
+        answered_at = was.get("answered_at")
+        if answered and not answered_at:
+            answered_at = now           # first time marked answered
+        elif not answered:
+            answered_at = None          # un-answered → clear the stamp
+        out.append({"id": pid, "text": text, "answered": answered, "answered_at": answered_at})
+    d["prayers"] = out
+    store.save("dailybread", d)
+    return JSONResponse({**d, "featured_id": _featured_id(d)})
+
+
 # ── Page ──────────────────────────────────────────────────────────────────────
 @router.get("/daily-bread", response_class=HTMLResponse)
 async def daily_bread_page() -> HTMLResponse:
@@ -296,6 +323,20 @@ _BODY = r"""
   .ptools .pin.on { background: var(--gold); color: var(--on-gold); }
   .ptools .rm:hover { background: #F08080; color: #1a1305; }
   .wall-empty { color: #56638a; font-style: italic; font-size: 13px; padding: 18px 0; text-align: center; border: 1px dashed var(--line-soft); border-radius: 12px; }
+
+  /* Prayer list */
+  .pray { margin-top: 34px; }
+  .pray .addrow { display: flex; gap: 8px; margin: 0 0 16px; }
+  .pray .addrow input { flex: 1; }
+  .pray .sub-label { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin: 18px 0 10px; }
+  .prayer { display: flex; align-items: center; gap: 11px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line-soft); border-left: 3px solid var(--gold-line); border-radius: 11px; margin-bottom: 8px; }
+  .prayer .box { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+  .prayer.answered { border-left-color: #80D4A0; }
+  .prayer.answered .box { background: #80D4A0; border-color: #80D4A0; color: var(--bg); cursor: pointer; }
+  .prayer .ptext { flex: 1; font-size: 13.5px; }
+  .prayer.answered .ptext { color: var(--muted); }
+  .prayer .pwhen { font-size: 11px; color: #80D4A0; white-space: nowrap; }
+  .pray-empty { color: #56638a; font-style: italic; font-size: 13px; padding: 4px 0; }
 </style>
 
 <main class="db">
@@ -343,6 +384,20 @@ _BODY = r"""
     </div>
     <div class="pgrid" id="pgrid"></div>
     <div class="wall-empty" id="wall-empty">No photos yet — add the faces you love.</div>
+  </section>
+
+  <!-- Prayer list -->
+  <section class="pray">
+    <div class="section-label">Prayer List</div>
+    <div class="addrow">
+      <input id="pr-in" type="text" placeholder="A name or intention — who are you lifting up?">
+      <button class="btn btn-gold btn-sm" id="pr-add">Add</button>
+    </div>
+    <div id="pr-active"></div>
+    <div id="pr-answered-wrap" style="display:none;">
+      <div class="sub-label">Answered &#128591;</div>
+      <div id="pr-answered"></div>
+    </div>
   </section>
 </main>
 
@@ -453,11 +508,65 @@ $("#photo-input").addEventListener("change", async (e) => {
   e.target.value = "";
 });
 
+// ── Prayer list ──
+function fmtWhen(iso) {
+  if (!iso) return "";
+  const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const p = String(iso).slice(0,10).split("-");
+  if (p.length < 3) return "";
+  return `${m[parseInt(p[1],10)-1]} ${parseInt(p[2],10)}, ${p[0]}`;
+}
+
+function prayerRow(p) {
+  return `<div class="prayer ${p.answered ? "answered" : ""}">
+    <div class="box" data-toggle="${esc(p.id)}" title="${p.answered ? "Move back to active" : "Mark answered"}">${p.answered ? "✓" : ""}</div>
+    <span class="ptext">${esc(p.text)}</span>
+    ${p.answered && p.answered_at ? `<span class="pwhen">answered ${esc(fmtWhen(p.answered_at))}</span>` : ""}
+  </div>`;
+}
+
+function renderPrayers() {
+  const list = db.prayers || [];
+  const active = list.filter(p => !p.answered);
+  const answered = list.filter(p => p.answered);
+  $("#pr-active").innerHTML = active.length
+    ? active.map(prayerRow).join("")
+    : '<div class="pray-empty">No one on the list yet — add a name above.</div>';
+  $("#pr-answered-wrap").style.display = answered.length ? "block" : "none";
+  $("#pr-answered").innerHTML = answered.map(prayerRow).join("");
+
+  document.querySelectorAll("[data-toggle]").forEach(el => el.addEventListener("click", () => {
+    const p = db.prayers.find(x => x.id === el.dataset.toggle);
+    if (p) { p.answered = !p.answered; savePrayers(); }
+  }));
+}
+
+async function savePrayers() {
+  const payload = { prayers: db.prayers.map(p => ({ id: p.id, text: p.text, answered: p.answered })) };
+  try {
+    const r = await fetch("/api/daily-bread/prayers", {
+      method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload),
+    });
+    db = await r.json();
+  } catch (_) {}
+  renderPrayers();
+}
+
+const rid = () => Math.random().toString(36).slice(2, 10);
+function addPrayer() {
+  const text = $("#pr-in").value.trim(); if (!text) return;
+  db.prayers.push({ id: rid(), text, answered: false });  // stable id: saves stay idempotent
+  $("#pr-in").value = ""; savePrayers();
+}
+$("#pr-add").addEventListener("click", addPrayer);
+$("#pr-in").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addPrayer(); } });
+
 (async () => {
   try { pack = await (await fetch("/api/daily-bread/scripture")).json(); } catch (_) {}
   if (pack.today) showVerse(pack.today, true);
   try { db = await (await fetch("/api/daily-bread")).json(); } catch (_) {}
   renderPhotos();
+  renderPrayers();
 })();
 </script>
 """
