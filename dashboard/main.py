@@ -30,6 +30,7 @@ from . import auth, chat, profile, registry, theme, work
 from .about import router as about_router
 from .body import router as body_router
 from .career import router as career_router
+from .dailybread import router as dailybread_router
 from .trips import router as trips_router
 from .wealth import router as wealth_router
 from .wellness import router as wellness_router
@@ -58,6 +59,7 @@ app.include_router(wealth_router)
 app.include_router(trips_router)
 app.include_router(wellness_router)
 app.include_router(career_router)
+app.include_router(dailybread_router)
 app.include_router(modules_router)
 # USAFA + Dev work surfaces (the Proposals board stays here in main.py).
 app.include_router(work.router)
