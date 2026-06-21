@@ -14,7 +14,8 @@
     "about",
     "stocks",
     "goals",
-    "wins"
+    "wins",
+    "dailybread"
   ],
   "tokens": {
     "bg": "#0a0e1a",
