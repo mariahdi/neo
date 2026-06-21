@@ -17,10 +17,12 @@ store (Postgres when DATABASE_URL is set) — see store.py.
 """
 from __future__ import annotations
 
+import base64
 import os
+import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter
+from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from . import store, theme
@@ -29,6 +31,8 @@ router = APIRouter()
 
 ANTHROPIC_KEY = os.environ.get("NEO_ANTHROPIC_API_KEY")
 ANTHROPIC_MODEL = os.environ.get("NEO_ANTHROPIC_MODEL", "claude-sonnet-4-6")
+MAX_PHOTO_BYTES = 5 * 1024 * 1024  # 5 MB cap — photos ride inline in the store as
+                                   # base64 data URLs, same as About Me (about.py).
 
 # ── Scripture pack ────────────────────────────────────────────────────────────
 # A two-week rotation, seeded in code so the page works day one with zero setup.
@@ -85,14 +89,34 @@ def _verse_of_day(now: datetime | None = None) -> dict:
     return VERSES[now.timetuple().tm_yday % len(VERSES)]
 
 
-DEFAULT = {"photos": [], "prayers": []}  # scripture is seeded in code, not stored
+# scripture is seeded in code; photos/prayers persist. `pinned` is a photo id
+# that overrides the daily featured rotation when set.
+DEFAULT = {"photos": [], "prayers": [], "pinned": None}
+
+
+def _id() -> str:
+    return uuid.uuid4().hex[:8]
 
 
 def _data() -> dict:
     d = store.load("dailybread", DEFAULT)
     for k in ("photos", "prayers"):
         d.setdefault(k, [])
+    d.setdefault("pinned", None)
     return d
+
+
+def _featured_id(d: dict, now: datetime | None = None) -> str | None:
+    """The photo featured today: the pinned one if set & present, else a daily
+    rotation by day-of-year (stable all day, advances at midnight)."""
+    photos = d.get("photos") or []
+    if not photos:
+        return None
+    pinned = d.get("pinned")
+    if pinned and any(p["id"] == pinned for p in photos):
+        return pinned
+    now = now or datetime.now(timezone.utc)
+    return photos[now.timetuple().tm_yday % len(photos)]["id"]
 
 
 # ── Scripture API ─────────────────────────────────────────────────────────────
@@ -149,6 +173,54 @@ async def verse_suggestion(body: dict) -> JSONResponse:
     return JSONResponse(_mock_suggestion((body.get("theme") or "").strip()))
 
 
+# ── Photos + prayers API ──────────────────────────────────────────────────────
+@router.get("/api/daily-bread")
+async def get_daily_bread() -> JSONResponse:
+    """Everything stored for the page plus the computed featured photo id."""
+    d = _data()
+    return JSONResponse({**d, "featured_id": _featured_id(d)})
+
+
+@router.post("/api/daily-bread/photo")
+async def upload_photo(photo: UploadFile = File(...), caption: str = Form("")) -> JSONResponse:
+    """Add one family photo. Stored inline as a base64 data URL (≤5 MB)."""
+    raw = await photo.read()
+    if not raw:
+        return JSONResponse({"ok": False, "message": "Empty file."}, status_code=400)
+    if len(raw) > MAX_PHOTO_BYTES:
+        return JSONResponse({"ok": False, "message": "Photo too large (max 5 MB)."}, status_code=400)
+    ctype = photo.content_type or "image/jpeg"
+    if not ctype.startswith("image/"):
+        return JSONResponse({"ok": False, "message": "Please choose an image file."}, status_code=400)
+    d = _data()
+    d["photos"].append({
+        "id": _id(),
+        "src": f"data:{ctype};base64," + base64.b64encode(raw).decode(),
+        "caption": (caption or "").strip(),
+    })
+    store.save("dailybread", d)
+    return JSONResponse({"ok": True, **d, "featured_id": _featured_id(d)})
+
+
+@router.post("/api/daily-bread/photos")
+async def save_photos(body: dict) -> JSONResponse:
+    """Update photo captions, the pinned photo, and the kept set — without
+    re-uploading image data. The client sends id+caption per photo it's keeping
+    (removal = leaving one out); image `src` is merged from what's stored."""
+    d = _data()
+    by_id = {p["id"]: p for p in d["photos"]}
+    kept = []
+    for p in body.get("photos", []):
+        existing = by_id.get(p.get("id"))
+        if existing:  # ignore unknown ids; src always comes from the store
+            kept.append({**existing, "caption": (p.get("caption") or "").strip()})
+    d["photos"] = kept
+    pinned = body.get("pinned")
+    d["pinned"] = pinned if any(p["id"] == pinned for p in kept) else None
+    store.save("dailybread", d)
+    return JSONResponse({**d, "featured_id": _featured_id(d)})
+
+
 # ── Page ──────────────────────────────────────────────────────────────────────
 @router.get("/daily-bread", response_class=HTMLResponse)
 async def daily_bread_page() -> HTMLResponse:
@@ -201,6 +273,29 @@ _BODY = r"""
   .vfd .out .vref { font-size: 12.5px; color: var(--gold); font-weight: 600; margin-top: 6px; }
   .vfd .out .vnote { font-size: 11.5px; color: var(--muted); margin-top: 8px; font-style: italic; }
   .vfd .out .stub-tag { display: inline-block; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 8px; padding: 1px 6px; margin-left: 6px; vertical-align: 2px; }
+
+  /* Family photo wall */
+  .wall-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 34px 0 12px; flex-wrap: wrap; }
+  .wall-head .section-label { margin: 0; }
+  .wall-head label.btn { display: inline-block; }
+  .wall-head input[type=file] { display: none; }
+  .featured { margin-bottom: 18px; }
+  .featured .frame { position: relative; width: 100%; max-height: 420px; aspect-ratio: 16 / 9; border-radius: 16px; overflow: hidden; border: 1px solid var(--gold-line); background: var(--field); }
+  .featured .frame img { width: 100%; height: 100%; object-fit: cover; }
+  .featured .badge { position: absolute; top: 12px; left: 12px; background: var(--gold); color: var(--on-gold); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; }
+  .featured .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 28px 16px 12px; background: linear-gradient(transparent, rgba(6,9,18,0.85)); color: #f0ead8; font-size: 14px; font-family: Georgia, serif; }
+  .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .pcard { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid var(--line-soft); background: var(--panel); }
+  .pcard.is-featured { border-color: var(--gold-line); }
+  .pcard .pimg { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
+  .pcard .pcap { width: 100%; box-sizing: border-box; background: transparent; border: none; border-top: 1px solid var(--line-soft); color: #cdd5e8; font-family: inherit; font-size: 12px; padding: 7px 9px; }
+  .pcard .pcap:focus { outline: none; background: var(--field); }
+  .pcard .ptools { position: absolute; top: 6px; right: 6px; display: flex; gap: 5px; opacity: 0; transition: opacity 0.12s ease; }
+  .pcard:hover .ptools { opacity: 1; }
+  .ptools button { width: 26px; height: 26px; border-radius: 7px; border: none; cursor: pointer; font-size: 12px; background: rgba(6,9,18,0.78); color: #e9ecf4; display: flex; align-items: center; justify-content: center; }
+  .ptools .pin.on { background: var(--gold); color: var(--on-gold); }
+  .ptools .rm:hover { background: #F08080; color: #1a1305; }
+  .wall-empty { color: #56638a; font-style: italic; font-size: 13px; padding: 18px 0; text-align: center; border: 1px dashed var(--line-soft); border-radius: 12px; }
 </style>
 
 <main class="db">
@@ -230,6 +325,24 @@ _BODY = r"""
       <div class="vref" id="vfd-ref"></div>
       <div class="vnote" id="vfd-note"></div>
     </div>
+  </section>
+
+  <!-- Family photo wall -->
+  <section>
+    <div class="wall-head">
+      <div class="section-label">Family</div>
+      <label class="btn btn-sm" for="photo-input">📷 Add photo</label>
+      <input type="file" id="photo-input" accept="image/*">
+    </div>
+    <div class="featured" id="featured" style="display:none;">
+      <div class="frame">
+        <span class="badge">Featured today</span>
+        <img id="featured-img" alt="Featured family photo">
+        <div class="cap" id="featured-cap" style="display:none;"></div>
+      </div>
+    </div>
+    <div class="pgrid" id="pgrid"></div>
+    <div class="wall-empty" id="wall-empty">No photos yet — add the faces you love.</div>
   </section>
 </main>
 
@@ -278,9 +391,73 @@ async function findVerse() {
 $("#vfd-go").addEventListener("click", findVerse);
 $("#vfd-in").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); findVerse(); } });
 
+// ── Family photo wall ──
+let db = { photos: [], prayers: [], pinned: null, featured_id: null };
+
+function renderPhotos() {
+  const photos = db.photos || [];
+  const empty = $("#wall-empty"), feat = $("#featured");
+  empty.style.display = photos.length ? "none" : "block";
+  // Featured banner
+  const fp = photos.find(p => p.id === db.featured_id);
+  if (fp) {
+    feat.style.display = "block";
+    $("#featured-img").src = fp.src;
+    const fc = $("#featured-cap");
+    if (fp.caption) { fc.textContent = fp.caption; fc.style.display = "block"; }
+    else { fc.style.display = "none"; }
+  } else { feat.style.display = "none"; }
+  // Grid
+  $("#pgrid").innerHTML = photos.map(p => `
+    <div class="pcard ${p.id === db.featured_id ? "is-featured" : ""}">
+      <img class="pimg" src="${p.src}" alt="${esc(p.caption) || "Family photo"}">
+      <div class="ptools">
+        <button class="pin ${p.id === db.pinned ? "on" : ""}" data-pin="${esc(p.id)}" title="${p.id === db.pinned ? "Unpin" : "Pin as featured"}">📌</button>
+        <button class="rm" data-rm="${esc(p.id)}" title="Remove">✕</button>
+      </div>
+      <input class="pcap" data-cap="${esc(p.id)}" value="${esc(p.caption)}" placeholder="Add a name or note…">
+    </div>`).join("");
+
+  $("#pgrid").querySelectorAll("[data-cap]").forEach(el => el.addEventListener("change", () => {
+    const p = db.photos.find(x => x.id === el.dataset.cap); if (p) { p.caption = el.value; savePhotos(); }
+  }));
+  $("#pgrid").querySelectorAll("[data-pin]").forEach(el => el.addEventListener("click", () => {
+    db.pinned = (db.pinned === el.dataset.pin) ? null : el.dataset.pin; savePhotos();
+  }));
+  $("#pgrid").querySelectorAll("[data-rm]").forEach(el => el.addEventListener("click", () => {
+    db.photos = db.photos.filter(x => x.id !== el.dataset.rm);
+    if (db.pinned === el.dataset.rm) db.pinned = null;
+    savePhotos();
+  }));
+}
+
+async function savePhotos() {
+  const payload = { photos: db.photos.map(p => ({ id: p.id, caption: p.caption })), pinned: db.pinned };
+  try {
+    const r = await fetch("/api/daily-bread/photos", {
+      method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload),
+    });
+    db = await r.json();
+  } catch (_) {}
+  renderPhotos();
+}
+
+$("#photo-input").addEventListener("change", async (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  const fd = new FormData(); fd.append("photo", file);
+  try {
+    const r = await fetch("/api/daily-bread/photo", { method: "POST", body: fd });
+    const out = await r.json();
+    if (out.ok) { db = out; renderPhotos(); } else { alert(out.message || "Upload failed."); }
+  } catch (_) { alert("Upload failed."); }
+  e.target.value = "";
+});
+
 (async () => {
   try { pack = await (await fetch("/api/daily-bread/scripture")).json(); } catch (_) {}
   if (pack.today) showVerse(pack.today, true);
+  try { db = await (await fetch("/api/daily-bread")).json(); } catch (_) {}
+  renderPhotos();
 })();
 </script>
 """
