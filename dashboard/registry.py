@@ -52,7 +52,7 @@ MODULES = [
      "version": "1.0", "released": "2026-06-18", "requires": []},
     {"key": "dailybread", "icon": "🕊️", "name": "Daily Bread", "path": "/daily-bread",
      "description": "A daily verse, a family photo wall, and a prayer list.",
-     "version": "1.0", "released": "2026-06-21", "requires": []},
+     "version": "1.0", "released": "2026-06-21", "requires": [], "hidden": True},
 ]
 _BY_KEY = {m["key"]: m for m in MODULES}
 ALL_KEYS = [m["key"] for m in MODULES]
@@ -72,9 +72,11 @@ def _state() -> dict:
 
 
 def enabled_keys() -> list[str]:
-    """Keys this instance shows, in registry order. Owner = everything."""
+    """Keys this instance shows, in registry order. Owner = everything except
+    `hidden` (opt-in-only) modules, unless the profile explicitly lists them."""
     if is_owner():
-        return list(ALL_KEYS)
+        explicit = set(profile.ACTIVE.get("modules", []))
+        return [k for k in ALL_KEYS if not _BY_KEY[k].get("hidden") or k in explicit]
     on = set(_state()["enabled"])
     return [k for k in ALL_KEYS if k in on]
 
@@ -103,8 +105,8 @@ def available_modules() -> list[dict]:
     present = integrations_present()
     out = []
     for m in MODULES:
-        if m["key"] in on:
-            continue
+        if m["key"] in on or m.get("hidden"):
+            continue  # hidden = opt-in only; never advertised in the catalog
         is_new = seen is None or m["released"] > seen
         unmet = [r for r in m.get("requires", []) if r not in present]
         out.append({**m, "isNew": is_new, "unmet": unmet})
