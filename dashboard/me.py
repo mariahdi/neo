@@ -59,6 +59,15 @@ async def toggle_module(body: ModIn) -> JSONResponse:
     return JSONResponse({"ok": True, "enabled": registry.enabled_keys()})
 
 
+@router.post("/api/me/reset-modules")
+async def reset_modules() -> JSONResponse:
+    """Reset the shown modules to this profile's default. Data is kept."""
+    if profile.ACTIVE.get("lock_modules") or registry.is_owner():
+        return JSONResponse({"ok": False, "error": "not allowed"}, status_code=403)
+    registry.reset_modules()
+    return JSONResponse({"ok": True, "enabled": registry.enabled_keys()})
+
+
 @router.get("/me", response_class=HTMLResponse)
 async def me_page() -> HTMLResponse:
     show_modules = "1" if (not profile.ACTIVE.get("lock_modules") and not registry.is_owner()) else ""
@@ -106,6 +115,10 @@ _BODY = r"""
     <h2>Your modules</h2>
     <p>Turn on what you'd like. Nothing's forced, and you can change it whenever.</p>
     <div id="mods"></div>
+    <div style="margin-top:16px; display:flex; align-items:center; gap:12px;">
+      <button class="btn btn-sm" id="reset-mods">Reset to default</button>
+      <span style="font-size:12px; color:var(--muted);">Restores the default set — your data is kept.</span>
+    </div>
   </div>
 </main>
 <script>
@@ -142,6 +155,12 @@ async function loadMods() {
     await fetch("/api/me/module", { method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ key: cb.dataset.key, on: cb.checked }) });
   }));
+  const rb = $("#reset-mods");
+  if (rb) rb.addEventListener("click", async () => {
+    if (!confirm("Reset which modules are shown back to the default? Your data is kept.")) return;
+    await fetch("/api/me/reset-modules", { method:"POST" });
+    loadMods();
+  });
 }
 loadMe(); loadMods();
 </script>

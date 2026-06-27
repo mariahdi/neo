@@ -136,6 +136,16 @@ def disable(key: str) -> None:
         store.save("modules", st)
 
 
+def reset_modules() -> None:
+    """Reset which modules are shown back to the profile default. Module DATA
+    (recipes, about, etc.) is untouched — this only rewrites the enabled set."""
+    if is_owner():
+        return
+    st = _state()
+    store.save("modules", {"enabled": list(profile.ACTIVE.get("modules", ALL_KEYS)),
+                           "seen": st.get("seen")})
+
+
 def mark_seen(when: str) -> None:
     if is_owner():
         return
