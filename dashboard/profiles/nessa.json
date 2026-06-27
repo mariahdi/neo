@@ -1,8 +1,8 @@
 {
   "key": "nessa",
-  "name": "Nessa",
-  "wordmark": "🦋 Ness<b>a</b>",
-  "who": "Nessa",
+  "name": "Nessie",
+  "wordmark": "🦋 Ness<b>ie</b>",
+  "who": "Nessie",
   "tagline": "your gentle little kitchen",
   "role": "member",
   "modules": [
@@ -19,9 +19,9 @@
     ["Anchored", "Relaxed", "Inwardly", "At-peace"],
     ["A", "Restful", "Inviting", "Aura"]
   ],
-  "about_heading": "About <b>Nessa</b>",
-  "about_roles": ["Nessa"],
-  "about_intro": "This little space is yours, Nessa. 🦋 Add the photos and words that make you smile — there's no right way to do it. Designed with you in mind.",
+  "about_heading": "About <b>Nessie</b>",
+  "about_roles": ["Nessie"],
+  "about_intro": "This little space is yours, Nessie. 🦋 Add the photos and words that make you smile — there's no right way to do it. Designed with you in mind.",
   "tokens": {
     "bg": "#e3ebf8",
     "bg-2": "#d9e3f4",
