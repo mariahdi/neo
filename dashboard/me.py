@@ -13,7 +13,7 @@ from fastapi import APIRouter
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
-from . import profile, registry, store, theme
+from . import profile, registry, store, theme, themes
 
 router = APIRouter()
 
@@ -68,6 +68,20 @@ async def reset_modules() -> JSONResponse:
     return JSONResponse({"ok": True, "enabled": registry.enabled_keys()})
 
 
+@router.get("/api/theme")
+async def get_theme() -> JSONResponse:
+    return JSONResponse({"current": themes.current(), "options": themes.options()})
+
+
+class ThemeIn(BaseModel):
+    name: str = ""
+
+
+@router.post("/api/theme")
+async def set_theme_api(body: ThemeIn) -> JSONResponse:
+    return JSONResponse({"ok": themes.set_theme(body.name), "current": themes.current()})
+
+
 @router.get("/me", response_class=HTMLResponse)
 async def me_page() -> HTMLResponse:
     show_modules = "1" if (not profile.ACTIVE.get("lock_modules") and not registry.is_owner()) else ""
@@ -95,6 +109,11 @@ _BODY = r"""
   .sw .sl::before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; top: 3px; background: var(--muted); border-radius: 50%; transition: .15s; }
   .sw input:checked + .sl { background: var(--gold-soft); border-color: var(--gold-line); }
   .sw input:checked + .sl::before { transform: translateX(18px); background: var(--gold); }
+  .theme-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .theme-sw { display: flex; align-items: center; gap: 9px; background: var(--field); border: 1px solid var(--line); border-radius: 12px; padding: 9px 13px 9px 9px; cursor: pointer; font-family: inherit; font-size: 13px; color: var(--text); transition: border-color .15s; }
+  .theme-sw:hover { border-color: var(--gold-line); }
+  .theme-sw.active { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+  .theme-dot { width: 26px; height: 26px; border-radius: 7px; border: 1px solid rgba(127,127,127,0.25); flex: none; }
 </style>
 <main class="me-wrap">
   <h1>You</h1>
@@ -109,6 +128,12 @@ _BODY = r"""
     <label for="age">Age (optional)</label>
     <input id="age" type="text" placeholder="">
     <div class="save-row"><button class="btn btn-gold" id="save">Save</button><span id="saved">Saved ✓</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Theme</h2>
+    <p>Pick the look that feels right today. It saves and follows you.</p>
+    <div id="themes" class="theme-grid"></div>
   </div>
 
   <div class="card" id="mods-card" style="display:none;">
@@ -162,6 +187,20 @@ async function loadMods() {
     loadMods();
   });
 }
-loadMe(); loadMods();
+async function loadThemes() {
+  const d = await (await fetch("/api/theme")).json();
+  const cur = d.current || "";
+  $("#themes").innerHTML = (d.options || []).map(o => `
+    <button class="theme-sw ${o.key===cur?'active':''}" data-key="${esc(o.key)}">
+      <span class="theme-dot" style="background:linear-gradient(135deg, ${esc(o.bg)} 58%, ${esc(o.accent)} 58%)"></span>
+      ${esc(o.label)}
+    </button>`).join("");
+  $("#themes").querySelectorAll(".theme-sw").forEach(b => b.addEventListener("click", async () => {
+    await fetch("/api/theme", { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ name: b.dataset.key }) });
+    location.reload();
+  }));
+}
+loadMe(); loadMods(); loadThemes();
 </script>
 """

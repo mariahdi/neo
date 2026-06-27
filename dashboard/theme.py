@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import os
 
-from . import profile, registry
+from . import profile, registry, themes
 
 ACTIVE = profile.ACTIVE
 
@@ -335,6 +335,8 @@ def pwa_head() -> str:
 
 def page(title: str, body: str, active: str = "") -> str:
     """Wrap a page `body` in the full shared HTML shell (nav + footer + tour)."""
+    ov = themes.override_css()  # per-user theme choice wins over the profile default
+    ov_tag = f"<style>{ov}</style>" if ov else ""
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -344,6 +346,7 @@ def page(title: str, body: str, active: str = "") -> str:
 {FONT_LINK}
 {pwa_head()}
 <style>{BASE_CSS}</style>
+{ov_tag}
 </head>
 <body>
 {nav(active)}
