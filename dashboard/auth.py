@@ -39,6 +39,17 @@ USER = os.environ.get("DASHBOARD_USER")
 PASS = os.environ.get("DASHBOARD_PASS")
 AUTH_ON = bool(USER and PASS)
 
+# Owner accounts are never sent through the billing gate (you shouldn't have to
+# subscribe to your own app). Set NEO_OWNER_EMAILS=a@x.com,b@y.com; the legacy
+# env user (if set) is always an owner.
+OWNER_EMAILS = {e.strip().lower() for e in (os.environ.get("NEO_OWNER_EMAILS") or "").split(",") if e.strip()}
+if USER:
+    OWNER_EMAILS.add(USER.strip().lower())
+
+
+def is_owner_email(email: str | None) -> bool:
+    return bool(email) and email.strip().lower() in OWNER_EMAILS
+
 COOKIE = "neo_session"
 TTL = 60 * 60 * 24 * 30  # 30 days
 # Signing key for session tokens. Priority:
@@ -193,8 +204,9 @@ class SessionMiddleware(BaseHTTPMiddleware):
         token = _token_from(request)
         if token and valid_token(token):
             # Logged in — now require an active subscription (except on the pages
-            # needed to get one). Webhook marks the user active; next request passes.
-            if path not in BILLING_EXEMPT:
+            # needed to get one, and except for owner accounts). Webhook marks the
+            # user active; next request passes.
+            if path not in BILLING_EXEMPT and not is_owner_email(user_from_token(token)):
                 from . import billing  # local import avoids an auth<->billing cycle
                 if not billing.is_subscribed(request):
                     if path.startswith("/api/"):
@@ -280,6 +292,27 @@ async def logout() -> JSONResponse:
     resp = JSONResponse({"ok": True})
     resp.delete_cookie(COOKIE, path="/")
     return resp
+
+
+class MigrateIn(BaseModel):
+    from_user: str = ""
+    to_user: str = ""
+
+
+@router.post("/api/admin/migrate-data")
+async def migrate_data(request: Request, body: MigrateIn) -> JSONResponse:
+    """Owner-only one-time data move between login identities."""
+    if not is_owner_email(current_user(request)):
+        return JSONResponse({"ok": False, "error": "owner only"}, status_code=403)
+    moved = store.migrate_user(body.from_user.strip(), body.to_user.strip())
+    return JSONResponse({"ok": True, "moved": moved, "count": len(moved)})
+
+
+@router.get("/admin", response_class=HTMLResponse)
+async def admin_page(request: Request):
+    if not is_owner_email(current_user(request)):
+        return RedirectResponse(url="/", status_code=302)
+    return HTMLResponse(theme.page("Admin", _ADMIN_BODY, active=""))
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -457,3 +490,34 @@ _SIGNUP_PAGE = (
     .replace("<!--LFONTS-->", theme.FONT_LINK)
     .replace("<!--LWORD-->", theme.ACTIVE["wordmark"])
 )
+
+
+_ADMIN_BODY = r"""
+<main style="max-width:520px;margin:20px auto;">
+  <h1 style="font-size:34px;">Admin</h1>
+  <p style="color:var(--muted);font-size:13px;margin:8px 0 20px;line-height:1.6;">
+    One-time data migration. Move a user's data (recipes, about, etc.) from one
+    login identity to another — e.g. your old env login to your account email.
+    Shared data (accounts, billing) is never touched, and it's safe to re-run.</p>
+  <div class="card">
+    <label style="display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 5px;">From (old identity)</label>
+    <input id="from" type="text" style="width:100%;margin-bottom:14px;" placeholder="your old DASHBOARD_USER value">
+    <label style="display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 5px;">To (new account email)</label>
+    <input id="to" type="text" style="width:100%;margin-bottom:16px;" placeholder="you@email.com">
+    <button class="btn btn-gold" id="go">Migrate data</button>
+    <div id="res" style="margin-top:14px;font-size:13px;color:var(--gold);line-height:1.5;"></div>
+  </div>
+</main>
+<script>
+const $=(s)=>document.querySelector(s);
+$("#go").addEventListener("click", async ()=>{
+  $("#go").disabled=true; $("#res").textContent="Migrating…";
+  try{
+    const out = await (await fetch("/api/admin/migrate-data",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({from_user:$("#from").value, to_user:$("#to").value})})).json();
+    $("#res").textContent = out.ok ? ("Moved "+out.count+" item(s): "+((out.moved||[]).join(", ")||"nothing new")) : ("Error: "+(out.error||"failed"));
+  }catch(_){ $("#res").textContent="Network error."; }
+  $("#go").disabled=false;
+});
+</script>
+"""

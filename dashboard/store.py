@@ -286,3 +286,27 @@ def health() -> dict:
         info["postgres_ok"] = False
         info["postgres_error"] = err[:300]
     return info
+
+
+def migrate_user(from_user: str, to_user: str) -> list[str]:
+    """One-time: copy a user's per-user data to another identity (e.g. an old
+    env-login to an account email). Skips SHARED keys and anything the target
+    already has, so it's safe to re-run. Returns the key names moved."""
+    if not from_user or not to_user or from_user == to_user:
+        return []
+    prev = _user.get()
+    moved: list[str] = []
+    try:
+        _user.set(from_user)
+        names = [n for n in keys() if n not in _SHARED]
+        data = {n: load(n, _MISSING) for n in names}
+        _user.set(to_user)
+        existing = set(keys())
+        for n, v in data.items():
+            if v is _MISSING or n in existing:
+                continue
+            save(n, v)
+            moved.append(n)
+    finally:
+        _user.set(prev)
+    return moved
