@@ -59,6 +59,29 @@ def _pg_name(name: str) -> str:
     return f"{_INSTANCE}:{_scope(name)}"
 
 
+# Encryption-at-rest for sensitive modules. Values for keys in ENCRYPTED_KEYS are
+# stored as ciphertext when NEO_DATA_KEY (a Fernet key) is set, so a database/file
+# peek reveals nothing. No key set = plaintext (graceful, e.g. local dev).
+ENCRYPTED_KEYS = {"wellness", "body"}
+_FERNET = _MISSING
+
+
+def _fernet():
+    global _FERNET
+    if _FERNET is _MISSING:
+        key = os.environ.get("NEO_DATA_KEY")
+        if not key:
+            _FERNET = None
+        else:
+            try:
+                from cryptography.fernet import Fernet
+                _FERNET = Fernet(key.encode())
+            except Exception as e:
+                print(f"[store] encryption disabled — bad NEO_DATA_KEY ({e})")
+                _FERNET = None
+    return _FERNET
+
+
 # ── File backend (default) ────────────────────────────────────────────────────
 def _file_path(name: str) -> Path:
     u = _user.get()
@@ -124,6 +147,32 @@ def _pg_save(name: str, data: Any) -> None:
 
 # ── Public interface ──────────────────────────────────────────────────────────
 def load(name: str, default: Any) -> Any:
+    """Public read — transparently decrypts at-rest-encrypted values."""
+    raw = _load_raw(name, default)
+    if isinstance(raw, dict) and "__enc__" in raw:
+        f = _fernet()
+        if not f:
+            print(f"[store] '{name}' is encrypted but NEO_DATA_KEY is unset; returning default")
+            return default
+        try:
+            return json.loads(f.decrypt(raw["__enc__"].encode()).decode())
+        except Exception as e:
+            print(f"[store] decrypt '{name}' failed ({e}); returning default")
+            return default
+    return raw
+
+
+def save(name: str, data: Any) -> None:
+    """Public write — encrypts at-rest for ENCRYPTED_KEYS when a key is configured."""
+    payload = data
+    if name in ENCRYPTED_KEYS:
+        f = _fernet()
+        if f:
+            payload = {"__enc__": f.encrypt(json.dumps(data).encode()).decode()}
+    _save_raw(name, payload)
+
+
+def _load_raw(name: str, default: Any) -> Any:
     """Return the stored value for `name`, or `default` if absent.
 
     With Postgres: read from the DB and mirror the result to the file cache. If
@@ -153,7 +202,7 @@ def load(name: str, default: Any) -> Any:
     return val
 
 
-def save(name: str, data: Any) -> None:
+def _save_raw(name: str, data: Any) -> None:
     """Persist `data` for `name`. Never raises.
 
     With Postgres: write to the DB and mirror to the file cache. If the DB write
