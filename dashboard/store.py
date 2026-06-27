@@ -25,7 +25,15 @@ from typing import Any
 DB_URL = os.environ.get("DATABASE_URL")
 _DATA_DIR = Path(os.environ.get("NEO_DATA_DIR") or (Path(__file__).resolve().parent / "data"))
 _TABLE = "neo_store"
+# Each instance namespaces its Postgres rows so one database can serve many
+# instances (default, nessa, …) without their data colliding. The file backend
+# is already separated by NEO_DATA_DIR, so only the shared DB backend needs this.
+_INSTANCE = (os.environ.get("NEO_PROFILE") or "neo").strip() or "neo"
 _pg_ready = False
+
+
+def _pg_name(name: str) -> str:
+    return f"{_INSTANCE}:{name}"
 _MISSING = object()  # distinguishes "no row / no cache" from a real default value
 
 
@@ -71,7 +79,7 @@ def _pg_load(name: str, default: Any) -> Any:
     _pg_init()
     with _connect() as conn:
         with conn.cursor() as cur:
-            cur.execute(f"SELECT data FROM {_TABLE} WHERE name = %s", (name,))
+            cur.execute(f"SELECT data FROM {_TABLE} WHERE name = %s", (_pg_name(name),))
             row = cur.fetchone()
     return row[0] if row else default  # jsonb comes back already parsed
 
@@ -83,7 +91,7 @@ def _pg_save(name: str, data: Any) -> None:
             cur.execute(
                 f"INSERT INTO {_TABLE} (name, data) VALUES (%s, %s::jsonb) "
                 "ON CONFLICT (name) DO UPDATE SET data = EXCLUDED.data, updated_at = now()",
-                (name, json.dumps(data)),
+                (_pg_name(name), json.dumps(data)),
             )
         conn.commit()
 
@@ -151,11 +159,12 @@ def keys() -> list[str]:
         return sorted(p.stem for p in _DATA_DIR.glob("*.json")) if _DATA_DIR.exists() else []
     try:
         _pg_init()
+        prefix = _INSTANCE + ":"
         with _connect() as conn:
             with conn.cursor() as cur:
-                cur.execute(f"SELECT name FROM {_TABLE}")
+                cur.execute(f"SELECT name FROM {_TABLE} WHERE name LIKE %s", (prefix + "%",))
                 rows = cur.fetchall()
-        return sorted(r[0] for r in rows)
+        return sorted(r[0][len(prefix):] for r in rows)
     except Exception as e:
         print(f"[store] keys() failed ({e}); using file cache")
         return sorted(p.stem for p in _DATA_DIR.glob("*.json")) if _DATA_DIR.exists() else []
