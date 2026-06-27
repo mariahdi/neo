@@ -17,8 +17,10 @@ still lands in the cache (loudly logged) instead of being silently dropped.
 """
 from __future__ import annotations
 
+import contextvars
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -30,15 +32,38 @@ _TABLE = "neo_store"
 # is already separated by NEO_DATA_DIR, so only the shared DB backend needs this.
 _INSTANCE = (os.environ.get("NEO_PROFILE") or "neo").strip() or "neo"
 _pg_ready = False
+_MISSING = object()  # distinguishes "no row / no cache" from a real default value
+
+# Per-user data isolation (NEO-93): a request-scoped current user, set by the
+# auth middleware. Per-user keys get namespaced so users on one instance never
+# see each other's data; SHARED keys stay instance-wide. No user set (local /
+# unauthenticated) = instance-level, so existing single-user behavior is unchanged.
+_user = contextvars.ContextVar("neo_user", default=None)
+_SHARED = {"users", "aria_bank", "billing"}
+
+
+def set_current_user(u) -> None:
+    _user.set(u or None)
+
+
+def _uslug(u: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9._-]", "_", u)[:64]
+
+
+def _scope(name: str) -> str:
+    u = _user.get()
+    return f"{_uslug(u)}::{name}" if (u and name not in _SHARED) else name
 
 
 def _pg_name(name: str) -> str:
-    return f"{_INSTANCE}:{name}"
-_MISSING = object()  # distinguishes "no row / no cache" from a real default value
+    return f"{_INSTANCE}:{_scope(name)}"
 
 
 # ── File backend (default) ────────────────────────────────────────────────────
 def _file_path(name: str) -> Path:
+    u = _user.get()
+    if u and name not in _SHARED:
+        return _DATA_DIR / _uslug(u) / f"{name}.json"
     return _DATA_DIR / f"{name}.json"
 
 
@@ -50,8 +75,9 @@ def _file_load(name: str, default: Any) -> Any:
 
 
 def _file_save(name: str, data: Any) -> None:
-    _DATA_DIR.mkdir(parents=True, exist_ok=True)
-    _file_path(name).write_text(json.dumps(data, indent=2))
+    p = _file_path(name)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(data, indent=2))
 
 
 # ── Postgres backend (when DATABASE_URL is set) ───────────────────────────────
@@ -154,17 +180,30 @@ def save(name: str, data: Any) -> None:
 
 
 def keys() -> list[str]:
-    """All stored names, for whole-instance export. Backend-agnostic."""
+    """The current user's stored names (for their data export) — per-user scoped,
+    so an export only ever contains that user's own data. Backend-agnostic."""
+    u = _user.get()
+
+    def _from_files():
+        d = (_DATA_DIR / _uslug(u)) if u else _DATA_DIR
+        return sorted(p.stem for p in d.glob("*.json")) if d.exists() else []
+
     if not DB_URL:
-        return sorted(p.stem for p in _DATA_DIR.glob("*.json")) if _DATA_DIR.exists() else []
+        return _from_files()
     try:
         _pg_init()
-        prefix = _INSTANCE + ":"
+        prefix = f"{_INSTANCE}:" + (f"{_uslug(u)}::" if u else "")
         with _connect() as conn:
             with conn.cursor() as cur:
                 cur.execute(f"SELECT name FROM {_TABLE} WHERE name LIKE %s", (prefix + "%",))
                 rows = cur.fetchall()
-        return sorted(r[0][len(prefix):] for r in rows)
+        out = []
+        for (n,) in rows:
+            rest = n[len(prefix):]
+            if not u and "::" in rest:
+                continue  # exclude other users' per-user rows when listing instance-level
+            out.append(rest)
+        return sorted(out)
     except Exception as e:
         print(f"[store] keys() failed ({e}); using file cache")
-        return sorted(p.stem for p in _DATA_DIR.glob("*.json")) if _DATA_DIR.exists() else []
+        return _from_files()

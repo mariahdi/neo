@@ -55,6 +55,8 @@ app = FastAPI(title="Neo", version="1.0.0")
 # instead of a re-prompting Basic-Auth popup. Enforced only when
 # DASHBOARD_USER/DASHBOARD_PASS are set; local/demo runs stay open.
 app.add_middleware(auth.SessionMiddleware)
+# Outermost: set the per-user data scope from the session before anything runs.
+app.add_middleware(auth.UserContextMiddleware)
 app.include_router(auth.router)
 
 # Module pages (About Me, Stocks, and more to come) live in their own routers.

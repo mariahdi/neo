@@ -189,6 +189,34 @@ class SessionMiddleware(BaseHTTPMiddleware):
         return RedirectResponse(url="/login", status_code=302)
 
 
+class UserContextMiddleware:
+    """Pure-ASGI middleware: resolve the session user and set it for per-user
+    data scoping (NEO-93). Pure ASGI (not BaseHTTPMiddleware) and added outermost
+    so the contextvar reliably propagates into the endpoint's task."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") == "http":
+            store.set_current_user(self._user(scope))
+        await self.app(scope, receive, send)
+
+    @staticmethod
+    def _user(scope):
+        headers = {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope.get("headers", [])}
+        tok = None
+        for part in headers.get("cookie", "").split(";"):
+            part = part.strip()
+            if part.startswith(COOKIE + "="):
+                tok = part[len(COOKIE) + 1:]
+                break
+        if not tok:
+            ah = headers.get("authorization", "")
+            tok = ah[7:] if ah.startswith("Bearer ") else headers.get("x-session-token")
+        return user_from_token(tok) if tok else None
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 router = APIRouter()
 
