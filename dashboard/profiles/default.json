@@ -5,11 +5,17 @@
   "who": "friend",
   "tagline": "Always Ready, Infinitely Adaptable",
   "role": "member",
+  "work_nav": [
+    ["usafa", "/usafa", "Web Dev"],
+    ["proposals", "/proposals", "Proposals"]
+  ],
   "modules": [
     "about",
-    "goals",
+    "recipes",
+    "stocks",
     "wins",
-    "recipes"
+    "nominal",
+    "wellness"
   ],
   "home": "modules",
   "tokens": {
