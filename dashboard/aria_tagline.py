@@ -22,7 +22,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel
 
-from . import auth, registry, store, theme
+from . import auth, profile, registry, store, theme
 
 router = APIRouter()
 
@@ -45,6 +45,11 @@ STARTERS = [
     ["Adventure", "Requires", "Intentional", "Action"],
     ["Aim", "Refine", "Iterate", "Achieve"],
 ]
+
+
+def _starters() -> list:
+    """Per-instance bank if the profile sets one (e.g. Nessa's calming set), else default."""
+    return profile.ACTIVE.get("aria_bank") or STARTERS
 
 
 def _personal() -> dict:
@@ -84,7 +89,7 @@ def _slug(words) -> str:
 
 
 def _all_phrases_lower(bank) -> set[str]:
-    return {_phrase(w).lower() for w in STARTERS} \
+    return {_phrase(w).lower() for w in _starters()} \
         | {_phrase(e["words"]).lower() for e in bank["approved"]} \
         | {_phrase(e["words"]).lower() for e in bank["pending"]}
 
@@ -96,7 +101,7 @@ async def today(request: Request) -> JSONResponse:
     if mine:
         return JSONResponse({"words": mine, "phrase": _phrase(mine), "source": "you",
                              "anchor": _phrase(ANCHOR)})
-    pool = STARTERS + [e["words"] for e in _bank()["approved"]]
+    pool = _starters() + [e["words"] for e in _bank()["approved"]]
     words = pool[date.today().toordinal() % len(pool)]
     return JSONResponse({"words": words, "phrase": _phrase(words), "source": "daily",
                          "anchor": _phrase(ANCHOR)})
@@ -126,7 +131,7 @@ async def set_mine(request: Request, body: WordsIn) -> JSONResponse:
 @router.get("/api/aria/bank")
 async def bank() -> JSONResponse:
     b = _bank()
-    return JSONResponse({"starters": [{"words": w} for w in STARTERS], "approved": b["approved"]})
+    return JSONResponse({"starters": [{"words": w} for w in _starters()], "approved": b["approved"]})
 
 
 class IdIn(BaseModel):

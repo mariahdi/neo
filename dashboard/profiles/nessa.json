@@ -12,6 +12,13 @@
   "home": "modules",
   "lock_modules": true,
   "hide_data_export": true,
+  "aria_bank": [
+    ["Always", "Reassuring", "Infinitely", "Adaptable"],
+    ["Awake", "Rested", "Inspired", "Aligned"],
+    ["At", "Rest", "Inwardly", "At-ease"],
+    ["Anchored", "Relaxed", "Inwardly", "At-peace"],
+    ["A", "Restful", "Inviting", "Aura"]
+  ],
   "about_heading": "About <b>Nessa</b>",
   "about_roles": ["Nessa"],
   "about_intro": "This little space is yours, Nessa. 🦋 Add the photos and words that make you smile — there's no right way to do it. Designed with you in mind.",
