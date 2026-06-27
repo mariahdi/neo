@@ -93,6 +93,7 @@ async def checkout(request: Request) -> JSONResponse:
             cancel_url=f"{BASE_URL}/billing/cancel",
             allow_promotion_codes=True,
             client_reference_id=key,  # ties the Stripe session back to this user
+            subscription_data={"trial_period_days": 14},
         )
         if "@" in key:
             kwargs["customer_email"] = key
@@ -147,6 +148,13 @@ async def webhook(request: Request) -> JSONResponse:
 @router.get("/billing", response_class=HTMLResponse)
 async def billing_page() -> HTMLResponse:
     return HTMLResponse(theme.page("Plan", _BODY, active=""))
+
+
+@router.get("/billing/checkout", response_class=HTMLResponse)
+async def checkout_page() -> HTMLResponse:
+    """The gate page for a logged-in-but-unsubscribed user: one button to start
+    the trial / checkout. In DEMO mode the button activates instantly."""
+    return HTMLResponse(theme.page("Start your trial", _CHECKOUT_BODY, active=""))
 
 
 @router.get("/billing/success", response_class=HTMLResponse)
@@ -229,14 +237,58 @@ load();
 </script>
 """
 
+_CHECKOUT_BODY = r"""
+<style>
+  .co { max-width: 460px; margin: 40px auto; text-align: center; }
+  .co h1 { font-size: 34px; } .co h1 b { color: var(--gold); font-weight: 400; }
+  .co .sub { color: var(--muted); font-size: 13.5px; margin: 10px 0 24px; line-height: 1.6; }
+  .co .plan { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 26px; }
+  .co .name { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
+  .co .price { font-family: var(--font-head); font-size: 40px; margin: 6px 0 2px; }
+  .co .trial { font-size: 12.5px; color: var(--muted); margin-bottom: 18px; }
+  .co .btn { width: 100%; padding: 13px; }
+  .co .fine { font-size: 11.5px; color: var(--muted); margin-top: 14px; }
+</style>
+<main class="co">
+  <h1>One step <b>left</b></h1>
+  <p class="sub">Start your 14-day free trial. You won't be charged today, and you can cancel anytime.</p>
+  <div class="plan">
+    <div class="name" id="plan-name">Neo</div>
+    <div class="price" id="plan-price">$9.99 / month</div>
+    <div class="trial">14 days free, then your plan</div>
+    <button class="btn btn-gold" id="start">Start free trial</button>
+    <div class="fine">Cancel anytime · Your data is exportable · Private by default</div>
+  </div>
+</main>
+<script>
+const $ = (s) => document.querySelector(s);
+(async () => {
+  try {
+    const d = await (await fetch('/api/billing/status')).json();
+    if (d.status === 'active') { location.href = '/'; return; }
+    $('#plan-name').textContent = d.plan || 'Neo';
+    if (d.price) $('#plan-price').textContent = d.price;
+  } catch (_) {}
+})();
+$('#start').addEventListener('click', async () => {
+  $('#start').disabled = true;
+  try {
+    const out = await (await fetch('/api/billing/checkout', { method: 'POST' })).json();
+    if (out.url) { location.href = out.url; }
+    else { alert(out.message || 'Could not start checkout'); $('#start').disabled = false; }
+  } catch (_) { alert('Network error — try again'); $('#start').disabled = false; }
+});
+</script>
+"""
+
 _SUCCESS_BODY = r"""
 <main style="max-width:520px;margin:48px auto;text-align:center;">
   <h1 style="font-size:42px;">You're <b style="color:var(--gold);font-weight:400;">in</b> 🎉</h1>
   <p style="color:var(--muted);font-size:14px;margin:14px 0 26px;line-height:1.6;">
-    Your beta subscription is active — no charge. This run-through just proved the whole billing pipeline works end to end.</p>
-  <a class="btn btn-gold" href="/">Go to your dashboard</a>
-  <p style="margin-top:18px;"><a href="/billing" style="color:var(--muted);font-size:12px;">Back to plan</a></p>
+    Welcome to Neo. Your account's all set — taking you to your dashboard…</p>
+  <a class="btn btn-gold" href="/">Go now</a>
 </main>
+<script>setTimeout(function(){ location.href = "/"; }, 3000);</script>
 """
 
 _CANCEL_BODY = r"""
