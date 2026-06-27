@@ -12,6 +12,7 @@
   "home": "modules",
   "lock_modules": true,
   "hide_data_export": true,
+  "seed_recipes": "nessa-recipes.json",
   "aria_bank": [
     ["Always", "Reassuring", "Infinitely", "Adaptable"],
     ["Awake", "Rested", "Inspired", "Aligned"],

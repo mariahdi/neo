@@ -11,13 +11,15 @@ obvious. They're seeded once into the editable store, then they're yours.
 """
 from __future__ import annotations
 
+import json
 import re
+from pathlib import Path
 
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
-from . import store, theme
+from . import profile, store, theme
 
 router = APIRouter()
 
@@ -65,18 +67,48 @@ SEED_RECIPES = [
 ]
 
 
+_SEEDS_DIR = Path(__file__).resolve().parent / "seeds"
+
+
+def _profile_seed_recipes() -> list:
+    """Extra starter recipes bundled for a specific instance (e.g. Nessie's),
+    named by the profile's `seed_recipes`. Empty for instances that don't set it."""
+    fname = profile.ACTIVE.get("seed_recipes")
+    if not fname:
+        return []
+    try:
+        return json.loads((_SEEDS_DIR / fname).read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+
 def _data() -> dict:
     d = store.load("recipes", {"added": [], "favs": [], "seeded": False})
     d.setdefault("added", [])
     d.setdefault("favs", [])
-    # Seed the samples once (append, skipping any same-title recipe), then leave
-    # the list fully under the user's control.
-    if not d.get("seeded"):
-        have = {(r.get("title") or "").strip().lower() for r in d["added"]}
-        for s in SEED_RECIPES:
-            if s["title"].strip().lower() not in have:
+    have = {(r.get("title") or "").strip().lower() for r in d["added"]}
+    changed = False
+
+    def _seed(items):
+        nonlocal changed
+        for s in items:
+            t = (s.get("title") or "").strip().lower()
+            if t and t not in have:
                 d["added"].append(dict(s))
+                have.add(t)
+                changed = True
+
+    # Base samples once; then any instance-bundled seeds once — tracked
+    # separately so the extras still land on an account seeded before they shipped.
+    if not d.get("seeded"):
+        _seed(SEED_RECIPES)
         d["seeded"] = True
+        changed = True
+    if profile.ACTIVE.get("seed_recipes") and not d.get("seeded_profile"):
+        _seed(_profile_seed_recipes())
+        d["seeded_profile"] = True
+        changed = True
+    if changed:
         store.save("recipes", d)
     return d
 
