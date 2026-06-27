@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import date
 
 from fastapi import APIRouter
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 
 from . import profile, registry, theme
@@ -32,6 +32,8 @@ class EnableIn(BaseModel):
 
 @router.post("/api/modules/enable")
 async def enable_module(body: EnableIn) -> JSONResponse:
+    if profile.ACTIVE.get("lock_modules"):
+        return JSONResponse({"ok": False, "error": "locked"}, status_code=403)
     registry.enable(body.key)
     return JSONResponse({"ok": True, "enabled": [m["key"] for m in registry.enabled_modules()]})
 
@@ -42,8 +44,11 @@ async def mark_seen() -> JSONResponse:
     return JSONResponse({"ok": True})
 
 
-@router.get("/modules", response_class=HTMLResponse)
-async def modules_page() -> HTMLResponse:
+@router.get("/modules")
+async def modules_page():
+    # Locked instances (e.g. Nessa) can't reach the catalog even by URL.
+    if profile.ACTIVE.get("lock_modules"):
+        return RedirectResponse("/", status_code=302)
     return HTMLResponse(theme.page("Modules", _BODY, active="modules"))
 
 

@@ -11,35 +11,66 @@ along in the same store — fine for one image; revisit if this grows.
 from __future__ import annotations
 
 import base64
+import io
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
+from PIL import Image
 from pydantic import BaseModel
 
-from . import store, theme
+from . import profile, store, theme
+
+try:  # HEIC/HEIF (Apple/iCloud) support so those photos upload + display
+    import pillow_heif
+    pillow_heif.register_heif_opener()
+except Exception:
+    pass
 
 router = APIRouter()
 
-MAX_PHOTO_BYTES = 5 * 1024 * 1024  # 5 MB cap so the JSON store stays sane.
+MAX_PHOTO_BYTES = 15 * 1024 * 1024  # cap the raw upload; we downscale before storing.
+MAX_GALLERY = 12  # cap the photo wall so the store doesn't balloon
 
 # Mock/placeholder content shown until someone edits it.
-DEFAULT = {
-    "narrative": "This is your space — click Edit to tell your story.",
-    "photo": None,  # data URL once uploaded
-    "milestones": [],
-    "updated_by": None,
-    "updated_at": None,
-}
+def _default() -> dict:
+    # Profiles can set a warmer opening line (about_intro); the general default
+    # is unchanged for instances that don't.
+    return {
+        "narrative": profile.ACTIVE.get(
+            "about_intro", "This is your space — click Edit to tell your story."),
+        "photo": None,  # data URL once uploaded
+        "gallery": [],  # list of data URLs — the photo wall
+        "milestones": [],
+        "updated_by": None,
+        "updated_at": None,
+    }
 
 
 def _data() -> dict:
-    return store.load("about", DEFAULT)
+    return store.load("about", _default())
 
 
 def _stamp(d: dict, role: str | None) -> None:
     d["updated_by"] = (role or "Mariah").strip() or "Mariah"
     d["updated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def _process_image(raw: bytes, ctype: str | None, filename: str | None) -> str | None:
+    """Normalize any uploaded photo to a browser-displayable JPEG data URL.
+    Handles HEIC/HEIF (iCloud) via pillow-heif and downscales big phone photos.
+    Returns None if it isn't a usable image."""
+    try:
+        img = Image.open(io.BytesIO(raw)).convert("RGB")
+        img.thumbnail((1600, 1600))  # keep the store light
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=85)
+        return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+    except Exception:
+        # Fallback: keep as-is only if it's already a web-displayable image type.
+        if ctype and ctype.startswith("image/") and not ctype.endswith(("heic", "heif")):
+            return f"data:{ctype};base64," + base64.b64encode(raw).decode()
+        return None
 
 
 # ── API ───────────────────────────────────────────────────────────────────────
@@ -75,21 +106,71 @@ async def upload_photo(photo: UploadFile = File(...), role: str = Form("Mariah")
     if not raw:
         return JSONResponse({"ok": False, "message": "Empty file."}, status_code=400)
     if len(raw) > MAX_PHOTO_BYTES:
-        return JSONResponse({"ok": False, "message": "Photo too large (max 5 MB)."}, status_code=400)
-    ctype = photo.content_type or "image/jpeg"
-    if not ctype.startswith("image/"):
-        return JSONResponse({"ok": False, "message": "Please choose an image file."}, status_code=400)
+        return JSONResponse({"ok": False, "message": "Photo too large (max 15 MB)."}, status_code=400)
+    url = _process_image(raw, photo.content_type, photo.filename)
+    if not url:
+        return JSONResponse({"ok": False, "message": "Please choose an image file (JPG, PNG, HEIC…)."}, status_code=400)
     d = _data()
-    d["photo"] = f"data:{ctype};base64," + base64.b64encode(raw).decode()
+    d["photo"] = url
     _stamp(d, role)
     store.save("about", d)
     return JSONResponse({"ok": True, "photo": d["photo"]})
 
 
+@router.post("/api/about/gallery")
+async def upload_gallery(files: list[UploadFile] = File(...), role: str = Form("Mariah")) -> JSONResponse:
+    """Append one or more photos to the wall (pick several at once)."""
+    d = _data()
+    gallery = d.get("gallery") or []
+    added = 0
+    for f in files:
+        if len(gallery) >= MAX_GALLERY:
+            break
+        raw = await f.read()
+        if not raw or len(raw) > MAX_PHOTO_BYTES:
+            continue
+        url = _process_image(raw, f.content_type, f.filename)
+        if url:
+            gallery.append(url)
+            added += 1
+    d["gallery"] = gallery
+    _stamp(d, role)
+    store.save("about", d)
+    return JSONResponse({"ok": True, "gallery": gallery, "added": added})
+
+
+class GalleryRm(BaseModel):
+    index: int
+    role: str | None = "Mariah"
+
+
+@router.post("/api/about/gallery/remove")
+async def remove_gallery(body: GalleryRm) -> JSONResponse:
+    d = _data()
+    g = d.get("gallery") or []
+    if 0 <= body.index < len(g):
+        g.pop(body.index)
+    d["gallery"] = g
+    _stamp(d, body.role)
+    store.save("about", d)
+    return JSONResponse({"ok": True, "gallery": g})
+
+
 # ── Page ──────────────────────────────────────────────────────────────────────
 @router.get("/about", response_class=HTMLResponse)
 async def about_page() -> HTMLResponse:
-    return HTMLResponse(theme.page("About", _BODY, active="about"))
+    # Heading + the "editing as" roles come from the profile so each instance
+    # can have its own About (e.g. Nessa) without changing the general default.
+    heading = f'<h1>{profile.ACTIVE.get("about_heading", "Our <b>Story</b>")}</h1>'
+    roles = profile.ACTIVE.get("about_roles", ["Mariah", "Dad"])
+    if len(roles) <= 1:
+        only = roles[0] if roles else "Me"  # single-person instances skip the picker
+        roles_html = f'<div class="role" style="display:none"><select id="role"><option>{only}</option></select></div>'
+    else:
+        opts = "".join(f"<option>{r}</option>" for r in roles)
+        roles_html = f'<div class="role">Editing as <select id="role">{opts}</select></div>'
+    body = _BODY.replace("<!--HEADING-->", heading).replace("<!--ROLES-->", roles_html)
+    return HTMLResponse(theme.page("About", body, active="about"))
 
 
 _BODY = r"""
@@ -105,10 +186,10 @@ _BODY = r"""
   .photo-card { text-align: center; }
   .photo-frame { width: 100%; aspect-ratio: 4 / 5; border-radius: 12px; overflow: hidden; background: var(--field); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; }
   .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
-  .photo-frame .ph { color: #4f5d7e; font-size: 12px; padding: 20px; }
+  .photo-frame .ph { color: var(--muted); font-size: 12px; padding: 20px; }
   .photo-card label.btn { display: inline-block; margin-top: 12px; }
   .photo-card input[type=file] { display: none; }
-  .narrative { white-space: pre-wrap; font-size: 14px; line-height: 1.8; color: #cdd5e8; }
+  .narrative { white-space: pre-wrap; font-size: 14px; line-height: 1.8; color: var(--text); }
   .narrative-edit { width: 100%; min-height: 200px; resize: vertical; line-height: 1.7; }
   .ms-list { list-style: none; display: flex; flex-direction: column; gap: 0; }
   .ms-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
@@ -121,19 +202,18 @@ _BODY = r"""
   .ms-row .btn { padding: 6px 10px; }
   .actions { display: flex; gap: 10px; margin-top: 16px; }
   .sec-actions { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .empty { color: #56638a; font-style: italic; font-size: 13px; }
+  .empty { color: var(--muted); font-style: italic; font-size: 13px; }
+  .photo-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 4px; }
+  .pw-item { position: relative; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; background: var(--field); border: 1px solid var(--line-soft); }
+  .pw-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pw-rm { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; border-radius: 50%; border: none; background: rgba(0,0,0,0.55); color: #fff; cursor: pointer; font-size: 12px; line-height: 1; }
+  .photos-card input[type=file] { display: none; }
 </style>
 
 <main>
   <div class="about-head">
-    <h1>Our <b>Story</b></h1>
-    <div class="role">
-      Editing as
-      <select id="role">
-        <option>Mariah</option>
-        <option>Dad</option>
-      </select>
-    </div>
+    <!--HEADING-->
+    <!--ROLES-->
   </div>
   <div class="saved" id="saved"></div>
 
@@ -177,12 +257,22 @@ _BODY = r"""
       </div>
     </div>
   </div>
+
+  <!-- Photo wall -->
+  <div class="card photos-card">
+    <div class="sec-actions">
+      <div class="section-label" style="margin:0;">Photos</div>
+      <label class="btn btn-sm" for="gallery-input">＋ Add photos</label>
+    </div>
+    <input type="file" id="gallery-input" accept="image/*" multiple>
+    <div class="photo-wall" id="photo-wall"></div>
+  </div>
 </main>
 
 <script>
 const $ = (s) => document.querySelector(s);
 const esc = (s) => (s == null ? "" : String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])));
-let data = { narrative: "", photo: null, milestones: [], updated_by: null, updated_at: null };
+let data = { narrative: "", photo: null, gallery: [], milestones: [], updated_by: null, updated_at: null };
 
 // Mock role — remembered in the browser, sent with every save.
 const roleSel = $("#role");
@@ -209,8 +299,17 @@ function renderSaved() {
 function renderPhoto() {
   const f = $("#photo-frame");
   f.innerHTML = data.photo
-    ? `<img src="${data.photo}" alt="Mariah and Dad">`
+    ? `<img src="${data.photo}" alt="Your photo">`
     : '<span class="ph">No photo yet</span>';
+}
+
+function renderGallery() {
+  const w = $("#photo-wall");
+  const g = data.gallery || [];
+  w.innerHTML = g.length
+    ? g.map((src, i) => `<div class="pw-item"><img src="${src}" alt=""><button class="pw-rm" data-i="${i}" title="Remove">✕</button></div>`).join("")
+    : '<div class="empty">No photos yet — add the ones that make you smile.</div>';
+  w.querySelectorAll(".pw-rm").forEach(b => b.addEventListener("click", () => removePhoto(parseInt(b.dataset.i, 10))));
 }
 
 function renderNarrative() { $("#narrative-view").textContent = data.narrative || ""; }
@@ -225,7 +324,7 @@ function renderMilestones() {
     </li>`).join("");
 }
 
-function render() { renderPhoto(); renderNarrative(); renderMilestones(); renderSaved(); }
+function render() { renderPhoto(); renderGallery(); renderNarrative(); renderMilestones(); renderSaved(); }
 
 async function load() {
   try { data = await (await fetch("/api/about")).json(); } catch (_) {}
@@ -303,6 +402,24 @@ $("#photo-input").addEventListener("change", async (e) => {
   else { alert(out.message || "Upload failed."); }
   e.target.value = "";
 });
+
+// ── Photo wall (multiple) ──
+$("#gallery-input").addEventListener("change", async (e) => {
+  const files = [...e.target.files];
+  if (!files.length) return;
+  const fd = new FormData();
+  files.forEach(f => fd.append("files", f));
+  fd.append("role", role());
+  const out = await (await fetch("/api/about/gallery", { method: "POST", body: fd })).json();
+  if (out.ok) { data.gallery = out.gallery; renderGallery(); }
+  else { alert(out.message || "Upload failed."); }
+  e.target.value = "";
+});
+async function removePhoto(i) {
+  if (!confirm("Remove this photo?")) return;
+  const out = await (await fetch("/api/about/gallery/remove", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ index: i, role: role() }) })).json();
+  if (out.ok) { data.gallery = out.gallery; renderGallery(); }
+}
 
 load();
 </script>

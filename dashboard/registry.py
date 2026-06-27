@@ -20,6 +20,9 @@ MODULES = [
     {"key": "about", "icon": "✦", "name": "About", "path": "/about",
      "description": "The story of how this was built.",
      "version": "1.0", "released": "2026-06-16", "requires": []},
+    {"key": "recipes", "icon": "🍴", "name": "Recipes", "path": "/recipes",
+     "description": "Gentle, gut-friendly recipes to browse and save.",
+     "version": "1.0", "released": "2026-06-27", "requires": []},
     {"key": "stocks", "icon": "📈", "name": "Stocks", "path": "/stocks",
      "description": "Sector watchlist with daily AI briefings.",
      "version": "1.0", "released": "2026-06-16", "requires": ["anthropic"]},
@@ -118,6 +121,16 @@ def enable(key: str) -> None:
     st = _state()
     if key not in st["enabled"]:
         st["enabled"].append(key)
+        store.save("modules", st)
+
+
+def disable(key: str) -> None:
+    """Member turns a module off (owner keeps everything; no-op for owner)."""
+    if key not in _BY_KEY or is_owner():
+        return
+    st = _state()
+    if key in st["enabled"]:
+        st["enabled"] = [k for k in st["enabled"] if k != key]
         store.save("modules", st)
 
 

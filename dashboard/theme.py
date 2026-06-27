@@ -17,6 +17,7 @@ ACTIVE = profile.ACTIVE
 # (key, href, label) — extended as each module ships.
 NAV_LINKS = [
     ("dashboard", "/", "Dashboard"),
+    ("recipes", "/recipes", "Recipes"),
     ("nominal", "/nominal", "Nominal"),
     ("body", "/body", "Body"),
     ("wealth", "/wealth", "Wealth"),
@@ -51,15 +52,18 @@ def nav(active: str = "") -> str:
             continue  # not enabled on this instance — hidden until opted in
         cls = ' class="active"' if key == active else ""
         links += f'<a href="{href}"{cls}>{label}</a>'
-    new = registry.new_count()
-    badge = f'<span class="nav-badge">{new}</span>' if new else ""
-    mcls = ' class="active"' if active == "modules" else ""
-    links += f'<a href="/modules"{mcls}>Modules{badge}</a>'
+    # Locked instances (e.g. Nessa) hide the catalog entirely — the owner adds
+    # modules for them; they never see the "add more" surface.
+    if not ACTIVE.get("lock_modules"):
+        new = registry.new_count()
+        badge = f'<span class="nav-badge">{new}</span>' if new else ""
+        mcls = ' class="active"' if active == "modules" else ""
+        links += f'<a href="/modules"{mcls}>Modules{badge}</a>'
     return (
         "<header>"
         f'<a class="brand" href="/">{ACTIVE["wordmark"]}</a>'
         f'<nav class="topnav">{links}</nav>'
-        f'<div class="who">{ACTIVE["who"]}</div>'
+        f'<div class="who">{profile.who()}</div>'
         f"{LOGOUT_BTN}"
         "</header>"
     )
@@ -102,7 +106,7 @@ BASE_CSS = (
   a { color: inherit; }
   header {
     display: flex; align-items: center; gap: 20px; padding: 18px 32px;
-    border-bottom: 1px solid var(--line-soft); background: rgba(10,14,26,0.7);
+    border-bottom: 1px solid var(--line-soft); background: var(--bg-2);
     backdrop-filter: blur(6px); position: sticky; top: 0; z-index: 20;
   }
   .brand { font-size: 30px; letter-spacing: 0.12em; font-family: var(--font-head); }
@@ -143,21 +147,33 @@ _JIRA_BOARD = os.environ.get("NEO_JIRA_BOARD_URL") or f"{_JIRA_BASE}/jira/softwa
 
 
 def footer() -> str:
-    repo = f"https://github.com/{_REPO}"
-    links = [
-        (_JIRA_BOARD, "Jira board"),
-        (repo, "GitHub"),
-        (f"{repo}/pulls", "Open PRs"),
-        (f"{repo}/blob/main/docs/SETUP.md", "Setup guide"),
-        (f"{repo}/blob/main/docs/DEPLOY.md", "Deploy guide"),
-    ]
-    anchors = "".join(
-        f'<a href="{href}" target="_blank" rel="noopener">{label} ↗</a>' for href, label in links
-    )
+    # Calm internal links everyone gets; developer links + the dev-flavored tour
+    # only on instances that opt in (dev_links) — Neo/Aria, never a gentle
+    # consumer instance like Nessa.
+    links = ['<a href="/me">⚙ You</a>']
+    if not ACTIVE.get("hide_data_export"):  # gentle instances (e.g. Nessa) skip the export/import rabbit hole
+        links.append('<a href="/data">⬇ Your data</a>')
+    links.append('<a href="/aria">✦ Your ARIA</a>')
+    internal = "".join(links)
+    dev_html = ""
+    tour_html = ""
+    if ACTIVE.get("dev_links"):
+        repo = f"https://github.com/{_REPO}"
+        links = [
+            (_JIRA_BOARD, "Jira board"),
+            (repo, "GitHub"),
+            (f"{repo}/pulls", "Open PRs"),
+            (f"{repo}/blob/main/docs/SETUP.md", "Setup guide"),
+            (f"{repo}/blob/main/docs/DEPLOY.md", "Deploy guide"),
+        ]
+        dev_html = "".join(
+            f'<a href="{href}" target="_blank" rel="noopener">{label} ↗</a>' for href, label in links
+        )
+        tour_html = '<button class="footer-tour" onclick="neoTour()">★ Take a tour</button>'
     return (
         '<footer class="footer"><div class="footer-inner">'
-        f'<div class="footer-links">{anchors}</div>'
-        '<button class="footer-tour" onclick="neoTour()">★ Take a tour</button>'
+        f'<div class="footer-links">{internal}{dev_html}</div>'
+        f"{tour_html}"
         "</div></footer>"
     )
 
@@ -306,6 +322,17 @@ FONT_LINK = (
 )
 
 
+def pwa_head() -> str:
+    """PWA install tags + service-worker registration, injected into every page."""
+    bg = ACTIVE.get("tokens", {}).get("bg", "#0f1115")
+    return (
+        '<link rel="manifest" href="/manifest.webmanifest">'
+        f'<meta name="theme-color" content="{bg}">'
+        '<link rel="apple-touch-icon" href="/static/icon-192.png">'
+        "<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}</script>"
+    )
+
+
 def page(title: str, body: str, active: str = "") -> str:
     """Wrap a page `body` in the full shared HTML shell (nav + footer + tour)."""
     return f"""<!DOCTYPE html>
@@ -315,12 +342,13 @@ def page(title: str, body: str, active: str = "") -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{title} — {ACTIVE["name"]}</title>
 {FONT_LINK}
+{pwa_head()}
 <style>{BASE_CSS}</style>
 </head>
 <body>
 {nav(active)}
 {body}
 {footer()}
-<script>{TOUR_JS}</script>
+{('<script>' + TOUR_JS + '</script>') if ACTIVE.get('dev_links') else ''}
 </body>
 </html>"""

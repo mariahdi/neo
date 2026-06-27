@@ -8,3 +8,10 @@ requests>=2.31
 
 # Durable storage backend (used only when DATABASE_URL is set):
 psycopg[binary]>=3.1
+
+# Payments (used only when NEO_STRIPE_* keys are set; demo mode otherwise):
+stripe>=9
+
+# Photo uploads (About photo + wall): resize + HEIC/iCloud conversion.
+pillow>=10
+pillow-heif>=0.16

@@ -78,6 +78,11 @@ his own Mac.
   or pick the plan in the Render dashboard.
 - **AI usage** bills to your `NEO_ANTHROPIC_API_KEY`, same as a local run.
 - **Auto-deploys.** Every push to `main` redeploys automatically.
+- **Session secret.** Set **`SESSION_SECRET`** (e.g. run `openssl rand -hex 32`
+  and paste the result) so logins stay valid across restarts and can't be
+  forged. Without it, the app warns and falls back to a key derived from the
+  password (or a random key that resets each restart). Rotating it logs everyone
+  out.
 - **Changing the password / locking him out.** Edit `DASHBOARD_PASS` in the
   Render dashboard (Environment tab) and save — it restarts with the new
   password. Rotate it any time.

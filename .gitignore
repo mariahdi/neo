@@ -1,6 +1,10 @@
-# --- Private data layer: never commit real contents ---
-personal-data/data.json
-personal-data/skills/*.md
+# --- Private data layer: never commit real/sensitive contents ---
+personal-data/*
+!personal-data/README.md
+!personal-data/*.example.md
+!personal-data/*.example.json
+!personal-data/skills/
+personal-data/skills/*
 !personal-data/skills/*.example.md
 
 # Real local config (keep only the .example)
@@ -17,5 +21,10 @@ venv/
 .env
 neo.env
 
-# Dashboard module data (JSON store + uploaded photos) — runtime, not committed
+# Runtime data — JSON store + uploaded photos (per instance), never committed
 dashboard/data/
+dashboard/data-*/
+
+# Build artifacts (rebuildable via build-app.ps1)
+build/
+dist/

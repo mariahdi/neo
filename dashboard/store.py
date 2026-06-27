@@ -143,3 +143,19 @@ def save(name: str, data: Any) -> None:
         _file_save(name, data)  # mirror the successful write into the cache
     except Exception:
         pass
+
+
+def keys() -> list[str]:
+    """All stored names, for whole-instance export. Backend-agnostic."""
+    if not DB_URL:
+        return sorted(p.stem for p in _DATA_DIR.glob("*.json")) if _DATA_DIR.exists() else []
+    try:
+        _pg_init()
+        with _connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute(f"SELECT name FROM {_TABLE}")
+                rows = cur.fetchall()
+        return sorted(r[0] for r in rows)
+    except Exception as e:
+        print(f"[store] keys() failed ({e}); using file cache")
+        return sorted(p.stem for p in _DATA_DIR.glob("*.json")) if _DATA_DIR.exists() else []

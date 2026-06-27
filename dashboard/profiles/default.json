@@ -1,0 +1,36 @@
+{
+  "key": "default",
+  "name": "Neo",
+  "wordmark": "NE<b>O</b>",
+  "who": "friend",
+  "tagline": "Always Ready, Infinitely Adaptable",
+  "role": "member",
+  "modules": [
+    "about",
+    "goals",
+    "wins",
+    "recipes"
+  ],
+  "home": "modules",
+  "tokens": {
+    "bg": "#0f1115",
+    "bg-2": "#14171d",
+    "bg-glow": "#1b2030",
+    "panel": "#171a21",
+    "panel-2": "#1c2029",
+    "line": "#2b313d",
+    "line-soft": "#20242d",
+    "text": "#e8eaf0",
+    "muted": "#8b93a7",
+    "gold": "#7c8cff",
+    "gold-soft": "rgba(124,140,255,0.14)",
+    "gold-line": "rgba(124,140,255,0.45)",
+    "hot": "#ff8a8a",
+    "gold-hover": "#97a4ff",
+    "on-gold": "#0f1115",
+    "field": "#11141a",
+    "btn-bg": "#161a22",
+    "font-head": "'Bebas Neue', 'Inter', sans-serif",
+    "font-body": "'Inter', system-ui, sans-serif"
+  }
+}

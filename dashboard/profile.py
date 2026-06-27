@@ -23,7 +23,7 @@ def _load() -> dict:
     path = _DIR / f"{name}.json"
     if not path.exists():
         path = _DIR / f"{_DEFAULT}.json"
-    return json.loads(path.read_text())
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 # Resolved once at import — the profile doesn't change within a running process.
@@ -35,3 +35,14 @@ def root_css() -> str:
     tokens = ACTIVE.get("tokens", {})
     body = "".join(f"    --{k}: {v};\n" for k, v in tokens.items())
     return ":root {\n" + body + "  }"
+
+
+def who() -> str:
+    """Effective display name — a runtime override (set on /me) or the profile default."""
+    from . import store  # local import to avoid any import-order surprises
+    return (store.load("me", {}) or {}).get("name") or ACTIVE.get("who", "")
+
+
+def pronouns() -> str:
+    from . import store
+    return (store.load("me", {}) or {}).get("pronouns") or ACTIVE.get("pronouns", "")

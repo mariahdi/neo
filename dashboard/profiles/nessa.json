@@ -1,0 +1,39 @@
+{
+  "key": "nessa",
+  "name": "Nessa",
+  "wordmark": "🦋 Ness<b>a</b>",
+  "who": "Nessa",
+  "tagline": "your gentle little kitchen",
+  "role": "member",
+  "modules": [
+    "recipes",
+    "about"
+  ],
+  "home": "modules",
+  "lock_modules": true,
+  "hide_data_export": true,
+  "about_heading": "About <b>Nessa</b>",
+  "about_roles": ["Nessa"],
+  "about_intro": "This little space is yours, Nessa. 🦋 Add the photos and words that make you smile — there's no right way to do it. Designed with you in mind.",
+  "tokens": {
+    "bg": "#e3ebf8",
+    "bg-2": "#d9e3f4",
+    "bg-glow": "#eaf0fe",
+    "panel": "#f4f2fa",
+    "panel-2": "#ece9f5",
+    "line": "#cdd8ec",
+    "line-soft": "#dde5f3",
+    "text": "#36405a",
+    "muted": "#7882a0",
+    "gold": "#4f8fe6",
+    "gold-soft": "rgba(79,143,230,0.15)",
+    "gold-line": "rgba(79,143,230,0.42)",
+    "hot": "#f0a07a",
+    "gold-hover": "#6aa3ef",
+    "on-gold": "#ffffff",
+    "field": "#f6f6fb",
+    "btn-bg": "#ece9f5",
+    "font-head": "Georgia, 'Times New Roman', serif",
+    "font-body": "'Inter', system-ui, sans-serif"
+  }
+}

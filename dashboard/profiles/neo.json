@@ -5,6 +5,7 @@
   "who": "Hello Chuck",
   "tagline": "Control Room",
   "role": "member",
+  "dev_links": true,
   "work_nav": [
     ["usafa", "/usafa", "USAFA"],
     ["proposals", "/proposals", "Proposals"],

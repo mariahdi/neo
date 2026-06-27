@@ -5,6 +5,7 @@
   "who": "Mariah",
   "tagline": "Personal OS",
   "role": "owner",
+  "dev_links": true,
   "tokens": {
     "bg": "#0e0a07",
     "bg-2": "#1a120c",

@@ -17,8 +17,11 @@ docs/DEPLOY.md). Leaving them unset — the local/demo default — means no logi
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from reviewer.actions_api import approve as do_approve
@@ -37,6 +40,12 @@ from .wellness import router as wellness_router
 from .goals import router as goals_router
 from .modules_api import router as modules_router
 from .nominal import router as nominal_router
+from .recipes import router as recipes_router
+from .billing import router as billing_router
+from .pwa import router as pwa_router
+from .dataio import router as dataio_router
+from .aria_tagline import router as aria_router
+from .me import router as me_router
 from .stocks import router as stocks_router
 from .wins import router as wins_router
 
@@ -60,9 +69,21 @@ app.include_router(trips_router)
 app.include_router(wellness_router)
 app.include_router(career_router)
 app.include_router(dailybread_router)
+app.include_router(recipes_router)
+app.include_router(billing_router)
 app.include_router(modules_router)
 # USAFA + Dev work surfaces (the Proposals board stays here in main.py).
 app.include_router(work.router)
+
+# PWA — installable web app: manifest + service worker (pwa.py) and icons.
+app.include_router(pwa_router)
+# Data export/import — own your data (dataio.py).
+app.include_router(dataio_router)
+# Adaptive tagline — "What's your ARIA today?" (aria_tagline.py).
+app.include_router(aria_router)
+# You / Settings — editable identity + module show/hide (me.py).
+app.include_router(me_router)
+app.mount("/static", StaticFiles(directory=str(Path(__file__).resolve().parent / "static"), check_dir=False), name="static")
 
 # Board column keys (from dashboard_api.COLUMNS) -> the canonical labels the
 # unified dashboard shows. Same four columns the prompt asks for.
@@ -146,10 +167,19 @@ def _launcher() -> str:
   .tiles-empty {{ color: var(--muted); font-style: italic; }}
 </style>
 <main>
-  <div class="launch-head"><h1>Welcome back, <b>{profile.ACTIVE.get("who", "")}</b></h1>
-    <p class="launch-sub">{profile.ACTIVE.get("tagline", "")} · pick a space</p></div>
+  <div class="launch-head"><h1>Welcome back, <b>{profile.who()}</b></h1>
+    <p class="launch-sub" id="aria-sub">{profile.ACTIVE.get("tagline", "")} · pick a space</p>
+    <p style="margin-top:4px;"><a href="/aria" style="font-size:12px;color:var(--gold);text-decoration:none;">What's your ARIA today? →</a></p></div>
   <div class="tiles">{tiles or '<div class="tiles-empty">No modules enabled yet — add some from Modules.</div>'}</div>
 </main>"""
+    # Swap in today's ARIA expansion on the home line (appended as a plain string
+    # so the f-string above stays free of brace-escaping).
+    body += (
+        "<script>fetch('/api/aria/today').then(function(r){return r.json()})"
+        ".then(function(d){if(d&&d.words){document.getElementById('aria-sub')"
+        ".innerHTML=d.words.map(function(w){return '<b>'+w[0]+'</b>'+w.slice(1)}).join(' ')+' · pick a space';}})"
+        ".catch(function(){});</script>"
+    )
     return theme.page(profile.ACTIVE.get("name", ""), body, active="dashboard")
 
 
@@ -188,6 +218,7 @@ PAGE = r"""<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><!--TITLE--></title>
 <!--FONTS-->
+<!--PWA-->
 <style>
   /*ROOTCSS*/
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -211,7 +242,7 @@ PAGE = r"""<!DOCTYPE html>
     display: flex; align-items: center; justify-content: space-between;
     padding: 18px 32px;
     border-bottom: 1px solid var(--line-soft);
-    background: rgba(10,14,26,0.7);
+    background: var(--bg-2);
     backdrop-filter: blur(6px);
     position: sticky; top: 0; z-index: 20;
   }
@@ -657,8 +688,9 @@ setInterval(refresh, 30000);
 PAGE = (
     PAGE.replace("<!--TITLE-->", profile.ACTIVE["name"])
     .replace("<!--FONTS-->", theme.FONT_LINK)
+    .replace("<!--PWA-->", theme.pwa_head())
     .replace("/*ROOTCSS*/", profile.root_css())
     .replace("/*EXTRA_CSS*/", theme.EXTRA_CSS)
     .replace("<!--FOOTER-->", theme.footer()
-             + f"<script>{theme.TOUR_JS}</script>")
+             + (f"<script>{theme.TOUR_JS}</script>" if profile.ACTIVE.get("dev_links") else ""))
 )
