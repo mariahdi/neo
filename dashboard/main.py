@@ -29,7 +29,7 @@ from reviewer.actions_api import request_changes as do_request_changes
 from reviewer.dashboard_api import DEMO_MODE as BOARD_DEMO
 from reviewer.dashboard_api import JIRA_BASE_URL, get_dashboard
 
-from . import auth, chat, profile, registry, theme, work
+from . import auth, chat, profile, registry, store, theme, work
 from .about import router as about_router
 from .body import router as body_router
 from .career import router as career_router
@@ -95,6 +95,13 @@ _COLUMN_LABELS = {
     "review": "In Review",
     "done": "Done",
 }
+
+
+@app.get("/api/health/store")
+def health_store():
+    """Is the live store actually persisting? Reports backend, Postgres
+    connectivity, and row count — no secrets. (Behind login when auth is on.)"""
+    return JSONResponse(store.health())
 
 
 @app.get("/api/state")

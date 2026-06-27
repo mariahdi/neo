@@ -256,3 +256,33 @@ def keys() -> list[str]:
     except Exception as e:
         print(f"[store] keys() failed ({e}); using file cache")
         return _from_files()
+
+
+def health() -> dict:
+    """Diagnostic snapshot of the storage backend — no secrets. Use to confirm
+    on a live server whether Postgres is actually connected and holding data."""
+    info = {
+        "instance": _INSTANCE,
+        "backend": "postgres" if DB_URL else "file",
+        "db_url_configured": bool(DB_URL),
+        "encryption_active": bool(_fernet()),
+        "authed_user": bool(_user.get()),
+    }
+    if not DB_URL:
+        info["note"] = ("No DATABASE_URL set — using file storage, which is "
+                        "EPHEMERAL on Render (data is lost on restart/redeploy).")
+        return info
+    try:
+        _pg_init()
+        with _connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1")
+                cur.fetchone()
+                cur.execute(f"SELECT count(*) FROM {_TABLE} WHERE name LIKE %s", (f"{_INSTANCE}:%",))
+                info["rows_for_instance"] = cur.fetchone()[0]
+        info["postgres_ok"] = True
+    except Exception as e:
+        err = str(e).replace(DB_URL, "<DATABASE_URL>") if DB_URL else str(e)
+        info["postgres_ok"] = False
+        info["postgres_error"] = err[:300]
+    return info
