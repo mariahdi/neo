@@ -167,8 +167,11 @@ async def webhook(request: Request) -> JSONResponse:
     except Exception as e:
         print(f"[billing] webhook verify failed: {e}")
         return JSONResponse({"ok": False}, status_code=400)
-    etype = event["type"]
-    obj = event["data"]["object"]
+    # construct_event() returns a StripeObject (no .get()); re-parse the raw
+    # payload as a plain dict so .get() works. Safe for both branches above.
+    parsed = json.loads(payload)
+    etype = parsed["type"]
+    obj = parsed["data"]["object"]
     if etype == "checkout.session.completed":
         import secrets
         email = (obj.get("customer_details") or {}).get("email")
