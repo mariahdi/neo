@@ -310,3 +310,31 @@ def migrate_user(from_user: str, to_user: str) -> list[str]:
     finally:
         _user.set(prev)
     return moved
+
+
+def delete(name: str) -> None:
+    """Delete a stored key for the current user/instance scope. Never raises."""
+    try:
+        p = _file_path(name)
+        if p.exists():
+            p.unlink()
+    except Exception as e:
+        print(f"[store] file delete '{name}' failed ({e})")
+    if DB_URL:
+        try:
+            _pg_init()
+            with _connect() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(f"DELETE FROM {_TABLE} WHERE name = %s", (_pg_name(name),))
+                conn.commit()
+        except Exception as e:
+            print(f"[store] Postgres delete '{name}' failed ({e})")
+
+
+def wipe_user() -> list[str]:
+    """Delete ALL of the current user's per-user data. Shared keys (account,
+    billing, community bank) are left intact. Returns the deleted key names."""
+    names = [n for n in keys() if n not in _SHARED]
+    for n in names:
+        delete(n)
+    return names

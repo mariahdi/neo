@@ -54,6 +54,13 @@ async def import_data(body: dict) -> JSONResponse:
     return JSONResponse({"ok": True, "restored": restored, "count": len(restored)})
 
 
+@router.post("/api/data/delete")
+async def delete_data() -> JSONResponse:
+    """Erase all of the current user's content (their account login stays)."""
+    deleted = store.wipe_user()
+    return JSONResponse({"ok": True, "deleted": deleted, "count": len(deleted)})
+
+
 @router.get("/data")
 async def data_page():
     # Gentle instances hide the data tools entirely (no rabbit hole, even by URL).
@@ -71,8 +78,8 @@ _BODY = r"""
   .data-card h2 { font-size: 18px; margin-bottom: 6px; }
   .data-card p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
   .data-card input[type=file] { display: none; }
-  #imp-result { display:none; margin-top:14px; font-size:13px; padding:10px 12px; border-radius:10px; background: var(--gold-soft); border:1px solid var(--gold-line); color: var(--text); }
-  #imp-result.show { display:block; }
+  #imp-result, #del-result { display:none; margin-top:14px; font-size:13px; padding:10px 12px; border-radius:10px; background: var(--gold-soft); border:1px solid var(--gold-line); color: var(--text); }
+  #imp-result.show, #del-result.show { display:block; }
 </style>
 <main class="data-wrap">
   <h1>Your <b>data</b></h1>
@@ -91,6 +98,15 @@ _BODY = r"""
     <input type="file" id="imp" accept="application/json,.json">
     <div id="imp-result"></div>
   </div>
+
+  <div class="data-card">
+    <h2>🗑 Delete everything</h2>
+    <p>Permanently erase all your content from Neo. Your login stays, but every
+       module's data is deleted. <b>This can't be undone</b> — export first if you'd
+       like a copy.</p>
+    <button class="btn" id="del-btn" style="border-color:var(--gold-line);">Delete my data</button>
+    <div id="del-result"></div>
+  </div>
 </main>
 <script>
 const res = document.getElementById("imp-result");
@@ -108,5 +124,17 @@ document.getElementById("imp").addEventListener("change", async (e) => {
   e.target.value = "";
 });
 function show(msg, ok){ res.textContent = msg; res.classList.add("show"); res.style.opacity = ok?1:0.9; }
+
+const delBtn = document.getElementById("del-btn");
+if (delBtn) delBtn.addEventListener("click", async () => {
+  if (!confirm("Permanently delete ALL your data? This cannot be undone.")) return;
+  if (!confirm("Are you absolutely sure? Everything will be erased.")) return;
+  const dr = document.getElementById("del-result");
+  try {
+    const out = await (await fetch("/api/data/delete", { method:"POST" })).json();
+    dr.textContent = out.ok ? ("Deleted " + out.count + " item(s). Your data is gone.") : "Delete failed.";
+  } catch (_) { dr.textContent = "Network error during delete."; }
+  dr.classList.add("show");
+});
 </script>
 """
