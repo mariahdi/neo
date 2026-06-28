@@ -38,3 +38,12 @@ services:
         sync: false
       - key: NEO_JIRA_PROJECT
         sync: false
+
+      # Account provisioning: GHL POSTs to /api/provision with this shared secret
+      # after a purchase. Set to a long random string (openssl rand -hex 32) and
+      # use the same value in the GHL webhook.
+      - key: NEO_PROVISION_SECRET
+        sync: false
+      # Where the login page's "Get Neo" link sends people (the GHL landing page).
+      - key: NEO_LANDING_URL
+        sync: false

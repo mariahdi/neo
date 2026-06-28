@@ -79,17 +79,13 @@ if not os.environ.get("SESSION_SECRET") and (PASS or os.environ.get("NEO_AUTH"))
              if PASS else "Using a random key that resets on every restart (users get logged out). ")
           + "Set SESSION_SECRET (e.g. `openssl rand -hex 32`) for stable, secure sessions.")
 
-# Reachable without a session (the login/signup screens and their APIs).
-EXEMPT = {"/login", "/signup", "/api/login", "/api/logout", "/api/signup", "/api/billing/webhook"}
+# Reachable without a session: the login screen + its API, server-to-server
+# account provisioning (GHL calls this after purchase), and the Stripe webhook.
+EXEMPT = {"/login", "/api/login", "/api/logout", "/api/provision", "/api/billing/webhook"}
 
-# Reachable while logged in but NOT yet subscribed, so a new user can finish
-# checkout. Everything else requires an active subscription (the billing gate).
-BILLING_EXEMPT = {
-    "/login", "/signup", "/api/login", "/api/logout", "/api/signup",
-    "/billing/checkout", "/billing/success", "/billing/cancel",
-    "/api/billing/checkout", "/api/billing/status", "/api/billing/reset",
-    "/api/billing/webhook", "/api/health/store",
-}
+# Marketing/landing URL shown on the login screen ("Get Neo"). Point
+# NEO_LANDING_URL at the GHL landing page once it's live.
+LANDING_URL = os.environ.get("NEO_LANDING_URL", "#")
 
 
 # ── Tokens (mock; swap for JWTs in a real backend) ────────────────────────────
@@ -203,15 +199,7 @@ class SessionMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         token = _token_from(request)
         if token and valid_token(token):
-            # Logged in — now require an active subscription (except on the pages
-            # needed to get one, and except for owner accounts). Webhook marks the
-            # user active; next request passes.
-            if path not in BILLING_EXEMPT and not is_owner_email(user_from_token(token)):
-                from . import billing  # local import avoids an auth<->billing cycle
-                if not billing.is_subscribed(request):
-                    if path.startswith("/api/"):
-                        return JSONResponse({"ok": False, "error": "subscription required"}, status_code=402)
-                    return RedirectResponse(url="/billing/checkout", status_code=302)
+            # A valid session is all Neo checks — billing lives entirely in GHL.
             return await call_next(request)
         if path.startswith("/api/"):
             return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
@@ -266,25 +254,25 @@ async def login(body: LoginIn) -> JSONResponse:
     return JSONResponse({"ok": False, "message": "Wrong email or password."}, status_code=401)
 
 
-class SignupIn(BaseModel):
+PROVISION_SECRET = os.environ.get("NEO_PROVISION_SECRET")
+
+
+class ProvisionIn(BaseModel):
     email: str = ""
-    username: str = ""          # accepted as an alias (the login-page toggle posts this)
     password: str = ""
-    confirm_password: str = ""
+    provision_secret: str = ""
 
 
-@router.post("/api/signup")
-async def signup(body: SignupIn) -> JSONResponse:
-    email = (body.email or body.username).strip()
-    if body.confirm_password and body.password != body.confirm_password:
-        return JSONResponse({"ok": False, "message": "Passwords don't match."}, status_code=400)
-    ok, result = register(email, body.password)
+@router.post("/api/provision")
+async def provision(body: ProvisionIn) -> JSONResponse:
+    """Server-to-server account creation, called by the GHL workflow after a
+    purchase. Not user-facing — guarded by a shared secret, never a session."""
+    if not PROVISION_SECRET or not hmac.compare_digest(body.provision_secret or "", PROVISION_SECRET):
+        return JSONResponse({"ok": False, "message": "unauthorized"}, status_code=403)
+    ok, result = register(body.email, body.password)
     if not ok:
         return JSONResponse({"ok": False, "message": result}, status_code=400)
-    token = make_token(result)  # result is the normalized email
-    resp = JSONResponse({"ok": True, "token": token, "redirect": "/billing/checkout"})
-    resp.set_cookie(COOKIE, token, max_age=TTL, httponly=True, samesite="lax", path="/")
-    return resp
+    return JSONResponse({"ok": True, "email": result}, status_code=201)
 
 
 @router.post("/api/logout")
@@ -324,15 +312,6 @@ async def login_page(request: Request):
     return HTMLResponse(_LOGIN_PAGE)
 
 
-@router.get("/signup", response_class=HTMLResponse)
-async def signup_page(request: Request):
-    # Already signed in? Skip straight to the app.
-    token = request.cookies.get(COOKIE)
-    if token and valid_token(token):
-        return RedirectResponse(url="/", status_code=302)
-    return HTMLResponse(_SIGNUP_PAGE)
-
-
 _LOGIN_PAGE = (
     """<!DOCTYPE html>
 <html lang="en">
@@ -370,36 +349,25 @@ _LOGIN_PAGE = (
       <label for="p">Password</label>
       <input id="p" type="password" autocomplete="current-password">
       <button type="submit" id="submit-btn" class="btn btn-gold">Sign in</button>
-      <div class="switch">New here? <a id="toggle" href="#">Create an account</a></div>
+      <div class="switch">Don't have an account? <a href="<!--LANDING-->">Get Neo</a></div>
     </div>
   </form>
 <script>
   const form = document.getElementById("login-form");
   const err = document.getElementById("err");
-  const submitBtn = document.getElementById("submit-btn");
-  const toggle = document.getElementById("toggle");
-  let mode = "login";
-  toggle.addEventListener("click", (e) => {
-    e.preventDefault();
-    mode = (mode === "login") ? "signup" : "login";
-    submitBtn.textContent = (mode === "login") ? "Sign in" : "Create account";
-    toggle.textContent = (mode === "login") ? "Create an account" : "Have an account? Sign in";
-    err.classList.remove("show");
-  });
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     err.classList.remove("show");
     const username = document.getElementById("u").value;
     const password = document.getElementById("p").value;
-    const url = (mode === "login") ? "/api/login" : "/api/signup";
     try {
-      const r = await fetch(url, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ username, password }) });
+      const r = await fetch("/api/login", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ username, password }) });
       const out = await r.json();
       if (out.ok) {
         localStorage.setItem("neo_session", out.token);  // returning users skip this screen
         location.href = "/";
       } else {
-        err.textContent = out.message || ((mode === "login") ? "Sign in failed." : "Couldn't create account."); err.classList.add("show");
+        err.textContent = out.message || "Sign in failed."; err.classList.add("show");
       }
     } catch (_) { err.textContent = "Network error — try again."; err.classList.add("show"); }
   });
@@ -414,81 +382,7 @@ _LOGIN_PAGE = (
     .replace("<!--LFONTS-->", theme.FONT_LINK)
     .replace("<!--LWORD-->", theme.ACTIVE["wordmark"])
     .replace("<!--LTAG-->", theme.ACTIVE["tagline"])
-)
-
-
-_SIGNUP_PAGE = (
-    """<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Create your <!--LNAME--></title>
-<!--LFONTS-->
-<style>"""
-    + theme.BASE_CSS
-    + """
-  body { display: flex; align-items: center; justify-content: center; padding: 24px; }
-  .login { width: 100%; max-width: 360px; }
-  .login .brand { display: block; text-align: center; font-size: 52px; letter-spacing: 0.14em; margin-bottom: 4px; }
-  .login .brand b { color: var(--gold); }
-  .login .tag { text-align: center; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-bottom: 26px; }
-  .login .card { padding: 26px 24px; }
-  .login label { display: block; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
-  .login input { width: 100%; margin-bottom: 16px; }
-  .login .btn-gold { width: 100%; padding: 12px; }
-  .login .err { display: none; font-size: 12.5px; color: #f0cda0; background: rgba(217,138,58,0.12); border: 1px solid rgba(217,138,58,0.5); border-radius: 9px; padding: 9px 11px; margin-bottom: 14px; }
-  .login .err.show { display: block; }
-  .login .switch { text-align: center; font-size: 12.5px; color: var(--muted); margin-top: 14px; }
-  .login .switch a { color: var(--gold); text-decoration: none; cursor: pointer; }
-</style>
-</head>
-<body>
-  <form class="login" id="signup-form">
-    <span class="brand"><!--LWORD--></span>
-    <div class="tag">Create your account</div>
-    <div class="card">
-      <div class="err" id="err"></div>
-      <label for="email">Email</label>
-      <input id="email" type="email" autocomplete="username" autofocus>
-      <label for="p">Password</label>
-      <input id="p" type="password" autocomplete="new-password" placeholder="at least 8 characters">
-      <label for="p2">Confirm password</label>
-      <input id="p2" type="password" autocomplete="new-password">
-      <button type="submit" class="btn btn-gold">Create my Neo</button>
-      <div class="switch">Already have an account? <a href="/login">Sign in</a></div>
-    </div>
-  </form>
-<script>
-  const form = document.getElementById("signup-form");
-  const err = document.getElementById("err");
-  function fail(m){ err.textContent = m; err.classList.add("show"); }
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    err.classList.remove("show");
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("p").value;
-    const confirm_password = document.getElementById("p2").value;
-    if (password.length < 8) return fail("Password must be at least 8 characters.");
-    if (password !== confirm_password) return fail("Passwords don't match.");
-    try {
-      const r = await fetch("/api/signup", { method: "POST", headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ email, password, confirm_password }) });
-      const out = await r.json();
-      if (out.ok) {
-        localStorage.setItem("neo_session", out.token);
-        location.href = out.redirect || "/billing/checkout";
-      } else { fail(out.message || "Couldn't create account."); }
-    } catch (_) { fail("Network error — try again."); }
-  });
-</script>
-</body>
-</html>"""
-)
-_SIGNUP_PAGE = (
-    _SIGNUP_PAGE.replace("<!--LNAME-->", theme.ACTIVE["name"])
-    .replace("<!--LFONTS-->", theme.FONT_LINK)
-    .replace("<!--LWORD-->", theme.ACTIVE["wordmark"])
+    .replace("<!--LANDING-->", LANDING_URL)
 )
 
 

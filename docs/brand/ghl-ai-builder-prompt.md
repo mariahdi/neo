@@ -85,11 +85,13 @@ single warm gold accent color.
 - **Logo wordmark:** "ARIA" with the final **A** in gold
 - Keep it spacious, rounded corners, soft shadows — premium and calm.
 
-## After the page exists
-- Point every **Get Neo / Start with Neo** button directly at:
-  **https://neo-dashboard-dmae.onrender.com/signup**
-- Neo handles signup + billing itself (Stripe Checkout, 14-day free trial, then
-  $9.99/mo). No GHL checkout/order form needed — GHL is the marketing/landing +
-  CRM layer; the app owns accounts and payments.
-- The full automatic flow: button → Neo **/signup** → account created → Neo
-  **/billing/checkout** (Stripe trial) → dashboard. Zero manual steps.
+## After the page exists — buy → account flow (billing lives in GHL)
+- Point every **Get Neo / Start with Neo** button at your **GHL checkout**
+  (Stripe, $9.99/mo, 14-day free trial).
+- On successful payment, a GHL **workflow** does two things:
+  1. **POST** to `https://neo-dashboard-dmae.onrender.com/api/provision`
+     with body `{ "email": <buyer email>, "password": <generated password>,
+     "provision_secret": <your NEO_PROVISION_SECRET> }` → creates the Neo account.
+  2. **Email** the buyer their login: the Neo URL, their email, and the password.
+- Buyer goes to the Neo URL → logs in → in. **Neo only authenticates; GHL owns
+  billing.** (Generate the password in the workflow; the buyer can change it later.)
