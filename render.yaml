@@ -47,3 +47,10 @@ services:
       # Where the login page's "Get Neo" link sends people (the GHL landing page).
       - key: NEO_LANDING_URL
         sync: false
+
+      # Welcome email (Gmail SMTP): buyers get their login + generated password.
+      # NEO_EMAIL_PASSWORD is a Gmail App Password (myaccount.google.com/apppasswords).
+      - key: NEO_EMAIL_FROM
+        sync: false
+      - key: NEO_EMAIL_PASSWORD
+        sync: false

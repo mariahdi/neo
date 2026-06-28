@@ -68,6 +68,45 @@ def is_subscribed(request: Request) -> bool:
     return _status(request).get("status") == "active"
 
 
+def _send_welcome_email(to_email: str, password: str) -> None:
+    import smtplib
+    from email.mime.text import MIMEText
+    from_email = os.environ.get("NEO_EMAIL_FROM", "")
+    from_pass = os.environ.get("NEO_EMAIL_PASSWORD", "")
+    if not from_email or not from_pass:
+        print(f"[billing] email not configured — credentials for {to_email}: {password}")
+        return
+    app_url = BASE_URL
+    landing = os.environ.get("NEO_LANDING_URL", "https://youraria.co")
+    body = f"""Hi,
+
+Welcome to Neo. Your private personal OS is ready.
+
+Login here: {app_url}/login
+Email:      {to_email}
+Password:   {password}
+
+Your 14-day free trial has started. You won't be charged until
+day 15. Cancel anytime -- your data is always exportable.
+
+With care,
+Mariah
+Co-Founder & CTO, Aria
+{landing}
+"""
+    msg = MIMEText(body)
+    msg["Subject"] = "Your Neo is ready ✦"
+    msg["From"] = from_email
+    msg["To"] = to_email
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+            s.login(from_email, from_pass)
+            s.send_message(msg)
+        print(f"[billing] welcome email sent to {to_email}")
+    except Exception as e:
+        print(f"[billing] email failed: {e} — credentials: {to_email} / {password}")
+
+
 # ── API ───────────────────────────────────────────────────────────────────────
 @router.get("/api/billing/status")
 async def billing_status(request: Request) -> JSONResponse:
@@ -131,9 +170,18 @@ async def webhook(request: Request) -> JSONResponse:
     etype = event["type"]
     obj = event["data"]["object"]
     if etype == "checkout.session.completed":
-        key = obj.get("client_reference_id") or (obj.get("customer_details") or {}).get("email") or "_local"
-        _set(key, "active", customer_id=obj.get("customer"),
-             email=(obj.get("customer_details") or {}).get("email"))
+        import secrets
+        email = (obj.get("customer_details") or {}).get("email")
+        key = obj.get("client_reference_id") or email or "_local"
+        _set(key, "active", customer_id=obj.get("customer"), email=email)
+
+        # Create the Neo account and email credentials to the buyer.
+        if email:
+            password = secrets.token_urlsafe(12)
+            ok, result = auth.register(email, password)
+            if ok:
+                _send_welcome_email(email, password)
+            # If already registered, that's fine — skip (their account exists).
     elif etype in ("customer.subscription.created", "customer.subscription.updated",
                    "customer.subscription.deleted"):
         # Map the Stripe customer back to whichever user we stored it against.
