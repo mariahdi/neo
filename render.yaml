@@ -48,9 +48,10 @@ services:
       - key: NEO_LANDING_URL
         sync: false
 
-      # Welcome email (Gmail SMTP): buyers get their login + generated password.
-      # NEO_EMAIL_PASSWORD is a Gmail App Password (myaccount.google.com/apppasswords).
-      - key: NEO_EMAIL_FROM
+      # Welcome email via Resend's HTTPS API (Render free tier blocks SMTP).
+      # RESEND_API_KEY from resend.com; NEO_EMAIL_FROM is a verified sender
+      # (defaults to onboarding@resend.dev until you verify your own domain).
+      - key: RESEND_API_KEY
         sync: false
-      - key: NEO_EMAIL_PASSWORD
+      - key: NEO_EMAIL_FROM
         sync: false

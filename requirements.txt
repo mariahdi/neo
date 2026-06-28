@@ -18,3 +18,7 @@ pillow-heif>=0.16
 
 # Encryption-at-rest for sensitive modules (used only when NEO_DATA_KEY is set).
 cryptography>=42
+
+# Transactional email (welcome email) via Resend's HTTPS API — Render's free
+# tier blocks outbound SMTP, so we don't use smtplib.
+resend

@@ -69,13 +69,12 @@ def is_subscribed(request: Request) -> bool:
 
 
 def _send_welcome_email(to_email: str, password: str) -> None:
-    import smtplib
-    from email.mime.text import MIMEText
-    from_email = os.environ.get("NEO_EMAIL_FROM", "")
-    from_pass = os.environ.get("NEO_EMAIL_PASSWORD", "")
-    if not from_email or not from_pass:
-        print(f"[billing] email not configured — credentials for {to_email}: {password}")
+    # Resend's HTTPS API — Render's free tier blocks outbound SMTP ports.
+    api_key = os.environ.get("RESEND_API_KEY", "")
+    if not api_key:
+        print(f"[billing] RESEND_API_KEY not set — credentials: {to_email} / {password}")
         return
+    from_email = os.environ.get("NEO_EMAIL_FROM", "onboarding@resend.dev")
     app_url = BASE_URL
     landing = os.environ.get("NEO_LANDING_URL", "https://youraria.co")
     body = f"""Hi,
@@ -94,14 +93,15 @@ Mariah
 Co-Founder & CTO, Aria
 {landing}
 """
-    msg = MIMEText(body)
-    msg["Subject"] = "Your Neo is ready ✦"
-    msg["From"] = from_email
-    msg["To"] = to_email
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
-            s.login(from_email, from_pass)
-            s.send_message(msg)
+        import resend
+        resend.api_key = api_key
+        resend.Emails.send({
+            "from": f"Mariah at Aria <{from_email}>",
+            "to": [to_email],
+            "subject": "Your Neo is ready ✦",
+            "text": body,
+        })
         print(f"[billing] welcome email sent to {to_email}")
     except Exception as e:
         print(f"[billing] email failed: {e} — credentials: {to_email} / {password}")
