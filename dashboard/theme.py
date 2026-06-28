@@ -88,6 +88,15 @@ TOPNAV_CSS = """
   .nav-badge { display: inline-block; background: var(--gold); color: var(--on-gold); font-size: 9px; font-weight: 700; border-radius: 10px; padding: 0 5px; margin-left: 5px; vertical-align: 1px; }
   .logout { background: none; border: 1px solid var(--line); color: var(--muted); font-family: inherit; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 8px; padding: 5px 11px; }
   .logout:hover { border-color: var(--gold-line); color: var(--gold); }
+  /* Mobile: keep the whole nav reachable instead of overflowing off-screen. */
+  @media (max-width: 720px) {
+    header { gap: 12px; padding: 14px 16px; }
+    .brand { font-size: 24px; }
+    .who { display: none; }
+    .topnav { gap: 16px; margin-left: 4px; overflow-x: auto; white-space: nowrap;
+              -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .topnav::-webkit-scrollbar { display: none; }
+  }
 """
 
 # Full shared stylesheet for new module pages. The :root block + all colors and
