@@ -85,13 +85,22 @@ single warm gold accent color.
 - **Logo wordmark:** "ARIA" with the final **A** in gold
 - Keep it spacious, rounded corners, soft shadows — premium and calm.
 
-## After the page exists — buy → account flow (billing lives in GHL)
-- Point every **Get Neo / Start with Neo** button at your **GHL checkout**
-  (Stripe, $9.99/mo, 14-day free trial).
-- On successful payment, a GHL **workflow** does two things:
-  1. **POST** to `https://neo-dashboard-dmae.onrender.com/api/provision`
-     with body `{ "email": <buyer email>, "password": <generated password>,
-     "provision_secret": <your NEO_PROVISION_SECRET> }` → creates the Neo account.
-  2. **Email** the buyer their login: the Neo URL, their email, and the password.
-- Buyer goes to the Neo URL → logs in → in. **Neo only authenticates; GHL owns
-  billing.** (Generate the password in the workflow; the buyer can change it later.)
+## After the page exists — buy → account flow (chosen: Stripe webhook)
+- Point every **Get Neo / Start with Neo** button at your **Stripe Payment Link**
+  (or Stripe Checkout) for **$9.99/mo with a 14-day free trial**.
+- On payment, Stripe fires `checkout.session.completed` to Neo's webhook
+  (`/api/billing/webhook`). Neo automatically **creates the account** and
+  **emails the buyer** their login (URL + email + password). Zero manual steps.
+- **GHL stays the marketing/landing + CRM layer** — host the page, capture leads,
+  run email/SMS follow-up (you can sync Stripe customers into GHL). It does NOT
+  create accounts.
+- *Backup path:* `POST /api/provision` (with `NEO_PROVISION_SECRET`) can create an
+  account manually, or from a GHL workflow, if you ever switch to GHL-driven checkout.
+
+### Setup checklist
+1. Stripe: create a **$9.99/mo Price** with a **14-day trial**, then a **Payment Link**.
+2. Stripe → Webhooks: add `https://neo-dashboard-dmae.onrender.com/api/billing/webhook`,
+   event `checkout.session.completed` → copy the `whsec_…`.
+3. Render env: `NEO_STRIPE_SECRET_KEY`, `NEO_STRIPE_PRICE_ID`, `NEO_STRIPE_WEBHOOK_SECRET`,
+   `NEO_APP_URL`, `NEO_EMAIL_FROM`, `NEO_EMAIL_PASSWORD` (Gmail App Password).
+4. Landing buttons → the Stripe Payment Link. Done.
