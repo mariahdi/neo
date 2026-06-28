@@ -154,12 +154,21 @@ async def review_changes(proposal_id: str, body: ChangesIn) -> JSONResponse:
 def _launcher() -> str:
     """A clean module home — tiles for the enabled modules. Used by profiles
     whose `home` is "modules" (e.g. Aria), instead of the proposal work board."""
+    me_name = (store.load("me", {}) or {}).get("name")
+    greeting = f"Welcome back, <b>{me_name}</b>" if me_name else "Welcome to <b>Neo</b>"
     tiles = "".join(
         f'<a class="tile" href="{m["path"]}">'
         f'<span class="tile-ic">{m.get("icon", "•")}</span>'
         f'<span class="tile-name">{m["name"]}</span>'
         f'<span class="tile-desc">{m["description"]}</span></a>'
         for m in registry.enabled_modules()
+    )
+    # First-run nudge for someone who hasn't personalized yet.
+    hint = "" if me_name else (
+        '<a class="tile tile-hint" href="/me">'
+        '<span class="tile-ic">👋</span>'
+        '<span class="tile-name">Make it yours</span>'
+        '<span class="tile-desc">Add your name and choose the spaces you want — takes a few seconds.</span></a>'
     )
     body = f"""
 <style>
@@ -171,15 +180,16 @@ def _launcher() -> str:
            border-left: 3px solid var(--gold); border-radius: 14px; padding: 20px; text-decoration: none; color: inherit;
            transition: border-color 0.15s, transform 0.15s; }}
   .tile:hover {{ border-color: var(--gold-line); transform: translateY(-2px); }}
+  .tile-hint {{ border-left-color: var(--hot); background: var(--bg-2); }}
   .tile-ic {{ font-size: 28px; }} .tile-name {{ font-size: 16px; font-weight: 700; }}
   .tile-desc {{ font-size: 12px; color: var(--muted); line-height: 1.5; }}
   .tiles-empty {{ color: var(--muted); font-style: italic; }}
 </style>
 <main>
-  <div class="launch-head"><h1>Welcome back, <b>{profile.who()}</b></h1>
+  <div class="launch-head"><h1>{greeting}</h1>
     <p class="launch-sub" id="aria-sub">{profile.ACTIVE.get("tagline", "")} · pick a space</p>
     <p style="margin-top:4px;"><a href="/aria" style="font-size:12px;color:var(--gold);text-decoration:none;">What's your ARIA today? →</a></p></div>
-  <div class="tiles">{tiles or '<div class="tiles-empty">No modules enabled yet — add some from Modules.</div>'}</div>
+  <div class="tiles">{hint}{tiles or '<div class="tiles-empty">No modules enabled yet — add some from Modules.</div>'}</div>
 </main>"""
     # Swap in today's ARIA expansion on the home line (appended as a plain string
     # so the f-string above stays free of brace-escaping).
