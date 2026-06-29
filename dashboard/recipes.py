@@ -13,11 +13,14 @@ from __future__ import annotations
 
 import json
 import re
+import requests
 from pathlib import Path
+from urllib.parse import urljoin
 
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
 
 from . import profile, store, theme
 
@@ -125,15 +128,47 @@ class RecipesIn(BaseModel):
     favs: list[str] = []
 
 
+_IMG_PATTERNS = (
+    r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
+    r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
+    r'<meta[^>]+name=["\']twitter:image(?::src)?["\'][^>]+content=["\']([^"\']+)["\']',
+    r'<link[^>]+rel=["\']image_src["\'][^>]+href=["\']([^"\']+)["\']',
+)
+
+
+def _og_image(url: str) -> str:
+    """Best-effort: a web page's preview image (og:image / twitter:image).
+    Returns an absolute URL, or "" on any failure."""
+    if not url.startswith(("http://", "https://")):
+        return ""
+    try:
+        resp = requests.get(url, timeout=5, headers={"User-Agent": "Mozilla/5.0 (compatible; NeoBot/1.0)"})
+        html = resp.text[:200_000]
+    except Exception:
+        return ""
+    for pat in _IMG_PATTERNS:
+        m = re.search(pat, html, re.IGNORECASE)
+        if m:
+            return urljoin(url, m.group(1).strip())
+    return ""
+
+
 @router.post("/api/recipes")
 async def save_recipes(body: RecipesIn) -> JSONResponse:
-    """Replace the full recipe list + favorites (covers add / edit / delete)."""
+    """Replace the full recipe list + favorites (covers add / edit / delete).
+    When a recipe has a URL but no image yet, grab the page's preview thumbnail."""
     clean = []
+    fetched = 0
     for r in body.added:
         title = (r.get("title") or "").strip()
         if not title:
             continue
         rid = (r.get("id") or "r-" + (re.sub(r"[^a-z0-9]+", "-", title.lower())[:24] or "recipe"))
+        url = (r.get("url") or "").strip()
+        img = (r.get("image") or "").strip()
+        if url and not img and fetched < 8:  # cap network calls per save
+            img = await run_in_threadpool(_og_image, url)
+            fetched += 1
         clean.append({
             "id": rid,
             "title": title,
@@ -142,8 +177,8 @@ async def save_recipes(body: RecipesIn) -> JSONResponse:
             "ingredients": [i.strip() for i in (r.get("ingredients") or []) if i.strip()],
             "steps": [s.strip() for s in (r.get("steps") or []) if s.strip()],
             "note": (r.get("note") or "").strip(),
-            "url": (r.get("url") or "").strip(),
-            "image": (r.get("image") or "").strip(),
+            "url": url,
+            "image": img,
         })
     favs = [f for f in body.favs if isinstance(f, str)]
     # Preserve the "seeded" flag so samples don't re-appear after deletion.
