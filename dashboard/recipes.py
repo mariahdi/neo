@@ -90,7 +90,7 @@ def _owner_seed_recipes() -> list:
     """The owner's personal recipe set — a safety net so an owner account that
     lands in a fresh/empty data scope gets their recipes restored automatically.
     Configurable via NEO_OWNER_RECIPES (defaults to the bundled set)."""
-    fname = os.environ.get("NEO_OWNER_RECIPES", "nessa-recipes.json")
+    fname = os.environ.get("NEO_OWNER_RECIPES", "starter-recipes.json")
     try:
         return json.loads((_SEEDS_DIR / fname).read_text(encoding="utf-8"))
     except Exception:
