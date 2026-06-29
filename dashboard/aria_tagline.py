@@ -46,6 +46,22 @@ STARTERS = [
     ["Aim", "Refine", "Iterate", "Achieve"],
 ]
 
+# A popular starter "bank" so the cloud isn't empty on day one. Shown (sized by
+# points) until the community's own approved expansions take over; persists the
+# moment anyone votes or an owner approves a new one.
+SEED_BANK = [
+    {"id": "always-ready-infinitely-adaptable", "words": ["Always", "Ready", "Infinitely", "Adaptable"], "votes": 9, "by": "aria"},
+    {"id": "advancing-real-world-intelligence-autonomy", "words": ["Advancing", "Real-world", "Intelligence", "Autonomy"], "votes": 8, "by": "aria"},
+    {"id": "add-rest-ignore-admin", "words": ["Add", "Rest", "Ignore", "Admin"], "votes": 7, "by": "aria"},
+    {"id": "aspire-reach-inspire-achieve", "words": ["Aspire", "Reach", "Inspire", "Achieve"], "votes": 6, "by": "aria"},
+    {"id": "always-rising-inspiring-action", "words": ["Always", "Rising", "Inspiring", "Action"], "votes": 5, "by": "aria"},
+    {"id": "awake-rested-inspired-aligned", "words": ["Awake", "Rested", "Inspired", "Aligned"], "votes": 4, "by": "aria"},
+    {"id": "adorable-reliable-intuitive-ally", "words": ["Adorable", "Reliable", "Intuitive", "Ally"], "votes": 4, "by": "aria"},
+    {"id": "anythings-reachable-infinitely-achievable", "words": ["Anything's", "Reachable", "Infinitely", "Achievable"], "votes": 3, "by": "aria"},
+    {"id": "aim-refine-iterate-achieve", "words": ["Aim", "Refine", "Iterate", "Achieve"], "votes": 2, "by": "aria"},
+    {"id": "adventure-requires-intentional-action", "words": ["Adventure", "Requires", "Intentional", "Action"], "votes": 2, "by": "aria"},
+]
+
 
 def _starters() -> list:
     """Per-instance bank if the profile sets one (e.g. Nessa's calming set), else default."""
@@ -60,6 +76,10 @@ def _bank() -> dict:
     b = store.load("aria_bank", {"approved": [], "pending": []})
     b.setdefault("approved", [])
     b.setdefault("pending", [])
+    if not b["approved"]:
+        # No community-approved expansions yet — surface the popular starter set
+        # (persists once anyone votes or an owner approves a new one).
+        b["approved"] = [dict(e) for e in SEED_BANK]
     return b
 
 
@@ -216,6 +236,8 @@ _BODY = r"""
   .card { background: var(--panel); border: 1px solid var(--line-soft); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
   .card h2 { font-size: 17px; margin-bottom: 4px; } .card p { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; }
   .words { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .words > div { min-width: 0; }
+  .words input { width: 100%; min-width: 0; }
   .words .wl { font-size: 11px; color: var(--gold); font-weight: 700; text-align: center; margin-bottom: 3px; }
   .msg { display:none; margin-top:12px; font-size:13px; padding:9px 12px; border-radius:9px; background:var(--gold-soft); border:1px solid var(--gold-line); color:var(--text); }
   .msg.show { display:block; }
@@ -278,7 +300,7 @@ async function loadBank() {
   const b = await (await fetch("/api/aria/bank")).json();
   const items = (b.approved || []).slice().sort((a,c)=>(c.votes||0)-(a.votes||0));
   $("#cloud").innerHTML = items.length ? items.map(e => {
-    const size = 13 + Math.min(14, (e.votes||0)*2);
+    const size = 14 + Math.min(22, (e.votes||0) * 2.2);
     return `<span data-id="${e.id}" style="font-size:${size}px">${html4(e.words)} <small style="color:var(--muted)">(${e.votes||0})</small></span>`;
   }).join("") : '<span style="color:var(--muted);cursor:default">No approved expansions yet — be the first below.</span>';
   $("#cloud").querySelectorAll("[data-id]").forEach(s => s.addEventListener("click", async () => {
