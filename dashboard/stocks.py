@@ -99,7 +99,7 @@ DEFAULT = {"sectors": [
         {"name": "NVIDIA", "ticker": "NVDA", "update": None, "updated_at": None},
     ]},
     {"id": "space", "name": "Space", "stocks": [
-        {"name": "SpaceX", "ticker": "", "update": None, "updated_at": None},
+        {"name": "SpaceX", "ticker": "SPCX", "update": None, "updated_at": None},
         {"name": "Rocket Lab", "ticker": "RKLB", "update": None, "updated_at": None},
     ]},
 ]}
