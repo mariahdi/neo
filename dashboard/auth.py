@@ -28,6 +28,7 @@ import os
 import secrets
 import time
 from datetime import datetime, timezone
+from urllib.parse import quote
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -224,6 +225,64 @@ Aria
         print(f"[auth] reset email failed: {e}")
 
 
+# ── Sensitive-module PIN lock (NEO-97) ────────────────────────────────────────
+# Opt-in, off by default. A per-user PIN gates Wellness/Body behind a lock page;
+# a correct PIN issues a 1-hour signed unlock cookie. It's a gentle "not on an
+# unlocked screen / over-the-shoulder" guard, not a hard security boundary.
+LOCKED_MODULES = {"wellness", "body"}
+UNLOCK_COOKIE = "neo_unlock"
+UNLOCK_TTL = 60 * 60  # 1 hour
+
+
+def _lock_cfg() -> dict:
+    return store.load("lock", {}) or {}
+
+
+def lock_on() -> bool:
+    return bool(_lock_cfg().get("pin_hash"))
+
+
+def set_pin(pin: str) -> tuple[bool, str]:
+    pin = (pin or "").strip()
+    if not pin.isdigit() or not (4 <= len(pin) <= 8):
+        return False, "PIN must be 4–8 digits."
+    salt = os.urandom(16).hex()
+    store.save("lock", {"pin_hash": _hash_pw(pin, salt), "salt": salt})
+    return True, "ok"
+
+
+def verify_pin(pin: str) -> bool:
+    cfg = _lock_cfg()
+    if not cfg.get("pin_hash"):
+        return False
+    return hmac.compare_digest(cfg["pin_hash"], _hash_pw(pin or "", cfg.get("salt", "")))
+
+
+def disable_lock() -> None:
+    store.delete("lock")
+
+
+def make_unlock(user: str) -> str:
+    payload = f"{user}|{int(time.time()) + UNLOCK_TTL}"
+    raw = f"{payload}|{_sign('unlock:' + payload)}"
+    return base64.urlsafe_b64encode(raw.encode()).decode()
+
+
+def valid_unlock(token: str, user: str) -> bool:
+    try:
+        raw = base64.urlsafe_b64decode((token or "").encode()).decode()
+        u, exp, sig = raw.rsplit("|", 2)
+        if not hmac.compare_digest(sig, _sign("unlock:" + f"{u}|{exp}")):
+            return False
+        return u == user and int(exp) > time.time()
+    except Exception:
+        return False
+
+
+def _locked_path(path: str) -> bool:
+    return path in ("/wellness", "/body") or path.startswith("/api/wellness") or path.startswith("/api/body")
+
+
 def verify_user(email: str, password: str) -> bool:
     u = _users().get((email or "").strip().lower())
     if not u:
@@ -285,7 +344,12 @@ class SessionMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         token = _token_from(request)
         if token and valid_token(token):
-            # A valid session is all Neo checks — billing lives entirely in GHL.
+            # Opt-in PIN lock for sensitive modules: if on and not unlocked this
+            # session, gate Wellness/Body behind the PIN page.
+            if _locked_path(path) and lock_on() and not valid_unlock(request.cookies.get(UNLOCK_COOKIE, ""), user_from_token(token)):
+                if path.startswith("/api/"):
+                    return JSONResponse({"ok": False, "error": "locked"}, status_code=423)
+                return RedirectResponse(url="/lock?next=" + quote(path), status_code=302)
             return await call_next(request)
         if path.startswith("/api/"):
             return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
@@ -453,6 +517,73 @@ async def reset_password_api(request: Request) -> JSONResponse:
     if not ok:
         return JSONResponse({"ok": False, "message": result}, status_code=400)
     return JSONResponse({"ok": True})
+
+
+@router.get("/lock", response_class=HTMLResponse)
+async def lock_page(request: Request):
+    nxt = request.query_params.get("next", "/")
+    if not lock_on() or valid_unlock(request.cookies.get(UNLOCK_COOKIE, ""), current_user(request)):
+        return RedirectResponse(url=nxt or "/", status_code=302)
+    return HTMLResponse(_LOCK_PAGE.replace("<!--NEXT-->", nxt.replace('"', "%22").replace("<", "%3C")))
+
+
+@router.post("/api/lock/unlock")
+async def lock_unlock(request: Request) -> JSONResponse:
+    data = await request.json()
+    if not verify_pin(data.get("pin", "")):
+        return JSONResponse({"ok": False, "message": "Wrong PIN."}, status_code=401)
+    resp = JSONResponse({"ok": True, "redirect": data.get("next") or "/"})
+    resp.set_cookie(UNLOCK_COOKIE, make_unlock(current_user(request)), max_age=UNLOCK_TTL,
+                    httponly=True, samesite="lax", path="/")
+    return resp
+
+
+class PinIn(BaseModel):
+    pin: str = ""
+
+
+@router.post("/api/lock/set")
+async def lock_set(body: PinIn) -> JSONResponse:
+    ok, msg = set_pin(body.pin)
+    return JSONResponse({"ok": ok, "message": msg}, status_code=200 if ok else 400)
+
+
+@router.post("/api/lock/off")
+async def lock_off() -> JSONResponse:
+    disable_lock()
+    resp = JSONResponse({"ok": True})
+    resp.delete_cookie(UNLOCK_COOKIE, path="/")
+    return resp
+
+
+@router.get("/api/lock/status")
+async def lock_status() -> JSONResponse:
+    return JSONResponse({"on": lock_on(), "modules": sorted(LOCKED_MODULES)})
+
+
+_LOCK_PAGE = """<style>body{margin:0;background:#0e0a07;min-height:100vh}</style>
+<div style="max-width:380px;margin:0 auto;padding:110px 24px;font-family:monospace;color:#f5ede0;text-align:center">
+  <div style="font-size:34px;margin-bottom:10px">🔒</div>
+  <h2 style="font-family:Georgia;margin-bottom:8px">This space is private</h2>
+  <p style="color:rgba(245,237,224,0.6);font-size:13px;margin-bottom:22px">Enter your PIN to open it.</p>
+  <form id="f">
+    <input id="pin" type="password" inputmode="numeric" placeholder="••••" autofocus
+           style="width:100%;padding:13px;background:#1a1410;border:1px solid #3a2e24;color:#f5ede0;border-radius:8px;margin-bottom:14px;font-size:18px;text-align:center;letter-spacing:0.3em;box-sizing:border-box">
+    <button type="submit" style="width:100%;padding:14px;background:#E8A87C;color:#0e0a07;border:none;border-radius:50px;font-weight:600;cursor:pointer;font-size:15px">Unlock</button>
+    <p id="msg" style="margin-top:14px;font-size:13px;color:#f0a07a"></p>
+  </form>
+  <p style="margin-top:18px;font-size:12px"><a href="/" style="color:rgba(245,237,224,0.45)">&larr; Back home</a></p>
+  <script>
+    document.getElementById('f').onsubmit = async e => {
+      e.preventDefault();
+      const r = await fetch('/api/lock/unlock', {method:'POST',headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({pin: document.getElementById('pin').value, next: "<!--NEXT-->"})});
+      const d = await r.json();
+      if (d.ok) window.location = d.redirect || '/';
+      else { document.getElementById('msg').textContent = d.message || 'Wrong PIN.'; document.getElementById('pin').value=''; }
+    };
+  </script>
+</div>"""
 
 
 @router.post("/api/logout")

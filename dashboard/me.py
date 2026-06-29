@@ -136,6 +136,20 @@ _BODY = r"""
     <div id="themes" class="theme-grid"></div>
   </div>
 
+  <div class="card">
+    <h2>Privacy lock</h2>
+    <p>Add a PIN to keep <b>Wellness</b> &amp; <b>Body</b> private — they'll ask for it before opening. Off by default, and only ever your choice.</p>
+    <div id="lock-off">
+      <input id="lock-pin" type="password" inputmode="numeric" placeholder="4–8 digit PIN" style="max-width:200px;">
+      <button class="btn btn-sm" id="lock-set" style="margin-left:8px;">Turn on lock</button>
+    </div>
+    <div id="lock-on" style="display:none;">
+      <span style="font-size:13px;color:var(--gold);">🔒 Lock is on for Wellness &amp; Body.</span>
+      <button class="btn btn-sm" id="lock-disable" style="margin-left:10px;">Turn off</button>
+    </div>
+    <div id="lock-msg" style="font-size:12px;color:var(--muted);margin-top:10px;"></div>
+  </div>
+
   <div class="card" id="mods-card" style="display:none;">
     <h2>Your modules</h2>
     <p>Turn on what you'd like. Nothing's forced, and you can change it whenever.</p>
@@ -201,6 +215,23 @@ async function loadThemes() {
     location.reload();
   }));
 }
-loadMe(); loadMods(); loadThemes();
+async function loadLock() {
+  const d = await (await fetch('/api/lock/status')).json();
+  $("#lock-off").style.display = d.on ? 'none' : 'block';
+  $("#lock-on").style.display = d.on ? 'block' : 'none';
+}
+const lockSet = $("#lock-set");
+if (lockSet) lockSet.addEventListener('click', async () => {
+  const out = await (await fetch('/api/lock/set', { method:'POST', headers:{"Content-Type":"application/json"}, body: JSON.stringify({ pin: $("#lock-pin").value }) })).json();
+  $("#lock-msg").textContent = out.ok ? 'Lock on — Wellness & Body now ask for your PIN.' : (out.message || 'Failed.');
+  if (out.ok) { $("#lock-pin").value = ''; loadLock(); }
+});
+const lockOff = $("#lock-disable");
+if (lockOff) lockOff.addEventListener('click', async () => {
+  await fetch('/api/lock/off', { method:'POST' });
+  $("#lock-msg").textContent = 'Lock off.';
+  loadLock();
+});
+loadMe(); loadMods(); loadThemes(); loadLock();
 </script>
 """
