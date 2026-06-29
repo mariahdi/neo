@@ -138,6 +138,24 @@ def register(email: str, password: str) -> tuple[bool, str]:
     return True, email
 
 
+def set_password(email: str, password: str) -> tuple[bool, str]:
+    """Reset the password for an existing user. Returns (ok, normalized-email)
+    or (False, error-message)."""
+    email = (email or "").strip().lower()
+    if not email or "@" not in email:
+        return False, "Enter a valid email."
+    if len(password or "") < 8:
+        return False, "Password must be at least 8 characters."
+    users = _users()
+    if email not in users:
+        return False, "No account found for that email."
+    salt = os.urandom(16).hex()
+    users[email]["salt"] = salt
+    users[email]["hash"] = _hash_pw(password, salt)
+    store.save("users", users)
+    return True, email
+
+
 def verify_user(email: str, password: str) -> bool:
     u = _users().get((email or "").strip().lower())
     if not u:
@@ -261,15 +279,17 @@ class ProvisionIn(BaseModel):
     email: str = ""
     password: str = ""
     provision_secret: str = ""
+    force: bool = False   # if the account already exists, reset its password instead of failing
 
 
 @router.post("/api/provision")
 async def provision(body: ProvisionIn) -> JSONResponse:
     """Server-to-server account creation, called by the GHL workflow after a
-    purchase. Not user-facing — guarded by a shared secret, never a session."""
+    purchase. Not user-facing — guarded by a shared secret, never a session.
+    With force=True, an existing account's password is reset instead of erroring."""
     if not PROVISION_SECRET or not hmac.compare_digest(body.provision_secret or "", PROVISION_SECRET):
         return JSONResponse({"ok": False, "message": "unauthorized"}, status_code=403)
-    ok, result = register(body.email, body.password)
+    ok, result = set_password(body.email, body.password) if body.force else register(body.email, body.password)
     if not ok:
         return JSONResponse({"ok": False, "message": result}, status_code=400)
     return JSONResponse({"ok": True, "email": result}, status_code=201)
