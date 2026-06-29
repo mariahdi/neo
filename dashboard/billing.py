@@ -165,7 +165,9 @@ async def webhook(request: Request) -> JSONResponse:
         else:  # no signing secret configured — parse without verifying (dev only)
             event = json.loads(payload)
     except Exception as e:
-        print(f"[billing] webhook verify failed: {e}")
+        _ws = WEBHOOK_SECRET or ""
+        print(f"[billing] webhook verify failed: {e} | secret_len={len(_ws)} "
+              f"secret_tail=...{_ws[-4:]} payload_len={len(payload)} sig_present={bool(sig)}")
         return JSONResponse({"ok": False}, status_code=400)
     # construct_event() returns a StripeObject (no .get()); re-parse the raw
     # payload as a plain dict so .get() works. Safe for both branches above.
