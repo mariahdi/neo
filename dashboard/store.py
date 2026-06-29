@@ -39,7 +39,7 @@ _MISSING = object()  # distinguishes "no row / no cache" from a real default val
 # see each other's data; SHARED keys stay instance-wide. No user set (local /
 # unauthenticated) = instance-level, so existing single-user behavior is unchanged.
 _user = contextvars.ContextVar("neo_user", default=None)
-_SHARED = {"users", "aria_bank", "billing"}
+_SHARED = {"users", "aria_bank", "billing", "reset_tokens"}
 
 
 def set_current_user(u) -> None:

@@ -25,6 +25,7 @@ import base64
 import hashlib
 import hmac
 import os
+import secrets
 import time
 from datetime import datetime, timezone
 
@@ -81,7 +82,8 @@ if not os.environ.get("SESSION_SECRET") and (PASS or os.environ.get("NEO_AUTH"))
 
 # Reachable without a session: the login screen + its API, server-to-server
 # account provisioning (GHL calls this after purchase), and the Stripe webhook.
-EXEMPT = {"/login", "/api/login", "/api/logout", "/api/provision", "/api/billing/webhook"}
+EXEMPT = {"/login", "/api/login", "/api/logout", "/api/provision", "/api/billing/webhook",
+          "/forgot-password", "/api/forgot-password", "/reset-password", "/api/reset-password"}
 
 # Marketing/landing URL shown on the login screen ("Get Neo"). Point
 # NEO_LANDING_URL at the GHL landing page once it's live.
@@ -154,6 +156,72 @@ def set_password(email: str, password: str) -> tuple[bool, str]:
     users[email]["hash"] = _hash_pw(password, salt)
     store.save("users", users)
     return True, email
+
+
+# ── Password reset (forgot-password) ──────────────────────────────────────────
+def _reset_tokens() -> dict:
+    return store.load("reset_tokens", {})
+
+
+def create_reset_token(email: str) -> str | None:
+    """A 1-hour password-reset token for an existing account (None if no account)."""
+    email = (email or "").strip().lower()
+    if email not in _users():
+        return None  # don't reveal whether the email exists
+    token = secrets.token_urlsafe(32)
+    tokens = _reset_tokens()
+    tokens[token] = {"email": email, "expires": time.time() + 3600}
+    store.save("reset_tokens", tokens)
+    return token
+
+
+def consume_reset_token(token: str) -> str | None:
+    """Validate + consume a reset token. Returns the email, or None if invalid/expired."""
+    tokens = _reset_tokens()
+    rec = tokens.get(token)
+    if not rec:
+        return None
+    if time.time() > rec["expires"]:
+        tokens.pop(token, None)
+        store.save("reset_tokens", tokens)
+        return None
+    tokens.pop(token)  # single-use
+    store.save("reset_tokens", tokens)
+    return rec["email"]
+
+
+def send_reset_email(to_email: str, token: str) -> None:
+    api_key = os.environ.get("RESEND_API_KEY", "")
+    from_email = os.environ.get("NEO_EMAIL_FROM", "onboarding@resend.dev")
+    app_url = (os.environ.get("NEO_APP_URL") or "http://127.0.0.1:8000").rstrip("/")
+    reset_url = f"{app_url}/reset-password?token={token}"
+    body = f"""Hi,
+
+You requested a password reset for your Neo account.
+
+Reset your password here (link expires in 1 hour):
+{reset_url}
+
+If you didn't request this, ignore this email. Your password won't change
+until you click the link above.
+
+Aria
+"""
+    if not api_key:
+        print(f"[auth] reset email not configured — reset URL: {reset_url}")
+        return
+    try:
+        import resend
+        resend.api_key = api_key
+        resend.Emails.send({
+            "from": f"Aria <{from_email}>",
+            "to": [to_email],
+            "subject": "Reset your Neo password",
+            "text": body,
+        })
+        print(f"[auth] reset email sent to {to_email}")
+    except Exception as e:
+        print(f"[auth] reset email failed: {e}")
 
 
 def verify_user(email: str, password: str) -> bool:
@@ -295,6 +363,98 @@ async def provision(body: ProvisionIn) -> JSONResponse:
     return JSONResponse({"ok": True, "email": result}, status_code=201)
 
 
+@router.get("/forgot-password", response_class=HTMLResponse)
+async def forgot_password_page(request: Request) -> HTMLResponse:
+    html = """<style>body{margin:0;background:#0e0a07;min-height:100vh}</style>
+    <div style="max-width:400px;margin:0 auto;padding:100px 24px;font-family:monospace;color:#f5ede0">
+      <h2 style="font-family:Georgia;margin-bottom:24px">Reset your password</h2>
+      <form id="f">
+        <input id="e" type="email" placeholder="Your email" required
+               style="width:100%;padding:12px;background:#1a1410;border:1px solid #3a2e24;color:#f5ede0;border-radius:8px;margin-bottom:16px;font-size:15px;box-sizing:border-box">
+        <button type="submit"
+                style="width:100%;padding:14px;background:#E8A87C;color:#0e0a07;border:none;border-radius:50px;font-weight:600;cursor:pointer;font-size:15px">
+          Send reset link
+        </button>
+        <p id="msg" style="margin-top:16px;font-size:13px"></p>
+      </form>
+      <p style="margin-top:18px;font-size:13px"><a href="/login" style="color:rgba(245,237,224,0.5)">Back to sign in</a></p>
+      <script>
+        document.getElementById('f').onsubmit = async e => {
+          e.preventDefault();
+          await fetch('/api/forgot-password', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({email: document.getElementById('e').value})
+          });
+          document.getElementById('msg').textContent =
+            'If that email has an account, a reset link is on its way.';
+        };
+      </script>
+    </div>"""
+    return HTMLResponse(html)
+
+
+@router.post("/api/forgot-password")
+async def forgot_password_api(request: Request) -> JSONResponse:
+    data = await request.json()
+    email = (data.get("email") or "").strip().lower()
+    token = create_reset_token(email)
+    if token:  # never reveal whether the email exists
+        send_reset_email(email, token)
+    return JSONResponse({"ok": True})
+
+
+@router.get("/reset-password", response_class=HTMLResponse)
+async def reset_password_page(request: Request) -> HTMLResponse:
+    token = request.query_params.get("token", "")
+    safe = token.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+    html = f"""<style>body{{margin:0;background:#0e0a07;min-height:100vh}}</style>
+    <div style="max-width:400px;margin:0 auto;padding:100px 24px;font-family:monospace;color:#f5ede0">
+      <h2 style="font-family:Georgia;margin-bottom:24px">Choose a new password</h2>
+      <form id="f">
+        <input type="hidden" id="t" value="{safe}">
+        <input id="p" type="password" placeholder="New password (min 8 chars)" required
+               style="width:100%;padding:12px;background:#1a1410;border:1px solid #3a2e24;color:#f5ede0;border-radius:8px;margin-bottom:12px;font-size:15px;box-sizing:border-box">
+        <input id="c" type="password" placeholder="Confirm password" required
+               style="width:100%;padding:12px;background:#1a1410;border:1px solid #3a2e24;color:#f5ede0;border-radius:8px;margin-bottom:16px;font-size:15px;box-sizing:border-box">
+        <button type="submit"
+                style="width:100%;padding:14px;background:#E8A87C;color:#0e0a07;border:none;border-radius:50px;font-weight:600;cursor:pointer;font-size:15px">
+          Set new password
+        </button>
+        <p id="msg" style="margin-top:16px;font-size:13px"></p>
+      </form>
+      <script>
+        document.getElementById('f').onsubmit = async e => {{
+          e.preventDefault();
+          if (document.getElementById('p').value !== document.getElementById('c').value) {{
+            document.getElementById('msg').textContent = 'Passwords do not match.'; return;
+          }}
+          const r = await fetch('/api/reset-password', {{
+            method:'POST', headers:{{'Content-Type':'application/json'}},
+            body: JSON.stringify({{token: document.getElementById('t').value, password: document.getElementById('p').value}})
+          }});
+          const d = await r.json();
+          if (d.ok) window.location = '/login?reset=1';
+          else document.getElementById('msg').textContent = d.message || 'Link expired. Request a new one.';
+        }};
+      </script>
+    </div>"""
+    return HTMLResponse(html)
+
+
+@router.post("/api/reset-password")
+async def reset_password_api(request: Request) -> JSONResponse:
+    data = await request.json()
+    token = data.get("token", "")
+    password = data.get("password", "")
+    email = consume_reset_token(token)
+    if not email:
+        return JSONResponse({"ok": False, "message": "Link expired or invalid."}, status_code=400)
+    ok, result = set_password(email, password)
+    if not ok:
+        return JSONResponse({"ok": False, "message": result}, status_code=400)
+    return JSONResponse({"ok": True})
+
+
 @router.post("/api/logout")
 async def logout() -> JSONResponse:
     resp = JSONResponse({"ok": True})
@@ -370,6 +530,7 @@ _LOGIN_PAGE = (
       <input id="p" type="password" autocomplete="current-password">
       <button type="submit" id="submit-btn" class="btn btn-gold">Sign in</button>
       <div class="switch">Don't have an account? <a href="<!--LANDING-->">Get Neo</a></div>
+      <div class="switch" style="margin-top:8px;"><a href="/forgot-password">Forgot your password?</a></div>
     </div>
   </form>
 <script>
