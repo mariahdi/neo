@@ -64,10 +64,24 @@ def _pg_name(name: str) -> str:
     return f"{_INSTANCE}:{_scope(name)}"
 
 
-# Encryption-at-rest for sensitive modules. Values for keys in ENCRYPTED_KEYS are
+# Encryption-at-rest for personal data. Values for keys in ENCRYPTED_KEYS are
 # stored as ciphertext when NEO_DATA_KEY (a Fernet key) is set, so a database/file
-# peek reveals nothing. No key set = plaintext (graceful, e.g. local dev).
-ENCRYPTED_KEYS = {"wellness", "body"}
+# peek reveals nothing. No key set = plaintext (graceful, e.g. local dev), and
+# existing plaintext rows still read fine and re-encrypt on their next save.
+#
+# We encrypt all per-user personal content. We deliberately leave a few keys
+# plaintext: operational state (theme, modules, tour, lock) that isn't personal,
+# the public acronym bank (aria_bank), and the auth/billing shared keys (users,
+# reset_tokens, billing) — so that LOGIN and BILLING never depend on the data key
+# (losing/rotating NEO_DATA_KEY shouldn't lock everyone out or break Stripe).
+ENCRYPTED_KEYS = {
+    "wellness", "body",            # health & meds
+    "nominal", "wealth",           # finances & investments
+    "recipes", "goals", "wins",    # life content
+    "trips", "career", "me",       # plans, job search, profile
+    "about", "dailybread",         # story & faith
+    "stocks", "aria_personal",     # watchlist & personal acronym
+}
 _FERNET = _MISSING
 
 
