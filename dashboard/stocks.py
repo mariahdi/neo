@@ -98,11 +98,6 @@ DEFAULT = {"sectors": [
         {"name": "Microsoft", "ticker": "MSFT", "update": None, "updated_at": None},
         {"name": "NVIDIA", "ticker": "NVDA", "update": None, "updated_at": None},
     ]},
-    {"id": "everyday", "name": "Everyday names", "stocks": [
-        {"name": "Amazon", "ticker": "AMZN", "update": None, "updated_at": None},
-        {"name": "Disney", "ticker": "DIS", "update": None, "updated_at": None},
-        {"name": "Starbucks", "ticker": "SBUX", "update": None, "updated_at": None},
-    ]},
 ]}
 
 
