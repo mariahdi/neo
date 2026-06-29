@@ -90,8 +90,20 @@ def _history(ticker: str) -> list[float]:
     return closes
 
 
-# Seed watchlist (mock until edited).
-DEFAULT = {"sectors": []}
+# Sample watchlist of well-known names — shown until you make it your own
+# (the moment you add/remove a stock, your version is saved instead).
+DEFAULT = {"sectors": [
+    {"id": "tech", "name": "Tech", "stocks": [
+        {"name": "Apple", "ticker": "AAPL", "update": None, "updated_at": None},
+        {"name": "Microsoft", "ticker": "MSFT", "update": None, "updated_at": None},
+        {"name": "NVIDIA", "ticker": "NVDA", "update": None, "updated_at": None},
+    ]},
+    {"id": "everyday", "name": "Everyday names", "stocks": [
+        {"name": "Amazon", "ticker": "AMZN", "update": None, "updated_at": None},
+        {"name": "Disney", "ticker": "DIS", "update": None, "updated_at": None},
+        {"name": "Starbucks", "ticker": "SBUX", "update": None, "updated_at": None},
+    ]},
+]}
 
 
 def _data() -> dict:

@@ -15,10 +15,23 @@ from . import store, theme
 
 router = APIRouter()
 
+# Gentle sample entries — shown for inspiration until you make it your own
+# (saving your own list replaces them). Kept calm and non-clinical on purpose.
 DEFAULT = {
-    "nonneg": [],
-    "routine": [],
-    "rules": [],
+    "nonneg": [
+        {"id": "n0", "emoji": "💧", "label": "Drink water", "note": "A glass when you wake up"},
+        {"id": "n1", "emoji": "🌿", "label": "Step outside", "note": "Even five minutes counts"},
+        {"id": "n2", "emoji": "😴", "label": "Wind down screen-free", "note": "20 min before bed"},
+    ],
+    "routine": [
+        {"time": "Morning", "emoji": "☀️", "label": "Slow start", "note": "Water, light, a few breaths"},
+        {"time": "Midday", "emoji": "🥪", "label": "Real break", "note": "Step away to eat"},
+        {"time": "Evening", "emoji": "🌙", "label": "Wind down", "note": "Dim the lights, ease off"},
+    ],
+    "rules": [
+        {"emoji": "🌱", "rule": "Progress over perfection."},
+        {"emoji": "💛", "rule": "Be as kind to yourself as you'd be to a friend."},
+    ],
     "checks": {},
 }
 
