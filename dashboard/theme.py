@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import os
 
-from . import profile, registry, themes
+from . import profile, registry, store, themes
 
 ACTIVE = profile.ACTIVE
 
@@ -301,10 +301,36 @@ TOUR_JS = r"""
     go(isNaN(i)?0:i);
   }
 
-  window.neoTour = function(){ sessionStorage.setItem(KEY,"0"); go(0); };
-  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", resume); else resume();
+  window.neoTour = function(){
+    // Starting the tour (auto or manual) marks it seen, so it never auto-starts again.
+    try { fetch("/api/tour/seen", {method:"POST"}); } catch(e){}
+    sessionStorage.setItem(KEY,"0"); go(0);
+  };
+  function init(){
+    resume();  // continue an in-progress tour (e.g. across a page nav)
+    // Auto-start once for a brand-new account: server says it hasn't been seen,
+    // nothing's already running, and we're on the dashboard.
+    if(sessionStorage.getItem(KEY)===null && window.NEO_TOUR_AUTOSTART && location.pathname==="/"){
+      window.neoTour();
+    }
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();
 """
+
+
+def tour_tag() -> str:
+    """The per-user auto-start flag + the tour script, for the page shell.
+
+    The flag is resolved server-side from the store so the tour fires exactly
+    once for a fresh account. Falls back to no-autostart if there's no user
+    context (e.g. a page rendered outside a request)."""
+    try:
+        autostart = not (store.load("tour", {}) or {}).get("seen")
+    except Exception:
+        autostart = False
+    return (f"<script>window.NEO_TOUR_AUTOSTART={'true' if autostart else 'false'};</script>"
+            f"<script>{TOUR_JS}</script>")
 
 
 BASE_CSS = BASE_CSS + EXTRA_CSS
@@ -349,6 +375,6 @@ def page(title: str, body: str, active: str = "") -> str:
 {nav(active)}
 {body}
 {footer()}
-<script>{TOUR_JS}</script>
+{tour_tag()}
 </body>
 </html>"""

@@ -42,6 +42,7 @@ from .modules_api import router as modules_router
 from .nominal import router as nominal_router
 from .recipes import router as recipes_router
 from .billing import router as billing_router
+from .tour import router as tour_router
 from .pwa import router as pwa_router
 from .dataio import router as dataio_router
 from .aria_tagline import router as aria_router
@@ -73,6 +74,7 @@ app.include_router(career_router)
 app.include_router(dailybread_router)
 app.include_router(recipes_router)
 app.include_router(billing_router)
+app.include_router(tour_router)
 app.include_router(modules_router)
 # USAFA + Dev work surfaces (the Proposals board stays here in main.py).
 app.include_router(work.router)
@@ -710,6 +712,5 @@ PAGE = (
     .replace("<!--PWA-->", theme.pwa_head())
     .replace("/*ROOTCSS*/", profile.root_css())
     .replace("/*EXTRA_CSS*/", theme.EXTRA_CSS)
-    .replace("<!--FOOTER-->", theme.footer()
-             + f"<script>{theme.TOUR_JS}</script>")
+    .replace("<!--FOOTER-->", theme.footer() + theme.tour_tag())
 )
