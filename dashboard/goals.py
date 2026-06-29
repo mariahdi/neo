@@ -31,8 +31,15 @@ ANTHROPIC_MODEL = os.environ.get("NEO_ANTHROPIC_MODEL", "claude-sonnet-4-6")
 
 CATEGORIES = ["financial", "fitness", "learning", "project"]
 
-# Seed goals (mock until edited). `start`/`current`/`target` drive the bar.
-DEFAULT = {"goals": []}
+# Sample goals for inspiration — shown until you add your own.
+DEFAULT = {"goals": [
+    {"id": "read-12-books", "title": "Read 12 books this year", "category": "personal",
+     "unit": "books", "start": 0, "current": 3, "target": 12, "history": []},
+    {"id": "daily-steps", "title": "Walk 10k steps a day", "category": "health",
+     "unit": "steps", "start": 0, "current": 6500, "target": 10000, "history": []},
+    {"id": "emergency-fund", "title": "Build a $5k emergency fund", "category": "finance",
+     "unit": "$", "start": 0, "current": 1500, "target": 5000, "history": []},
+]}
 
 
 def _data() -> dict:

@@ -15,7 +15,12 @@ from . import store, theme
 
 router = APIRouter()
 
-DEFAULT = {"age": 30, "monthly": 0, "return": 8, "accounts": []}
+# Sample accounts + numbers for inspiration — shown until you make it your own.
+DEFAULT = {"age": 30, "monthly": 500, "return": 8, "accounts": [
+    {"id": "a-checking", "name": "Checking", "balance": 3200, "icon": "💳"},
+    {"id": "a-savings", "name": "Savings", "balance": 8000, "icon": "🏦"},
+    {"id": "a-401k", "name": "401(k)", "balance": 24000, "icon": "📈"},
+]}
 
 
 def _data() -> dict:

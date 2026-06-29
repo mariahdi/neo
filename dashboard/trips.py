@@ -15,7 +15,11 @@ from . import store, theme
 
 router = APIRouter()
 
-DEFAULT = {"trips": []}
+# Sample trips for inspiration — shown until you add your own.
+DEFAULT = {"trips": [
+    {"id": "t-banff", "emoji": "🏔️", "city": "Banff, Canada", "dates": "Aug 14–20", "status": "planning"},
+    {"id": "t-cdmx", "emoji": "🌮", "city": "Mexico City", "dates": "Oct 2026", "status": "booked"},
+]}
 
 
 def _data() -> dict:

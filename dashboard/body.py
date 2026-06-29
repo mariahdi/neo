@@ -19,10 +19,18 @@ from . import store, theme
 router = APIRouter()
 
 # Blank template — each instance fills its own health data.
+# Sample entries for inspiration — shown until you make it your own. Kept light
+# and non-clinical (an example supplement + a few habits), not medical advice.
 DEFAULT = {
-    "meds": [],
+    "meds": [
+        {"name": "Vitamin D", "dose": "1000 IU", "time": "Morning"},
+    ],
     "weight": {"current": 0, "target": 0, "history": []},
-    "habits": [],
+    "habits": [
+        {"icon": "💧", "label": "8 glasses of water", "freq": "Daily"},
+        {"icon": "🧘", "label": "Stretch", "freq": "Most days"},
+        {"icon": "🚶", "label": "Walk after lunch", "freq": "Weekdays"},
+    ],
 }
 
 

@@ -21,7 +21,20 @@ from . import store, theme
 
 router = APIRouter()
 
-DEFAULT = {"applications": [], "todos": [], "notes": []}
+# Sample workspace for inspiration — shown until you make it your own.
+DEFAULT = {
+    "applications": [
+        {"id": "c-example", "company": "Dream Company", "stage": "Interested", "status": "",
+         "note": "A role that fits — tailor the résumé before applying."},
+    ],
+    "todos": [
+        {"id": "td-resume", "text": "Refresh my résumé", "done": False},
+        {"id": "td-reach", "text": "Reach out to one contact this week", "done": False},
+    ],
+    "notes": [
+        {"id": "n-pitch", "title": "My pitch", "body": "Two sentences on what I do and the impact I've had."},
+    ],
+}
 
 
 def _data() -> dict:
