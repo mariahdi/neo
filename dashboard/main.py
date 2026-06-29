@@ -711,5 +711,5 @@ PAGE = (
     .replace("/*ROOTCSS*/", profile.root_css())
     .replace("/*EXTRA_CSS*/", theme.EXTRA_CSS)
     .replace("<!--FOOTER-->", theme.footer()
-             + (f"<script>{theme.TOUR_JS}</script>" if profile.ACTIVE.get("dev_links") else ""))
+             + f"<script>{theme.TOUR_JS}</script>")
 )

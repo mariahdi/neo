@@ -165,7 +165,8 @@ def footer() -> str:
     links.append('<a href="/aria">✦ Your ARIA</a>')
     internal = "".join(links)
     dev_html = ""
-    tour_html = ""
+    # The tour is for everyone (customers included); the dev links stay dev-only.
+    tour_html = '<button class="footer-tour" onclick="neoTour()">★ Take a tour</button>'
     if ACTIVE.get("dev_links"):
         repo = f"https://github.com/{_REPO}"
         links = [
@@ -178,7 +179,6 @@ def footer() -> str:
         dev_html = "".join(
             f'<a href="{href}" target="_blank" rel="noopener">{label} ↗</a>' for href, label in links
         )
-        tour_html = '<button class="footer-tour" onclick="neoTour()">★ Take a tour</button>'
     return (
         '<footer class="footer"><div class="footer-inner">'
         f'<div class="footer-links">{internal}{dev_html}</div>'
@@ -215,24 +215,12 @@ EXTRA_CSS = """
 TOUR_JS = r"""
 (function(){
   const STEPS = [
-    {title:"Welcome to Neo", body:"A quick spin through what's here — your control room plus four modules. Use Next, or Skip any time."},
-    {sel:"#chat-form", title:"Ask Neo", body:"Type (or speak) a request. Neo picks the right module, opens a Jira ticket, and starts the draft."},
-    {sel:"#board .col:nth-child(1)", title:"1 · To Do", body:"Here's where a new request lands first — e.g. \"a proposal for the Red Cross.\""},
-    {sel:"#board .col:nth-child(2)", title:"2 · In Progress", body:"Neo drafts it here, then opens a pull request behind the scenes."},
-    {sel:"#board .col:nth-child(3)", title:"3 · In Review", body:"It shows up here as a card with the full draft and Approve / Request Changes / Re-prompt."},
-    {sel:"#board .col:nth-child(4)", title:"4 · Done", body:"Approved and parked. That's the whole journey of one request — start to sign-off."},
-    {sel:"#reviews", title:"Review inline", body:"Anything awaiting you appears here with its draft, so you approve or send it back without leaving the page."},
-    {sel:"#widgets", title:"Modules at a glance", body:"Live counts across everything in flight."},
-    {sel:".topnav", title:"Your modules", body:"Jump between Dashboard, Stocks, Goals, Wins and About up here — the tour visits each next."},
-    {page:"/stocks", sel:"#view", title:"Stocks", body:"Your watchlist by sector. Hit Refresh on any card for a live AI briefing."},
-    {page:"/stocks", sel:"#manage-btn", title:"Edit the watchlist", body:"Use Manage to add, swap, or remove sectors and stocks."},
-    {page:"/goals", sel:".teller", title:"Goals — just say it", body:"Tell Neo \"weighed myself, 182\" and it logs progress to the right goal automatically."},
-    {page:"/goals", sel:"#view", title:"Track progress", body:"Each goal shows a progress bar and a sparkline of its history."},
-    {page:"/wins", sel:".teller", title:"Wins", body:"Describe your day; Neo spots the accomplishments and you confirm which ones to keep."},
-    {page:"/wins", sel:"#list", title:"Your wins", body:"Grouped by day and tagged work / life / health / build."},
-    {page:"/about", sel:".about-head", title:"About", body:"The story of how Neo was built — editable, with a shared photo and milestones."},
-    {sel:".footer-links", title:"Quick links", body:"Your Jira board, GitHub, open PRs, and the setup/deploy guides all live down here."},
-    {sel:".logout", title:"You're set", body:"You stay signed in between visits — sign out here whenever. That's the tour!"},
+    {title:"Welcome to Neo", body:"Here's a quick 30-second tour of your space. Hit Next, or Skip any time."},
+    {page:"/", sel:"#catalog", title:"Your modules", body:"Everything in Neo is a module — recipes, goals, wins, money, wellness and more. Tap any card to open it."},
+    {page:"/", sel:"#catalog", title:"Turn on what you want", body:"Add or remove modules anytime. Neo only shows what you actually use — nothing extra, no noise."},
+    {sel:".topnav", title:"Move around", body:"Jump between your active spaces up here. Your dashboard is always one click away."},
+    {sel:".footer-links", title:"Yours to keep", body:"Down here live your settings, your own ARIA & themes, and your data — which you can export or delete anytime. No lock-in, ever."},
+    {sel:".logout", title:"You're all set ✦", body:"You stay signed in between visits; sign out here whenever you like. That's the tour — enjoy Neo!"},
   ];
   const KEY = "neo_tour";
   let cur = 0, ro = null, onReflow = null;
@@ -361,6 +349,6 @@ def page(title: str, body: str, active: str = "") -> str:
 {nav(active)}
 {body}
 {footer()}
-{('<script>' + TOUR_JS + '</script>') if ACTIVE.get('dev_links') else ''}
+<script>{TOUR_JS}</script>
 </body>
 </html>"""
