@@ -27,6 +27,18 @@ PRESETS: dict[str, dict] = {
             "field": "#f6f6fb", "btn-bg": "#ece9f5",
         },
     },
+    "mocha": {
+        "label": "Mocha",
+        "tokens": {
+            "bg": "#0e0a07", "bg-2": "#1a120c", "bg-glow": "#2a1c10",
+            "panel": "#1c1410", "panel-2": "#241a12", "line": "#3a2d20",
+            "line-soft": "#2a2016", "text": "#f5ede0", "muted": "#a08060",
+            "gold": "#e8a87c", "gold-soft": "rgba(232,168,124,0.14)",
+            "gold-line": "rgba(232,168,124,0.42)", "hot": "#f0a07a",
+            "gold-hover": "#f0bc92", "on-gold": "#1a1305",
+            "field": "#1a1410", "btn-bg": "#241a12",
+        },
+    },
     "midnight": {
         "label": "Midnight",
         "tokens": {
@@ -73,6 +85,30 @@ PRESETS: dict[str, dict] = {
             "gold-line": "rgba(139,124,240,0.45)", "hot": "#a594f5",
             "gold-hover": "#9b8cf5", "on-gold": "#0c0a18",
             "field": "#1c1839", "btn-bg": "#261f49",
+        },
+    },
+    "rose": {
+        "label": "Rose",
+        "tokens": {
+            "bg": "#160f12", "bg-2": "#1f161a", "bg-glow": "#2a1c22",
+            "panel": "#201619", "panel-2": "#2a1e23", "line": "#3e2c33",
+            "line-soft": "#2d2025", "text": "#f3e7ea", "muted": "#b08f99",
+            "gold": "#e08aa0", "gold-soft": "rgba(224,138,160,0.15)",
+            "gold-line": "rgba(224,138,160,0.42)", "hot": "#f0a0b0",
+            "gold-hover": "#ec9cb0", "on-gold": "#1a0f12",
+            "field": "#201619", "btn-bg": "#2a1e23",
+        },
+    },
+    "forest": {
+        "label": "Forest",
+        "tokens": {
+            "bg": "#0c130e", "bg-2": "#121d15", "bg-glow": "#16271b",
+            "panel": "#14201a", "panel-2": "#1a2c22", "line": "#274536",
+            "line-soft": "#1e3328", "text": "#e6f0e8", "muted": "#8fb29c",
+            "gold": "#7fb98a", "gold-soft": "rgba(127,185,138,0.15)",
+            "gold-line": "rgba(127,185,138,0.42)", "hot": "#9fd0a8",
+            "gold-hover": "#93c79e", "on-gold": "#0a140d",
+            "field": "#14201a", "btn-bg": "#1a2c22",
         },
     },
 }
