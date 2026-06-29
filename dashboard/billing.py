@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime, timezone
+from urllib.parse import quote
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -30,6 +31,9 @@ WEBHOOK_SECRET = os.environ.get("NEO_STRIPE_WEBHOOK_SECRET")
 BASE_URL = (os.environ.get("NEO_APP_URL") or "http://127.0.0.1:8000").rstrip("/")
 PLAN_NAME = os.environ.get("NEO_PLAN_NAME", "Founding Beta")
 PLAN_PRICE = os.environ.get("NEO_PLAN_PRICE", "$0 / month")
+# Where a lapsed user goes to resubscribe. Set NEO_PAYMENT_LINK to your live
+# Stripe Payment Link; falls back to the in-app Stripe Checkout page.
+RESUBSCRIBE_URL = os.environ.get("NEO_PAYMENT_LINK", "")
 
 # No real keys -> simulate the pipeline so it's testable with zero setup.
 DEMO = not (SECRET_KEY and PRICE_ID)
@@ -176,7 +180,9 @@ async def webhook(request: Request) -> JSONResponse:
     obj = parsed["data"]["object"]
     if etype == "checkout.session.completed":
         import secrets
-        email = (obj.get("customer_details") or {}).get("email")
+        # Lowercase to match auth.register()'s normalization, so the billing key
+        # lines up with the login email (else a paid user reads as unsubscribed).
+        email = ((obj.get("customer_details") or {}).get("email") or "").strip().lower() or None
         key = obj.get("client_reference_id") or email or "_local"
         _set(key, "active", customer_id=obj.get("customer"), email=email)
 
@@ -189,11 +195,16 @@ async def webhook(request: Request) -> JSONResponse:
             # If already registered, that's fine — skip (their account exists).
     elif etype in ("customer.subscription.created", "customer.subscription.updated",
                    "customer.subscription.deleted"):
-        # Map the Stripe customer back to whichever user we stored it against.
+        # Map the Stripe customer back to whichever user we stored it against, then
+        # mirror Stripe's subscription status. Only `active`/`trialing` keep access;
+        # `past_due`, `unpaid`, `canceled`, etc. (and any deletion) lock the account.
         cust = obj.get("customer")
         key = next((k for k, v in _all().items() if v.get("customer_id") == cust), None)
         if key:
-            _set(key, "canceled" if etype == "customer.subscription.deleted" else "active")
+            sub_status = obj.get("status")  # Stripe's subscription status
+            access = (etype != "customer.subscription.deleted"
+                      and sub_status in ("active", "trialing"))
+            _set(key, "active" if access else "canceled")
     return JSONResponse({"ok": True})
 
 
@@ -232,6 +243,21 @@ async def success(request: Request) -> HTMLResponse:
 @router.get("/billing/cancel", response_class=HTMLResponse)
 async def cancel() -> HTMLResponse:
     return HTMLResponse(theme.page("No worries", _CANCEL_BODY, active=""))
+
+
+@router.get("/billing/locked", response_class=HTMLResponse)
+async def locked(request: Request) -> HTMLResponse:
+    """Shown to a logged-in user whose trial/subscription has lapsed (the gate in
+    auth.py sends them here). Their data is kept — they just can't reach it until
+    they resubscribe."""
+    email = auth.current_user(request) or ""
+    if RESUBSCRIBE_URL:
+        sep = "&" if "?" in RESUBSCRIBE_URL else "?"
+        resub = RESUBSCRIBE_URL + (f"{sep}prefilled_email={quote(email)}" if email else "")
+    else:
+        resub = "/billing/checkout"
+    body = _LOCKED_BODY.replace("__RESUB__", resub).replace("__EMAIL__", email)
+    return HTMLResponse(theme.page("Welcome back", body, active=""))
 
 
 _BODY = r"""
@@ -351,4 +377,24 @@ _CANCEL_BODY = r"""
     Checkout was cancelled — nothing happened. You can join anytime.</p>
   <a class="btn btn-gold" href="/billing">Back to plan</a>
 </main>
+"""
+
+_LOCKED_BODY = r"""
+<main style="max-width:520px;margin:48px auto;text-align:center;">
+  <h1 style="font-size:40px;">Welcome <b style="color:var(--gold);font-weight:400;">back</b></h1>
+  <p style="color:var(--muted);font-size:14px;margin:14px 0 8px;line-height:1.6;">
+    Your trial has ended, so your dashboard is paused. Your data is safe and
+    waiting — resubscribe to pick up right where you left off.</p>
+  <p style="color:var(--muted);font-size:12.5px;margin:0 0 26px;">__EMAIL__</p>
+  <a class="btn btn-gold" href="__RESUB__" style="display:inline-block;padding:13px 28px;">Resubscribe to Neo</a>
+  <div style="margin-top:22px;">
+    <button id="out" style="background:none;border:none;color:var(--muted);font-size:12.5px;cursor:pointer;text-decoration:underline;">Sign out</button>
+  </div>
+</main>
+<script>
+document.getElementById('out').addEventListener('click', async () => {
+  try { await fetch('/api/logout', { method: 'POST' }); } catch (_) {}
+  location.href = '/login';
+});
+</script>
 """

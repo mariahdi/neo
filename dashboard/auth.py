@@ -52,6 +52,17 @@ if USER:
 def is_owner_email(email: str | None) -> bool:
     return bool(email) and email.strip().lower() in OWNER_EMAILS
 
+
+# Comp accounts: real members who never get charged (family, beta testers, gifts).
+# Not owners (they don't get every module by default) — they just skip the billing
+# gate. Set NEO_COMP_EMAILS=a@x.com,b@y.com.
+COMP_EMAILS = {e.strip().lower() for e in (os.environ.get("NEO_COMP_EMAILS") or "").split(",") if e.strip()}
+
+
+def is_billing_exempt(email: str | None) -> bool:
+    """True if this account never goes through the subscription gate."""
+    return bool(email) and (is_owner_email(email) or email.strip().lower() in COMP_EMAILS)
+
 COOKIE = "neo_session"
 TTL = 60 * 60 * 24 * 30  # 30 days
 # Signing key for session tokens. Priority:
@@ -334,6 +345,24 @@ def current_user(request: Request) -> str | None:
     return user_from_token(tok) if tok else None
 
 
+# ── Subscription gate ─────────────────────────────────────────────────────────
+# Paths an unsubscribed (logged-in) user may still reach: the resubscribe flow,
+# billing APIs, logout, the lock pages, and static assets so the page can render.
+_SUB_OK_PREFIXES = ("/billing", "/api/billing", "/static", "/assets", "/lock", "/api/unlock")
+_SUB_OK_EXACT = {"/logout", "/api/logout", "/sw.js", "/manifest.webmanifest", "/favicon.ico"}
+
+
+def _needs_subscription(request: Request, path: str, user: str | None) -> bool:
+    from . import billing  # lazy import — billing imports auth, so avoid a cycle
+    if billing.DEMO:          # no real Stripe configured (local/dev) — don't gate
+        return False
+    if is_billing_exempt(user):
+        return False
+    if path in _SUB_OK_EXACT or path.startswith(_SUB_OK_PREFIXES):
+        return False
+    return not billing.is_subscribed(request)
+
+
 # ── Middleware ────────────────────────────────────────────────────────────────
 class SessionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
@@ -350,6 +379,13 @@ class SessionMiddleware(BaseHTTPMiddleware):
                 if path.startswith("/api/"):
                     return JSONResponse({"ok": False, "error": "locked"}, status_code=423)
                 return RedirectResponse(url="/lock?next=" + quote(path), status_code=302)
+            # Subscription gate: a logged-in user whose trial/subscription has
+            # lapsed is sent to the resubscribe page. Owners + comp accounts skip
+            # it, as does everyone when real billing isn't configured (DEMO).
+            if _needs_subscription(request, path, user_from_token(token)):
+                if path.startswith("/api/"):
+                    return JSONResponse({"ok": False, "error": "subscription_required"}, status_code=402)
+                return RedirectResponse(url="/billing/locked", status_code=302)
             return await call_next(request)
         if path.startswith("/api/"):
             return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401)
