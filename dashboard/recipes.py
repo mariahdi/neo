@@ -12,6 +12,7 @@ obvious. They're seeded once into the editable store, then they're yours.
 from __future__ import annotations
 
 import json
+import os
 import re
 import requests
 from pathlib import Path
@@ -22,7 +23,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
-from . import profile, store, theme
+from . import auth, profile, store, theme
 
 router = APIRouter()
 
@@ -85,6 +86,17 @@ def _profile_seed_recipes() -> list:
         return []
 
 
+def _owner_seed_recipes() -> list:
+    """The owner's personal recipe set — a safety net so an owner account that
+    lands in a fresh/empty data scope gets their recipes restored automatically.
+    Configurable via NEO_OWNER_RECIPES (defaults to the bundled set)."""
+    fname = os.environ.get("NEO_OWNER_RECIPES", "nessa-recipes.json")
+    try:
+        return json.loads((_SEEDS_DIR / fname).read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+
 def _data() -> dict:
     d = store.load("recipes", {"added": [], "favs": [], "seeded": False})
     d.setdefault("added", [])
@@ -110,6 +122,13 @@ def _data() -> dict:
     if profile.ACTIVE.get("seed_recipes") and not d.get("seeded_profile"):
         _seed(_profile_seed_recipes())
         d["seeded_profile"] = True
+        changed = True
+    # Safety net: an owner account gets their personal recipes restored (once) in
+    # any data scope they land in — so a scope change can't "lose" them.
+    u = store.current_user()
+    if u and auth.is_owner_email(u) and not d.get("seeded_owner"):
+        _seed(_owner_seed_recipes())
+        d["seeded_owner"] = True
         changed = True
     if changed:
         store.save("recipes", d)

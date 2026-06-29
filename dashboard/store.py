@@ -46,6 +46,11 @@ def set_current_user(u) -> None:
     _user.set(u or None)
 
 
+def current_user():
+    """The current request's user id (or None) — for read-only checks like owner-ness."""
+    return _user.get()
+
+
 def _uslug(u: str) -> str:
     return re.sub(r"[^a-zA-Z0-9._-]", "_", u)[:64]
 
