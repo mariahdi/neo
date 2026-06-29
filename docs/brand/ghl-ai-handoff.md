@@ -12,7 +12,7 @@ billing — **GHL does NOT create accounts or send logins.** Build only the GHL 
   people organize their whole life. Core promise: **own your data.**
 - **Pricing:** $9.99/month, **14-day free trial**, cancel anytime.
 - **Audience:** everyday people who want to get organized without feeling nagged
-  or surveilled. Tone: warm, intelligent, a little playful — calm, not corporate.
+  or surveilled. Tone: warm, intelligent, a little playful — confident, not corporate.
 
 ## What I want you (GHL) to build
 1. **A landing page** that sells Neo (sections + copy below).
@@ -26,12 +26,12 @@ billing — **GHL does NOT create accounts or send logins.** Build only the GHL 
    stays yours."; subline "Meet Neo, your private personal OS."; buttons
    "Get Neo" (primary) + "See how it works". Spacious, premium.
 2. **What is Neo** — "Neo — No Effort Organization. A private personal OS for your
-   whole life: recipes, goals, wins, money, wellness, and more — modular, calm,
+   whole life: recipes, goals, wins, money, wellness, and more — modular, fast,
    and yours." Trust badges: Own your data · Private by design · Modular.
 3. **Features** — cards: Own your data (export anytime, never sold); Encrypted &
-   private; Gentle by design (no nags, no streaks, no guilt); Modular; Works
+   private; No noise (no streaks, no badges, no busywork); Modular; Works
    everywhere (web, app, desktop).
-4. **The Aria family** — Neo (available now); Aria Finance — calm budgeting;
+4. **The Aria family** — Neo (available now); Aria Finance — budgeting dialed in;
    Aria Robotics (coming soon).
 5. **Pricing** — $9.99/month, 14-day free trial; button "Start free trial".
 6. **Trust & privacy** — "We don't sell your data. Sensitive entries are

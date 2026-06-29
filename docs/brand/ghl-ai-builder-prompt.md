@@ -21,30 +21,30 @@ product, **Neo**, a private "personal operating system" that helps people
 organize their whole life — and whose #1 promise is **"own your data."**
 
 Tone: warm, intelligent, a little playful — it should make you smile and feel
-calm, not corporate or salesy. Audience: everyday people who want to get
+in control, not corporate or salesy. Audience: everyday people who want to get
 organized without feeling nagged or surveilled.
 
 Create these sections in order:
 
 1. **Hero** — Big wordmark "ARIA". Headline: "Your life, organized — and your
-   data stays yours." Subline: "Meet Neo, your private personal OS." Two buttons:
-   "Get Neo" (primary) and "See how it works" (scrolls down). Calm, spacious,
-   premium feel.
+   data stays yours." Subline: "Meet Neo — your private command center." Two buttons:
+   "Get Neo" (primary) and "See how it works" (scrolls down). Spacious, premium,
+   confident feel.
 
 2. **What is Neo** — Short paragraph: "Neo — No Effort Organization. A private
    personal OS for your whole life: recipes, goals, wins, money, wellness, and
-   more — modular, calm, and yours." Three small trust badges: "Own your data",
+   more — modular, fast, and yours." Three small trust badges: "Own your data",
    "Private by design", "Modular".
 
 3. **Features** — A grid of 4–5 cards:
    - Own your data — your life in one place; export it anytime; never sold.
    - Encrypted & private — sensitive entries are encrypted; you stay in control.
-   - Gentle by design — no nags, no streaks, no guilt; it never feels controlling.
+   - No noise — no streaks, no badges, no busywork; it stays out of your way.
    - Modular — turn on only what you want; change it anytime without losing data.
    - Yours everywhere — works on web, installs like an app, runs on desktop.
 
 4. **The Aria family** — Three items: "Neo — personal OS (available now)",
-   "Aria Finance — budgeting made calm (by Fixed, Loose, Float & Savings)",
+   "Aria Finance — budgeting, dialed in (by Fixed, Loose, Float & Savings)",
    "Aria Robotics — autonomy in the physical world (coming soon)".
 
 5. **Pricing / Get Neo** — A clean pricing card with a "Start with Neo" button
@@ -83,7 +83,7 @@ single warm gold accent color.
 - **Heading font:** Georgia / elegant serif
 - **Body font:** DM Mono (or a clean monospace) for a distinctive, techy-but-warm feel
 - **Logo wordmark:** "ARIA" with the final **A** in gold
-- Keep it spacious, rounded corners, soft shadows — premium and calm.
+- Keep it spacious, rounded corners, soft shadows — premium and confident.
 
 ## After the page exists — buy → account flow (chosen: Stripe webhook)
 - Point every **Get Neo / Start with Neo** button at your **Stripe Payment Link**

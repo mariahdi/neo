@@ -21,7 +21,7 @@ MODULES = [
      "description": "The story of how this was built.",
      "version": "1.0", "released": "2026-06-16", "requires": []},
     {"key": "recipes", "icon": "🍴", "name": "Recipes", "path": "/recipes",
-     "description": "Gentle, gut-friendly recipes to browse and save.",
+     "description": "Save your favorite recipes — bookmark any from the web with a tap.",
      "version": "1.0", "released": "2026-06-27", "requires": []},
     {"key": "stocks", "icon": "📈", "name": "Stocks", "path": "/stocks",
      "description": "Sector watchlist with daily AI briefings.",

@@ -19,13 +19,13 @@ Reuse the look from `docs/brand/aria-portal.html` (warm dark palette, gold final
 
 ### 2. What is Neo
 > **Neo — No Effort Organization.** A private personal OS for your whole life:
-> recipes, goals, wins, money, wellness, and more — modular, calm, and yours.
+> recipes, goals, wins, money, wellness, and more — modular, fast, and yours.
 - 3 trust badges: **🔒 Own your data** · **🙈 Private by design** · **🧩 Modular**
 
 ### 3. Feature tiles (3–6)
 - **Own your data** — your life in one place; export it anytime; we never sell it.
 - **Encrypted & private** — sensitive modules (like Wellness) are encrypted at rest.
-- **Gentle by design** — no nags, no streaks, no guilt. It never feels controlling.
+- **No noise** — no streaks, no badges, no busywork. It stays out of your way.
 - **Modular** — turn on only what you want; reset anytime without losing data.
 - **Yours everywhere** — web + installable app (PWA) + desktop.
 
