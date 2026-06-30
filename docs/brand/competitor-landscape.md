@@ -4,7 +4,7 @@ A scan of the market Neo competes in, to sharpen positioning and pricing.
 Neo = a **private, modular, calm "personal OS"** — recipes, goals, wins, money
 (Fixed/Loose/Float/Savings), wellness, body/health, career, trips in ONE app.
 Promises: own your data (export anytime · never sold · never used to train AI ·
-sensitive data encrypted), no streaks/gamification/surveillance, web + desktop,
+sensitive data encrypted), no manipulative gamification or surveillance, web + desktop,
 $9.99/mo, 14-day trial.
 
 > **Headline finding:** No mainstream app pre-packages named life modules
@@ -18,13 +18,13 @@ $9.99/mo, 14-day trial.
 ---
 
 ## Neo's category = the intersection of four things
-whole-life + modular + **calm (no gamification)** + **private**. No single
+whole-life + modular + **calm & respectful (no guilt-trip gamification)** + **private**. No single
 competitor sits in that intersection. Neo is flanked on three sides:
 
 - **"Life OS" builders** (Notion, Anytype, Obsidian, AFFiNE, AppFlowy, Logseq) —
   flexible & (some) private, but **DIY blank canvases**, not done-for-you.
 - **Life trackers** (Exist, Gyroscope, Daylio, Finch…) — whole-life-ish, but
-  **analytics-only or gamified**.
+  **analytics-only, or gamified with pressure**.
 - **Specialists** (YNAB, Sunsama, Bearable) — excellent at **one** Neo module.
 
 ---
@@ -59,8 +59,8 @@ edge is "already assembled + calm," not "more private than Anytype."
 
 ## Adjacent competitors (each owns ONE Neo module)
 **Wellness / tracking:** Gyroscope ("health OS," ~$29/mo, score-driven), Bearable
-(health/symptoms), Daylio / Finch / Habitica / Reflectly (**gamified — opposite of
-Neo's no-streaks stance**), Stoic (journaling, iOS-only).
+(health/symptoms), Daylio / Finch / Habitica / Reflectly (**coercive gamification —
+the guilt-trip streaks Neo avoids**), Stoic (journaling, iOS-only).
 
 **Planning:** Sunsama (~$20/mo — shares Neo's *calm* ethos, but work-only), Motion
 (AI auto-scheduling, $12.73+/mo), Reclaim (Dropbox-owned, free tier), Morgen
@@ -86,8 +86,9 @@ Neo's no-streaks stance**), Stoic (journaling, iOS-only).
    private. Nobody is all four.
 2. **Batteries-included** vs. Notion/Anytype/Obsidian/AFFiNE/AppFlowy "assemble it
    yourself."
-3. **Calm, no-surveillance, no-streaks** vs. gamified trackers (Daylio, Finch,
-   Habitica, Reflectly).
+3. **No surveillance, no guilt-trips** — gentle, opt-in encouragement is welcome;
+   manipulative streaks aren't — vs. the guilt-trip trackers (Daylio, Habitica,
+   Reflectly).
 4. **No bank-linking** in money = a privacy story the entire finance category
    can't match.
 5. **"Never used to train AI"** is timely — AI-data-use is the 2025–26 battleground.
@@ -112,7 +113,7 @@ Neo's no-streaks stance**), Stoic (journaling, iOS-only).
 - **Lead with the intersection:** *"The calm, private home for your whole life —
   done for you, not built by you."*
 - **vs Notion:** "No templates to build." **vs Anytype/Obsidian/AFFiNE:** "For real
-  life, not power users." **vs trackers:** "No streaks, no guilt." **vs budgeting
+  life, not power users." **vs trackers:** "Encouragement, not guilt." **vs budgeting
   apps:** "We never touch your bank login."
 - **Pricing:** add annual (~$99/yr) for LTV + category parity.
 - **Possible future module:** a private "people/relationships" module (Monica
