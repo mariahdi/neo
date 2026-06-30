@@ -22,7 +22,8 @@ from neo.neo_types import Category, State, WorkItem
 from neo.router import route
 
 ANTHROPIC_KEY = os.environ.get("NEO_ANTHROPIC_API_KEY")
-ANTHROPIC_MODEL = os.environ.get("NEO_ANTHROPIC_MODEL", "claude-sonnet-4-6")
+# Intent classification is cheap work — Haiku is plenty and ~3x cheaper than Sonnet.
+UTILITY_MODEL = os.environ.get("NEO_UTILITY_MODEL", "claude-haiku-4-5")
 
 # How each module wants its Jira summary to read. The board only surfaces
 # tickets whose summary starts with "Proposal", so proposals get that prefix;
@@ -208,7 +209,7 @@ def classify(text: str) -> str:
             "https://api.anthropic.com/v1/messages",
             headers={"x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01",
                      "content-type": "application/json"},
-            json={"model": ANTHROPIC_MODEL, "max_tokens": 8,
+            json={"model": UTILITY_MODEL, "max_tokens": 8,
                   "messages": [{"role": "user", "content": prompt}]},
             timeout=20,
         )

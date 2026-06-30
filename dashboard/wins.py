@@ -26,7 +26,8 @@ from . import store, theme
 router = APIRouter()
 
 ANTHROPIC_KEY = os.environ.get("NEO_ANTHROPIC_API_KEY")
-ANTHROPIC_MODEL = os.environ.get("NEO_ANTHROPIC_MODEL", "claude-sonnet-4-6")
+# Spotting accomplishments from a day's description is cheap extraction — Haiku is plenty.
+UTILITY_MODEL = os.environ.get("NEO_UTILITY_MODEL", "claude-haiku-4-5")
 
 CATEGORIES = ["work", "life", "health", "build"]
 
@@ -59,7 +60,7 @@ def _suggest_claude(text: str) -> list[dict]:
         "https://api.anthropic.com/v1/messages",
         headers={"x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01",
                  "content-type": "application/json"},
-        json={"model": ANTHROPIC_MODEL, "max_tokens": 400,
+        json={"model": UTILITY_MODEL, "max_tokens": 400,
               "messages": [{"role": "user", "content": prompt}]},
         timeout=40,
     )

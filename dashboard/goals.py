@@ -27,7 +27,8 @@ from . import store, theme
 router = APIRouter()
 
 ANTHROPIC_KEY = os.environ.get("NEO_ANTHROPIC_API_KEY")
-ANTHROPIC_MODEL = os.environ.get("NEO_ANTHROPIC_MODEL", "claude-sonnet-4-6")
+# Parsing a natural-language progress update is cheap extraction — Haiku is plenty.
+UTILITY_MODEL = os.environ.get("NEO_UTILITY_MODEL", "claude-haiku-4-5")
 
 CATEGORIES = ["financial", "fitness", "learning", "project"]
 
@@ -78,7 +79,7 @@ def _infer_claude(text: str, goals: list[dict]) -> dict:
         "https://api.anthropic.com/v1/messages",
         headers={"x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01",
                  "content-type": "application/json"},
-        json={"model": ANTHROPIC_MODEL, "max_tokens": 300,
+        json={"model": UTILITY_MODEL, "max_tokens": 300,
               "messages": [{"role": "user", "content": prompt}]},
         timeout=40,
     )
