@@ -123,11 +123,11 @@ def _mock_update(name: str, ticker: str) -> str:
     )
 
 
-def _claude_update(name: str, ticker: str) -> str:
-    """Live Anthropic call for one stock's briefing. Real Claude text, but not
-    real-time market data (see module docstring)."""
+def briefing_prompt(name: str, ticker: str) -> str:
+    """The briefing prompt for one stock. Shared by the live call and the daily
+    Batch job (dashboard/jobs/refresh_stocks.py) so both ask for the same thing."""
     tag = f" (ticker {ticker})" if ticker else " (privately held)"
-    prompt = (
+    return (
         f"Give a concise daily briefing on {name}{tag} for a personal "
         "watchlist dashboard. 3-4 sentences: recent direction/performance, any "
         "notable news or catalysts, and a brief outlook. If it's a private "
@@ -135,6 +135,12 @@ def _claude_update(name: str, ticker: str) -> str:
         "and plain-spoken. Do not invent a specific real-time price — you don't "
         "have live market data; speak to trend and context."
     )
+
+
+def _claude_update(name: str, ticker: str) -> str:
+    """Live Anthropic call for one stock's briefing. Real Claude text, but not
+    real-time market data (see module docstring)."""
+    prompt = briefing_prompt(name, ticker)
     resp = requests.post(
         "https://api.anthropic.com/v1/messages",
         headers={
@@ -243,6 +249,34 @@ async def refresh_update(body: RefreshIn) -> JSONResponse:
                 st["updated_at"] = stamp
     store.save("stocks", data)
     return JSONResponse({"ok": True, "update": text, "updated_at": stamp, "demo": demo})
+
+
+class SetBriefingIn(BaseModel):
+    sector_id: str
+    name: str
+    ticker: str = ""
+    update: str
+
+
+@router.post("/api/stocks/set-briefing")
+async def set_briefing(body: SetBriefingIn) -> JSONResponse:
+    """Store a pre-generated briefing (no live call) — used by the daily Batch
+    job, which generates every stock's briefing at 50% via the Batch API and
+    writes the results back here."""
+    stamp = _now()
+    data = _data()
+    found = False
+    for sec in data["sectors"]:
+        if sec.get("id") != body.sector_id:
+            continue
+        for st in sec["stocks"]:
+            if st["name"] == body.name and (st.get("ticker") or "") == body.ticker:
+                st["update"] = body.update
+                st["updated_at"] = stamp
+                found = True
+    if found:
+        store.save("stocks", data)
+    return JSONResponse({"ok": found, "updated_at": stamp})
 
 
 # ── Page ──────────────────────────────────────────────────────────────────────
