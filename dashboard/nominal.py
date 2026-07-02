@@ -8,7 +8,7 @@ Friends / Coworker / Public. State persists to the store.
 """
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
@@ -96,8 +96,49 @@ async def save_nominal(body: NominalIn) -> JSONResponse:
 
 
 @router.get("/nominal", response_class=HTMLResponse)
-async def nominal_page() -> HTMLResponse:
+async def nominal_page(request: Request) -> HTMLResponse:
+    if request.query_params.get("bare"):
+        return HTMLResponse(theme.embed(_BODY))
     return HTMLResponse(theme.page("Finance & Wealth", _BODY, active="nominal"))
+
+
+# The Finance & Wealth zoom canvas — Budget, Investments, and Stocks live on one
+# page as embedded panels; hover a panel to blow it up (Prezi-style).
+_CANVAS = r"""
+<style>
+  .zc-head h1 { font-size: 40px; }
+  .zc-sub { font-size: 12.5px; color: var(--muted); margin: 2px 0 24px; }
+  .zc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 900px) { .zc-grid { grid-template-columns: 1fr; } }
+  .zc-panel { position: relative; height: 380px; border: 1px solid var(--line); border-radius: 16px;
+    overflow: hidden; background: var(--panel); cursor: zoom-in;
+    transition: transform .4s cubic-bezier(.2,.8,.2,1), box-shadow .4s, border-color .4s; }
+  .zc-panel:hover { transform: scale(1.75); z-index: 30;
+    box-shadow: 0 30px 90px rgba(0,0,0,0.65); border-color: var(--gold-line); }
+  .zc-grid:has(.zc-panel:hover) .zc-panel:not(:hover) { opacity: 0.35; filter: blur(1px); }
+  .zc-label { position: absolute; top: 0; left: 0; right: 0; z-index: 3; display: flex; align-items: center;
+    gap: 8px; padding: 11px 15px; font-size: 13.5px; font-weight: 600; color: var(--text);
+    background: linear-gradient(180deg, var(--panel) 55%, transparent); pointer-events: none; }
+  .zc-frame { position: absolute; top: 34px; left: 50%; width: 760px; height: 1180px; border: 0;
+    transform: translateX(-50%) scale(0.455); transform-origin: top center; background: var(--bg); }
+  .zc-hint { text-align: center; color: var(--muted); font-size: 12px; margin-top: 20px; letter-spacing: 0.02em; }
+</style>
+<main>
+  <div class="zc-head"><h1>Finance &amp; Wealth 💰</h1></div>
+  <p class="zc-sub">your whole financial picture in one place — hover a section to zoom in</p>
+  <div class="zc-grid">
+    <div class="zc-panel"><div class="zc-label">💰 Budget</div><iframe class="zc-frame" src="/nominal?bare=1" loading="lazy" title="Budget"></iframe></div>
+    <div class="zc-panel"><div class="zc-label">📊 Investments</div><iframe class="zc-frame" src="/wealth?bare=1" loading="lazy" title="Investments"></iframe></div>
+    <div class="zc-panel"><div class="zc-label">📈 Stocks</div><iframe class="zc-frame" src="/stocks?bare=1" loading="lazy" title="Stocks"></iframe></div>
+  </div>
+  <p class="zc-hint">&#10022; Hover a section to blow it up &middot; click inside to interact</p>
+</main>
+"""
+
+
+@router.get("/finance", response_class=HTMLResponse)
+async def finance_page() -> HTMLResponse:
+    return HTMLResponse(theme.page("Finance & Wealth", _CANVAS, active="nominal"))
 
 
 _BODY = r"""

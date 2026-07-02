@@ -8,7 +8,7 @@ store.
 """
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from . import store, theme
@@ -57,7 +57,9 @@ async def save_wealth(body: dict) -> JSONResponse:
 
 
 @router.get("/wealth", response_class=HTMLResponse)
-async def wealth_page() -> HTMLResponse:
+async def wealth_page(request: Request) -> HTMLResponse:
+    if request.query_params.get("bare"):
+        return HTMLResponse(theme.embed(_BODY))
     return HTMLResponse(theme.page("Finance & Wealth", _BODY, active="wealth"))
 
 

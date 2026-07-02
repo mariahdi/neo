@@ -367,6 +367,27 @@ def pwa_head() -> str:
     )
 
 
+def embed(body: str) -> str:
+    """A chrome-free render of a module body — no nav / footer / tour — for
+    embedding one dashboard inside another (e.g. the Finance & Wealth zoom canvas)."""
+    ov = themes.override_css()
+    ov_tag = f"<style>{ov}</style>" if ov else ""
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+{FONT_LINK}
+<style>{BASE_CSS}</style>
+{ov_tag}
+<style>body{{padding:18px 20px;background:var(--bg);}} .cat-tabs{{display:none!important;}} main{{margin:0!important;}}</style>
+</head>
+<body>
+{body}
+</body>
+</html>"""
+
+
 def page(title: str, body: str, active: str = "") -> str:
     """Wrap a page `body` in the full shared HTML shell (nav + footer + tour)."""
     ov = themes.override_css()  # per-user theme choice wins over the profile default

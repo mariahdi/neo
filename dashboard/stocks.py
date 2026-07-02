@@ -20,7 +20,7 @@ import os
 from datetime import datetime, timezone
 
 import requests
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
@@ -281,7 +281,9 @@ async def set_briefing(body: SetBriefingIn) -> JSONResponse:
 
 # ── Page ──────────────────────────────────────────────────────────────────────
 @router.get("/stocks", response_class=HTMLResponse)
-async def stocks_page() -> HTMLResponse:
+async def stocks_page(request: Request) -> HTMLResponse:
+    if request.query_params.get("bare"):
+        return HTMLResponse(theme.embed(_BODY))
     return HTMLResponse(theme.page("Finance & Wealth", _BODY, active="stocks"))
 
 
