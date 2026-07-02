@@ -53,6 +53,29 @@ MODULES = [
     {"key": "about", "icon": "✦", "name": "About", "path": "/about",
      "description": "The story of how this was built.",
      "version": "1.0", "released": "2026-06-16", "requires": [], "hidden": True},
+
+    # Retired from the Aria product (not on the demo/default profiles), but kept
+    # registered + hidden so other instances still work — Nessa's Recipes, Chuck's
+    # Daily Bread, etc. To bring one onto the Aria dashboard, add its key to the
+    # profile's "modules" list. Code + routers for all of these are still mounted.
+    {"key": "recipes", "icon": "🍴", "name": "Recipes", "path": "/recipes",
+     "description": "Save your favorite recipes — bookmark any from the web with a tap.",
+     "version": "1.0", "released": "2026-06-27", "requires": [], "hidden": True},
+    {"key": "stocks", "icon": "📈", "name": "Stocks", "path": "/stocks",
+     "description": "Sector watchlist with daily AI briefings.",
+     "version": "1.0", "released": "2026-06-16", "requires": ["anthropic"], "hidden": True},
+    {"key": "wins", "icon": "🌟", "name": "Wins", "path": "/wins",
+     "description": "Daily wins with AI recognition.",
+     "version": "1.0", "released": "2026-06-16", "requires": ["anthropic"], "hidden": True},
+    {"key": "body", "icon": "🫀", "name": "Body", "path": "/body",
+     "description": "Meds, weight journey, and habits — private by default.",
+     "version": "1.0", "released": "2026-06-17", "requires": [], "hidden": True},
+    {"key": "wealth", "icon": "📊", "name": "Wealth", "path": "/wealth",
+     "description": "Investments + retirement projections, with audience masking.",
+     "version": "1.0", "released": "2026-06-17", "requires": [], "hidden": True},
+    {"key": "dailybread", "icon": "🕊️", "name": "Daily Bread", "path": "/daily-bread",
+     "description": "A daily verse, a family photo wall, and a prayer list.",
+     "version": "1.0", "released": "2026-06-21", "requires": [], "hidden": True},
 ]
 _BY_KEY = {m["key"]: m for m in MODULES}
 ALL_KEYS = [m["key"] for m in MODULES]

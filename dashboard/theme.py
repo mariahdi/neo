@@ -45,13 +45,14 @@ def nav(active: str = "") -> str:
         for key, href, label in work_nav:
             cls = ' class="active"' if key == active else ""
             links += f'<a href="{href}"{cls}>{label}</a>'
-    for key, href, label in NAV_LINKS:
-        if key == "dashboard" and work_nav:
-            continue  # replaced by the work tabs above
-        if key != "dashboard" and key not in enabled:
-            continue  # not enabled on this instance — hidden until opted in
-        cls = ' class="active"' if key == active else ""
-        links += f'<a href="{href}"{cls}>{label}</a>'
+    if not work_nav:
+        dcls = ' class="active"' if active == "dashboard" else ""
+        links += f'<a href="/"{dcls}>Dashboard</a>'
+    # Nav mirrors the enabled modules straight from the registry, so labels
+    # always match the launcher (e.g. "Finance & Wealth", not "Nominal").
+    for m in registry.enabled_modules():
+        cls = ' class="active"' if m["key"] == active else ""
+        links += f'<a href="{m["path"]}"{cls}>{m["name"]}</a>'
     # Locked instances (e.g. Nessa) hide the catalog entirely — the owner adds
     # modules for them; they never see the "add more" surface.
     if not ACTIVE.get("lock_modules"):
