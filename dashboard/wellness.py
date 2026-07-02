@@ -114,7 +114,8 @@ _BODY = r"""
 </style>
 
 <main>
-  <div class="we-head"><h1>Health &amp; <b>Wellness 🌿</b></h1></div>
+  <div class="we-head"><h1>Health &amp; Wellness 🌿</h1></div>
+  <div class="cat-tabs"><a href="/wellness" class="active">&#127807; Wellness</a><a href="/body">&#129728; Body</a></div>
   <p class="we-sub">your non-negotiables · your rules · your life — tap any line to edit</p>
 
   <div class="sec">Today's Check-in</div>

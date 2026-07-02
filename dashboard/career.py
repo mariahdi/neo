@@ -125,7 +125,7 @@ _BODY = r"""
 </style>
 
 <main>
-  <div class="c-head"><h1>Career &amp; <b>Business Growth 📈</b></h1></div>
+  <div class="c-head"><h1>Career &amp; Business Growth 📈</h1></div>
   <p class="c-sub">applications, prep &amp; the plan — tap any line to edit</p>
 
   <div class="sec">Applications</div>

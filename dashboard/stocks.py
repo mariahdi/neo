@@ -282,7 +282,7 @@ async def set_briefing(body: SetBriefingIn) -> JSONResponse:
 # ── Page ──────────────────────────────────────────────────────────────────────
 @router.get("/stocks", response_class=HTMLResponse)
 async def stocks_page() -> HTMLResponse:
-    return HTMLResponse(theme.page("Stocks", _BODY, active="stocks"))
+    return HTMLResponse(theme.page("Finance & Wealth", _BODY, active="stocks"))
 
 
 _BODY = r"""
@@ -336,9 +336,10 @@ _BODY = r"""
 
 <main>
   <div class="stk-head">
-    <h1>Stocks <b>Watch</b></h1>
+    <h1>Finance &amp; Wealth 📈</h1>
     <button class="btn btn-sm" id="manage-btn">Manage</button>
   </div>
+  <div class="cat-tabs"><a href="/nominal">&#128176; Budget</a><a href="/wealth">&#128202; Investments</a><a href="/stocks" class="active">&#128200; Stocks</a></div>
   <p class="note" id="note"></p>
 
   <div id="view"></div>

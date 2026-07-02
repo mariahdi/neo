@@ -148,7 +148,8 @@ _BODY = r"""
 </style>
 
 <main>
-  <div class="nom-head"><h1>Finance &amp; <b>Wealth 💰</b></h1></div>
+  <div class="nom-head"><h1>Finance &amp; Wealth 💰</h1></div>
+  <div class="cat-tabs"><a href="/nominal" class="active">&#128176; Budget</a><a href="/wealth">&#128202; Investments</a><a href="/stocks">&#128200; Stocks</a></div>
   <p class="nom-sub">take-home / mo: <input type="number" id="income" placeholder="0" style="width:130px;display:inline-block"></p>
 
   <div id="leftover"></div>

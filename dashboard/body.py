@@ -82,7 +82,7 @@ async def log_weight(body: WeighIn) -> JSONResponse:
 
 @router.get("/body", response_class=HTMLResponse)
 async def body_page() -> HTMLResponse:
-    return HTMLResponse(theme.page("Body", _BODY, active="body"))
+    return HTMLResponse(theme.page("Health & Wellness", _BODY, active="body"))
 
 
 _BODY = r"""
@@ -110,7 +110,8 @@ _BODY = r"""
 </style>
 
 <main>
-  <div class="body-head"><h1>Body <b>🫀</b></h1></div>
+  <div class="body-head"><h1>Health &amp; Wellness 🫀</h1></div>
+  <div class="cat-tabs"><a href="/wellness">&#127807; Wellness</a><a href="/body" class="active">&#129728; Body</a></div>
 
   <div class="sec-label">Medications</div>
   <div id="meds"></div>

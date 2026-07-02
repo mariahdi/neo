@@ -86,6 +86,11 @@ TOPNAV_CSS = """
   .topnav { display: flex; gap: 22px; margin-right: auto; margin-left: 10px; }
   .topnav a { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); text-decoration: none; padding: 6px 0; }
   .topnav a:hover, .topnav a.active { color: var(--gold); }
+  /* Sub-tabs for combined categories (e.g. Finance & Wealth: Budget/Investments/Stocks). */
+  .cat-tabs { display: flex; gap: 8px; margin: 0 0 24px; flex-wrap: wrap; }
+  .cat-tabs a { font-size: 12.5px; padding: 7px 15px; border-radius: 50px; border: 1px solid var(--line); color: var(--muted); text-decoration: none; background: var(--panel); }
+  .cat-tabs a:hover { border-color: var(--gold-line); color: var(--text); }
+  .cat-tabs a.active { background: var(--gold-soft); border-color: var(--gold-line); color: var(--gold); }
   .nav-badge { display: inline-block; background: var(--gold); color: var(--on-gold); font-size: 9px; font-weight: 700; border-radius: 10px; padding: 0 5px; margin-left: 5px; vertical-align: 1px; }
   .logout { background: none; border: 1px solid var(--line); color: var(--muted); font-family: inherit; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border-radius: 8px; padding: 5px 11px; }
   .logout:hover { border-color: var(--gold-line); color: var(--gold); }

@@ -58,7 +58,7 @@ async def save_wealth(body: dict) -> JSONResponse:
 
 @router.get("/wealth", response_class=HTMLResponse)
 async def wealth_page() -> HTMLResponse:
-    return HTMLResponse(theme.page("Wealth", _BODY, active="wealth"))
+    return HTMLResponse(theme.page("Finance & Wealth", _BODY, active="wealth"))
 
 
 _BODY = r"""
@@ -88,7 +88,8 @@ _BODY = r"""
 </style>
 
 <main>
-  <div class="w-head"><h1>Wealth <b>📈</b></h1></div>
+  <div class="w-head"><h1>Finance &amp; Wealth 📊</h1></div>
+  <div class="cat-tabs"><a href="/nominal">&#128176; Budget</a><a href="/wealth" class="active">&#128202; Investments</a><a href="/stocks">&#128200; Stocks</a></div>
   <p class="w-sub">long game · the trajectory is up</p>
 
   <div class="total">

@@ -79,7 +79,7 @@ _BODY = r"""
 </style>
 
 <main>
-  <div class="t-head"><h1>Recreation, Fun &amp; <b>Travel 🌴</b></h1></div>
+  <div class="t-head"><h1>Recreation, Fun &amp; Travel 🌴</h1></div>
   <p class="t-sub">where to next — tap a trip to edit flights, notes & to-dos</p>
   <div id="trips"></div>
   <div class="add">

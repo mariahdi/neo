@@ -245,7 +245,7 @@ _BODY = r"""
 </style>
 
 <main>
-  <div class="g-head"><h1>Time &amp; <b>Habits ⏱️</b></h1><button class="btn btn-sm" id="manage-btn">Manage</button></div>
+  <div class="g-head"><h1>Time &amp; Habits ⏱️</h1><button class="btn btn-sm" id="manage-btn">Manage</button></div>
 
   <div class="teller">
     <div class="lbl">Tell Aria an update — it figures out the goal. <b>e.g. “weighed myself this morning, 182”</b></div>
