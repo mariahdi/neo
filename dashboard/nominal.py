@@ -110,29 +110,73 @@ _CANVAS = r"""
   .zc-sub { font-size: 12.5px; color: var(--muted); margin: 2px 0 24px; }
   .zc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
   @media (max-width: 900px) { .zc-grid { grid-template-columns: 1fr; } }
-  .zc-panel { position: relative; height: 380px; border: 1px solid var(--line); border-radius: 16px;
+  /* preview cards — a clean peek that fades out at the bottom (not a hard cut) */
+  .zc-panel { position: relative; height: 340px; border: 1px solid var(--line); border-radius: 16px;
     overflow: hidden; background: var(--panel); cursor: zoom-in;
-    transition: transform .4s cubic-bezier(.2,.8,.2,1), box-shadow .4s, border-color .4s; }
-  .zc-panel:hover { transform: scale(1.75); z-index: 30;
-    box-shadow: 0 30px 90px rgba(0,0,0,0.65); border-color: var(--gold-line); }
-  .zc-grid:has(.zc-panel:hover) .zc-panel:not(:hover) { opacity: 0.35; filter: blur(1px); }
+    transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+  .zc-panel:hover { transform: translateY(-5px); border-color: var(--gold-line);
+    box-shadow: 0 20px 55px rgba(0,0,0,0.5); }
+  .zc-panel::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 90px; z-index: 2;
+    background: linear-gradient(transparent, var(--panel)); pointer-events: none; }
   .zc-label { position: absolute; top: 0; left: 0; right: 0; z-index: 3; display: flex; align-items: center;
-    gap: 8px; padding: 11px 15px; font-size: 13.5px; font-weight: 600; color: var(--text);
-    background: linear-gradient(180deg, var(--panel) 55%, transparent); pointer-events: none; }
-  .zc-frame { position: absolute; top: 34px; left: 50%; width: 760px; height: 1180px; border: 0;
-    transform: translateX(-50%) scale(0.455); transform-origin: top center; background: var(--bg); }
-  .zc-hint { text-align: center; color: var(--muted); font-size: 12px; margin-top: 20px; letter-spacing: 0.02em; }
+    gap: 8px; padding: 12px 15px; font-size: 14px; font-weight: 600; color: var(--text);
+    background: linear-gradient(180deg, var(--panel) 60%, transparent); pointer-events: none; }
+  .zc-open { position: absolute; bottom: 12px; left: 0; right: 0; z-index: 3; text-align: center;
+    font-size: 12px; color: var(--gold); pointer-events: none; opacity: 0; transition: opacity .2s; }
+  .zc-panel:hover .zc-open { opacity: 1; }
+  /* preview iframe: non-interactive thumbnail of the real dashboard */
+  .zc-frame { position: absolute; top: 40px; left: 50%; width: 820px; height: 1500px; border: 0;
+    transform: translateX(-50%) scale(0.44); transform-origin: top center; background: var(--bg);
+    pointer-events: none; }
+  /* zoom overlay — full, centered, scrollable, fully interactive */
+  .zc-ov { position: fixed; inset: 0; z-index: 9998; background: rgba(6,4,2,0.86);
+    -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; padding: 22px; }
+  .zc-ov.open { display: flex; }
+  .zc-modal { position: relative; width: min(1060px, 95vw); height: 88vh; background: var(--panel);
+    border: 1px solid var(--gold-line); border-radius: 18px; overflow: hidden; display: flex;
+    flex-direction: column; box-shadow: 0 40px 120px rgba(0,0,0,0.7);
+    transform: scale(0.92); opacity: 0; transition: transform .3s cubic-bezier(.2,.8,.2,1), opacity .3s; }
+  .zc-ov.open .zc-modal { transform: scale(1); opacity: 1; }
+  .zc-mhead { display: flex; align-items: center; justify-content: space-between; padding: 13px 20px;
+    border-bottom: 1px solid var(--line); flex-shrink: 0; }
+  .zc-mhead .t { font-size: 15px; font-weight: 600; }
+  .zc-close { background: none; border: none; color: var(--muted); font-size: 27px; line-height: 1; cursor: pointer; }
+  .zc-close:hover { color: var(--gold); }
+  .zc-mframe { flex: 1; width: 100%; border: 0; background: var(--bg); }
 </style>
 <main>
   <div class="zc-head"><h1>Finance &amp; Wealth 💰</h1></div>
-  <p class="zc-sub">your whole financial picture in one place — hover a section to zoom in</p>
-  <div class="zc-grid">
-    <div class="zc-panel"><div class="zc-label">💰 Budget</div><iframe class="zc-frame" src="/nominal?bare=1" loading="lazy" title="Budget"></iframe></div>
-    <div class="zc-panel"><div class="zc-label">📊 Investments</div><iframe class="zc-frame" src="/wealth?bare=1" loading="lazy" title="Investments"></iframe></div>
-    <div class="zc-panel"><div class="zc-label">📈 Stocks</div><iframe class="zc-frame" src="/stocks?bare=1" loading="lazy" title="Stocks"></iframe></div>
+  <p class="zc-sub">your whole financial picture in one place — click a section to zoom in</p>
+  <div class="zc-grid" id="zc-grid">
+    <div class="zc-panel" data-src="/nominal?bare=1" data-label="💰 Budget"><div class="zc-label">💰 Budget</div><iframe class="zc-frame" src="/nominal?bare=1" loading="lazy" title="Budget preview"></iframe><span class="zc-open">&#10022; Click to zoom in</span></div>
+    <div class="zc-panel" data-src="/wealth?bare=1" data-label="📊 Investments"><div class="zc-label">📊 Investments</div><iframe class="zc-frame" src="/wealth?bare=1" loading="lazy" title="Investments preview"></iframe><span class="zc-open">&#10022; Click to zoom in</span></div>
+    <div class="zc-panel" data-src="/stocks?bare=1" data-label="📈 Stocks"><div class="zc-label">📈 Stocks</div><iframe class="zc-frame" src="/stocks?bare=1" loading="lazy" title="Stocks preview"></iframe><span class="zc-open">&#10022; Click to zoom in</span></div>
   </div>
-  <p class="zc-hint">&#10022; Hover a section to blow it up &middot; click inside to interact</p>
+  <div class="zc-ov" id="zc-ov" aria-hidden="true">
+    <div class="zc-modal">
+      <div class="zc-mhead"><span class="t" id="zc-mlabel"></span><button class="zc-close" aria-label="Close">&times;</button></div>
+      <iframe class="zc-mframe" id="zc-mframe" title="dashboard"></iframe>
+    </div>
+  </div>
 </main>
+<script>
+(function(){
+  var ov = document.getElementById('zc-ov');
+  var fr = document.getElementById('zc-mframe');
+  var lb = document.getElementById('zc-mlabel');
+  function open(src, label){ fr.src = src; lb.textContent = label;
+    ov.classList.add('open'); ov.setAttribute('aria-hidden','false'); document.body.style.overflow = 'hidden'; }
+  function close(){ ov.classList.remove('open'); ov.setAttribute('aria-hidden','true');
+    document.body.style.overflow = ''; setTimeout(function(){ fr.src = 'about:blank'; }, 300); }
+  document.querySelectorAll('#zc-grid .zc-panel').forEach(function(p){
+    p.addEventListener('click', function(){ open(p.getAttribute('data-src'), p.getAttribute('data-label')); });
+  });
+  ov.querySelector('.zc-close').addEventListener('click', close);
+  ov.addEventListener('click', function(e){ if(e.target === ov) close(); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && ov.classList.contains('open')) close(); });
+})();
+</script>
 """
 
 
