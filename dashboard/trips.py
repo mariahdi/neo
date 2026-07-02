@@ -40,7 +40,7 @@ async def save_trips(body: dict) -> JSONResponse:
 
 @router.get("/trips", response_class=HTMLResponse)
 async def trips_page() -> HTMLResponse:
-    return HTMLResponse(theme.page("Trips", _BODY, active="trips"))
+    return HTMLResponse(theme.page("Recreation, Fun & Travel", _BODY, active="trips"))
 
 
 _BODY = r"""
@@ -79,7 +79,7 @@ _BODY = r"""
 </style>
 
 <main>
-  <div class="t-head"><h1>Trips <b>✈️</b></h1></div>
+  <div class="t-head"><h1>Recreation, Fun &amp; <b>Travel 🌴</b></h1></div>
   <p class="t-sub">where to next — tap a trip to edit flights, notes & to-dos</p>
   <div id="trips"></div>
   <div class="add">

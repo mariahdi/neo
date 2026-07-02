@@ -78,7 +78,7 @@ async def save_wellness(body: dict) -> JSONResponse:
 
 @router.get("/wellness", response_class=HTMLResponse)
 async def wellness_page() -> HTMLResponse:
-    return HTMLResponse(theme.page("Wellness", _BODY, active="wellness"))
+    return HTMLResponse(theme.page("Health & Wellness", _BODY, active="wellness"))
 
 
 _BODY = r"""
@@ -114,7 +114,7 @@ _BODY = r"""
 </style>
 
 <main>
-  <div class="we-head"><h1>Wellness <b>🌸</b></h1></div>
+  <div class="we-head"><h1>Health &amp; <b>Wellness 🌿</b></h1></div>
   <p class="we-sub">your non-negotiables · your rules · your life — tap any line to edit</p>
 
   <div class="sec">Today's Check-in</div>

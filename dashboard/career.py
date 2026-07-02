@@ -81,7 +81,7 @@ async def save_career(body: dict) -> JSONResponse:
 
 @router.get("/career", response_class=HTMLResponse)
 async def career_page() -> HTMLResponse:
-    return HTMLResponse(theme.page("Career", _BODY, active="career"))
+    return HTMLResponse(theme.page("Career & Business Growth", _BODY, active="career"))
 
 
 _BODY = r"""
@@ -125,7 +125,7 @@ _BODY = r"""
 </style>
 
 <main>
-  <div class="c-head"><h1>Career <b>💼</b></h1></div>
+  <div class="c-head"><h1>Career &amp; <b>Business Growth 📈</b></h1></div>
   <p class="c-sub">applications, prep &amp; the plan — tap any line to edit</p>
 
   <div class="sec">Applications</div>
