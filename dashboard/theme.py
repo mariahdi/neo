@@ -216,7 +216,7 @@ TOUR_JS = r"""
 (function(){
   const STEPS = [
     {title:"Welcome to Aria", body:"Here's a quick 30-second tour of your space. Hit Next, or Skip any time."},
-    {page:"/", sel:"#catalog", title:"Your modules", body:"Everything in Aria is a module — recipes, goals, wins, money, wellness and more. Tap any card to open it."},
+    {page:"/", sel:"#catalog", title:"Your dashboards", body:"Everything in Aria is a dashboard — health, finances, goals, career, and more. Tap any card to open it."},
     {page:"/", sel:"#catalog", title:"Turn on what you want", body:"Add or remove modules anytime. Aria only shows what you actually use — nothing extra, no noise."},
     {sel:".topnav", title:"Move around", body:"Jump between your active spaces up here. Your dashboard is always one click away."},
     {sel:".footer-links", title:"Yours to keep", body:"Down here live your settings, your own ARIA & themes, and your data — which you can export or delete anytime. No lock-in, ever."},

@@ -12,7 +12,7 @@ from fastapi import APIRouter
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
-from . import store, theme
+from . import profile, store, theme
 
 router = APIRouter()
 
@@ -23,9 +23,32 @@ DEFAULT = {
     "categories": [],
 }
 
+# Realistic sample budget so the public demo opens full, not empty.
+DEMO_SEED = {
+    "income": 6800,
+    "income_avg": 6000,
+    "categories": [
+        {"id": "rent", "name": "Rent", "emoji": "🏠", "amount": 2100, "avg": 2100, "type": "fixed", "active": True},
+        {"id": "utilities", "name": "Utilities", "emoji": "💡", "amount": 220, "avg": 220, "type": "fixed", "active": True},
+        {"id": "groceries", "name": "Groceries", "emoji": "🛒", "amount": 600, "avg": 550, "type": "loose", "active": True},
+        {"id": "dining", "name": "Dining & fun", "emoji": "🍜", "amount": 400, "avg": 300, "type": "loose", "active": True},
+        {"id": "transport", "name": "Transport", "emoji": "🚗", "amount": 260, "avg": 260, "type": "float", "active": True},
+        {"id": "subs", "name": "Subscriptions", "emoji": "📺", "amount": 85, "avg": 85, "type": "float", "active": True},
+        {"id": "emergency", "name": "Emergency fund", "emoji": "🛟", "amount": 500, "avg": 400, "type": "savings", "active": True},
+        {"id": "invest", "name": "Investing", "emoji": "📈", "amount": 900, "avg": 700, "type": "savings", "active": True},
+    ],
+}
+
 
 def _data() -> dict:
-    return store.load("nominal", DEFAULT)
+    d = store.load("nominal", None)
+    if d is None:
+        # Demo instances open pre-filled; real accounts start blank.
+        if profile.ACTIVE.get("demo"):
+            store.save("nominal", DEMO_SEED)
+            return DEMO_SEED
+        return DEFAULT
+    return d
 
 
 @router.get("/api/nominal")
@@ -74,7 +97,7 @@ async def save_nominal(body: NominalIn) -> JSONResponse:
 
 @router.get("/nominal", response_class=HTMLResponse)
 async def nominal_page() -> HTMLResponse:
-    return HTMLResponse(theme.page("Nominal", _BODY, active="nominal"))
+    return HTMLResponse(theme.page("Finance & Wealth", _BODY, active="nominal"))
 
 
 _BODY = r"""
@@ -125,7 +148,7 @@ _BODY = r"""
 </style>
 
 <main>
-  <div class="nom-head"><h1>Nominal <b>💰</b></h1></div>
+  <div class="nom-head"><h1>Finance &amp; <b>Wealth 💰</b></h1></div>
   <p class="nom-sub">take-home / mo: <input type="number" id="income" placeholder="0" style="width:130px;display:inline-block"></p>
 
   <div id="leftover"></div>

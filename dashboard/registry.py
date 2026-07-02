@@ -32,7 +32,7 @@ MODULES = [
     {"key": "wins", "icon": "🌟", "name": "Wins", "path": "/wins",
      "description": "Daily wins with AI recognition.",
      "version": "1.0", "released": "2026-06-16", "requires": ["anthropic"]},
-    {"key": "nominal", "icon": "💰", "name": "Nominal", "path": "/nominal",
+    {"key": "nominal", "icon": "💰", "name": "Finance & Wealth", "path": "/nominal",
      "description": "Budget by Fixed / Loose / Float / Savings, with audience masking.",
      "version": "1.0", "released": "2026-06-17", "requires": []},
     {"key": "body", "icon": "🫀", "name": "Body", "path": "/body",
