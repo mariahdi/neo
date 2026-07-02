@@ -49,6 +49,7 @@ from .aria_tagline import router as aria_router
 from .me import router as me_router
 from .stocks import router as stocks_router
 from .wins import router as wins_router
+from .categories import router as categories_router
 
 app = FastAPI(title="Aria", version="1.0.0")
 
@@ -71,6 +72,7 @@ app.include_router(wealth_router)
 app.include_router(trips_router)
 app.include_router(wellness_router)
 app.include_router(career_router)
+app.include_router(categories_router)
 app.include_router(dailybread_router)
 app.include_router(recipes_router)
 app.include_router(billing_router)

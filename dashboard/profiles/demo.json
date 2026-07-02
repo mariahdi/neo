@@ -10,17 +10,15 @@
   "home": "modules",
   "seed_recipes": "starter-recipes.json",
   "modules": [
-    "about",
-    "goals",
     "wellness",
-    "body",
     "nominal",
-    "wealth",
-    "wins",
+    "goals",
     "career",
+    "relationships",
+    "growth",
+    "vision",
     "trips",
-    "recipes",
-    "stocks"
+    "legacy"
   ],
   "tokens": {
     "bg": "#0e0a07",

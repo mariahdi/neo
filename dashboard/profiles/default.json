@@ -6,12 +6,15 @@
   "tagline": "Always Ready, Infinitely Adaptable",
   "role": "member",
   "modules": [
-    "about",
-    "recipes",
-    "stocks",
-    "wins",
+    "wellness",
     "nominal",
-    "wellness"
+    "goals",
+    "career",
+    "relationships",
+    "growth",
+    "vision",
+    "trips",
+    "legacy"
   ],
   "home": "modules",
   "seed_recipes": "starter-recipes.json",
