@@ -380,7 +380,8 @@ def embed(body: str) -> str:
 {FONT_LINK}
 <style>{BASE_CSS}</style>
 {ov_tag}
-<style>body{{padding:18px 20px;background:var(--bg);}} .cat-tabs{{display:none!important;}} main{{margin:0!important;}}</style>
+<style>body{{padding:18px 20px;background:var(--bg);}} .cat-tabs{{display:none!important;}} main{{margin:0!important;}}
+.nom-head,.w-head,.stk-head,.we-head,.body-head,.g-head,.c-head,.t-head{{display:none!important;}}</style>
 </head>
 <body>
 {body}
