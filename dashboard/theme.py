@@ -215,12 +215,12 @@ EXTRA_CSS = """
 TOUR_JS = r"""
 (function(){
   const STEPS = [
-    {title:"Welcome to Neo", body:"Here's a quick 30-second tour of your space. Hit Next, or Skip any time."},
-    {page:"/", sel:"#catalog", title:"Your modules", body:"Everything in Neo is a module — recipes, goals, wins, money, wellness and more. Tap any card to open it."},
-    {page:"/", sel:"#catalog", title:"Turn on what you want", body:"Add or remove modules anytime. Neo only shows what you actually use — nothing extra, no noise."},
+    {title:"Welcome to Aria", body:"Here's a quick 30-second tour of your space. Hit Next, or Skip any time."},
+    {page:"/", sel:"#catalog", title:"Your modules", body:"Everything in Aria is a module — recipes, goals, wins, money, wellness and more. Tap any card to open it."},
+    {page:"/", sel:"#catalog", title:"Turn on what you want", body:"Add or remove modules anytime. Aria only shows what you actually use — nothing extra, no noise."},
     {sel:".topnav", title:"Move around", body:"Jump between your active spaces up here. Your dashboard is always one click away."},
     {sel:".footer-links", title:"Yours to keep", body:"Down here live your settings, your own ARIA & themes, and your data — which you can export or delete anytime. No lock-in, ever."},
-    {sel:".logout", title:"You're all set ✦", body:"You stay signed in between visits; sign out here whenever you like. That's the tour — enjoy Neo!"},
+    {sel:".logout", title:"You're all set ✦", body:"You stay signed in between visits; sign out here whenever you like. That's the tour — enjoy Aria!"},
   ];
   const KEY = "neo_tour";
   let cur = 0, ro = null, onReflow = null;
@@ -326,7 +326,12 @@ def tour_tag() -> str:
     once for a fresh account. Falls back to no-autostart if there's no user
     context (e.g. a page rendered outside a request)."""
     try:
-        autostart = not (store.load("tour", {}) or {}).get("seen")
+        # Demo instances always offer the tour (every visitor gets the walkthrough);
+        # normal accounts autostart it exactly once, until dismissed.
+        if profile.ACTIVE.get("demo"):
+            autostart = True
+        else:
+            autostart = not (store.load("tour", {}) or {}).get("seen")
     except Exception:
         autostart = False
     return (f"<script>window.NEO_TOUR_AUTOSTART={'true' if autostart else 'false'};</script>"

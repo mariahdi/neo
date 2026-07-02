@@ -44,7 +44,7 @@ async def import_data(body: dict) -> JSONResponse:
     # Accept either the full export payload ({"data": {...}}) or a bare data dict.
     data = body.get("data") if isinstance(body, dict) and "data" in body else body
     if not isinstance(data, dict):
-        return JSONResponse({"ok": False, "message": "That doesn't look like a Neo data file."}, status_code=400)
+        return JSONResponse({"ok": False, "message": "That doesn't look like an Aria data file."}, status_code=400)
     restored = []
     for k, v in data.items():
         if k in EXCLUDE:
@@ -101,7 +101,7 @@ _BODY = r"""
 
   <div class="data-card">
     <h2>🗑 Delete everything</h2>
-    <p>Permanently erase all your content from Neo. Your login stays, but every
+    <p>Permanently erase all your content from Aria. Your login stays, but every
        module's data is deleted. <b>This can't be undone</b> — export first if you'd
        like a copy.</p>
     <button class="btn" id="del-btn" style="border-color:var(--gold-line);">Delete my data</button>

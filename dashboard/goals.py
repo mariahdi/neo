@@ -248,7 +248,7 @@ _BODY = r"""
   <div class="g-head"><h1>My <b>Goals</b></h1><button class="btn btn-sm" id="manage-btn">Manage</button></div>
 
   <div class="teller">
-    <div class="lbl">Tell Neo an update — it figures out the goal. <b>e.g. “weighed myself this morning, 182”</b></div>
+    <div class="lbl">Tell Aria an update — it figures out the goal. <b>e.g. “weighed myself this morning, 182”</b></div>
     <div class="teller-row">
       <textarea id="log-input" placeholder="What happened?"></textarea>
       <button class="btn btn-gold" id="log-btn">Log it</button>

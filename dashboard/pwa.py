@@ -17,7 +17,7 @@ router = APIRouter()
 
 @router.get("/manifest.webmanifest")
 async def manifest() -> JSONResponse:
-    name = profile.ACTIVE.get("name", "Neo")
+    name = profile.ACTIVE.get("name", "Aria")
     bg = profile.ACTIVE.get("tokens", {}).get("bg", "#0f1115")
     data = {
         "name": name,

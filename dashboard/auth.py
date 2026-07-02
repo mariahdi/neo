@@ -209,7 +209,7 @@ def send_reset_email(to_email: str, token: str) -> None:
     reset_url = f"{app_url}/reset-password?token={token}"
     body = f"""Hi,
 
-You requested a password reset for your Neo account.
+You requested a password reset for your Aria account.
 
 Reset your password here (link expires in 1 hour):
 {reset_url}
@@ -228,7 +228,7 @@ Aria
         resend.Emails.send({
             "from": f"Aria <{from_email}>",
             "to": [to_email],
-            "subject": "Reset your Neo password",
+            "subject": "Reset your Aria password",
             "text": body,
         })
         print(f"[auth] reset email sent to {to_email}")
@@ -696,7 +696,7 @@ _LOGIN_PAGE = (
       <label for="p">Password</label>
       <input id="p" type="password" autocomplete="current-password">
       <button type="submit" id="submit-btn" class="btn btn-gold">Sign in</button>
-      <div class="switch">Don't have an account? <a href="<!--LANDING-->">Get Neo</a></div>
+      <div class="switch">Don't have an account? <a href="<!--LANDING-->">Get Aria</a></div>
       <div class="switch" style="margin-top:8px;"><a href="/forgot-password">Forgot your password?</a></div>
     </div>
   </form>

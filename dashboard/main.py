@@ -50,7 +50,7 @@ from .me import router as me_router
 from .stocks import router as stocks_router
 from .wins import router as wins_router
 
-app = FastAPI(title="Neo", version="1.0.0")
+app = FastAPI(title="Aria", version="1.0.0")
 
 # Persistent session login (NEO-33): a /login screen + signed session cookie
 # instead of a re-prompting Basic-Auth popup. Enforced only when
@@ -157,7 +157,7 @@ def _launcher() -> str:
     """A clean module home — tiles for the enabled modules. Used by profiles
     whose `home` is "modules" (e.g. Aria), instead of the proposal work board."""
     me_name = (store.load("me", {}) or {}).get("name")
-    greeting = f"Welcome back, <b>{me_name}</b>" if me_name else "Welcome to <b>Neo</b>"
+    greeting = f"Welcome back, <b>{me_name}</b>" if me_name else "Welcome to <b>Aria</b>"
     tiles = "".join(
         f'<a class="tile" href="{m["path"]}">'
         f'<span class="tile-ic">{m.get("icon", "•")}</span>'
@@ -427,8 +427,8 @@ PAGE = r"""<!DOCTYPE html>
 <main>
   <!-- Chat -->
   <section class="chat">
-    <h2>Ask Neo</h2>
-    <p class="hint">Type a request — or tap the mic to speak — and Neo figures out the module, opens the ticket, and starts the draft.</p>
+    <h2>Ask Aria</h2>
+    <p class="hint">Type a request — or tap the mic to speak — and Aria figures out the module, opens the ticket, and starts the draft.</p>
     <form id="chat-form" class="chat-row">
       <textarea id="chat-input" rows="1" placeholder="e.g. I need a proposal for USAFA for website development"></textarea>
       <button type="button" id="chat-mic" class="btn btn-mic" aria-label="Speak your request" title="Speak your request">🎙</button>

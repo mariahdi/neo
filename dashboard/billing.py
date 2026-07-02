@@ -83,7 +83,7 @@ def _send_welcome_email(to_email: str, password: str) -> None:
     landing = os.environ.get("NEO_LANDING_URL", "https://youraria.co")
     body = f"""Hi,
 
-Welcome to Neo. Your private personal OS is ready.
+Welcome to Aria. Your private personal OS is ready.
 
 Login here: {app_url}/login
 Email:      {to_email}
@@ -103,7 +103,7 @@ Co-Founder & CTO, Aria
         resend.Emails.send({
             "from": f"Mariah at Aria <{from_email}>",
             "to": [to_email],
-            "subject": "Your Neo is ready ✦",
+            "subject": "Your Aria is ready ✦",
             "text": body,
         })
         print(f"[billing] welcome email sent to {to_email}")
@@ -332,7 +332,7 @@ _CHECKOUT_BODY = r"""
   <h1>One step <b>left</b></h1>
   <p class="sub">Start your 14-day free trial. You won't be charged today, and you can cancel anytime.</p>
   <div class="plan">
-    <div class="name" id="plan-name">Neo</div>
+    <div class="name" id="plan-name">Aria</div>
     <div class="price" id="plan-price">$9.99 / month</div>
     <div class="trial">14 days free, then your plan</div>
     <button class="btn btn-gold" id="start">Start free trial</button>
@@ -345,7 +345,7 @@ const $ = (s) => document.querySelector(s);
   try {
     const d = await (await fetch('/api/billing/status')).json();
     if (d.status === 'active') { location.href = '/'; return; }
-    $('#plan-name').textContent = d.plan || 'Neo';
+    $('#plan-name').textContent = d.plan || 'Aria';
     if (d.price) $('#plan-price').textContent = d.price;
   } catch (_) {}
 })();
@@ -364,7 +364,7 @@ _SUCCESS_BODY = r"""
 <main style="max-width:520px;margin:48px auto;text-align:center;">
   <h1 style="font-size:42px;">You're <b style="color:var(--gold);font-weight:400;">in</b> 🎉</h1>
   <p style="color:var(--muted);font-size:14px;margin:14px 0 26px;line-height:1.6;">
-    Welcome to Neo. Your account's all set — taking you to your dashboard…</p>
+    Welcome to Aria. Your account's all set — taking you to your dashboard…</p>
   <a class="btn btn-gold" href="/">Go now</a>
 </main>
 <script>setTimeout(function(){ location.href = "/"; }, 3000);</script>
@@ -386,7 +386,7 @@ _LOCKED_BODY = r"""
     Your trial has ended, so your dashboard is paused. Your data is safe and
     waiting — resubscribe to pick up right where you left off.</p>
   <p style="color:var(--muted);font-size:12.5px;margin:0 0 26px;">__EMAIL__</p>
-  <a class="btn btn-gold" href="__RESUB__" style="display:inline-block;padding:13px 28px;">Resubscribe to Neo</a>
+  <a class="btn btn-gold" href="__RESUB__" style="display:inline-block;padding:13px 28px;">Resubscribe to Aria</a>
   <div style="margin-top:22px;">
     <button id="out" style="background:none;border:none;color:var(--muted);font-size:12.5px;cursor:pointer;text-decoration:underline;">Sign out</button>
   </div>

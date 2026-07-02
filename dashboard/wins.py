@@ -139,7 +139,7 @@ async def suggest_wins(body: SuggestIn) -> JSONResponse:
     """Recognize wins in free text and return them as suggestions (not saved)."""
     text = (body.text or "").strip()
     if not text:
-        return JSONResponse({"ok": False, "message": "Tell Neo about your day first."}, status_code=400)
+        return JSONResponse({"ok": False, "message": "Tell Aria about your day first."}, status_code=400)
     demo = not ANTHROPIC_KEY
     try:
         suggestions = _suggest_mock(text) if demo else _suggest_claude(text)
@@ -227,12 +227,12 @@ _BODY = r"""
 
 <main>
   <div class="w-head"><h1>Daily <b>Wins</b></h1></div>
-  <p class="sub">Log what went well. Tell Neo about your day and it spots the wins — you decide which to keep.</p>
+  <p class="sub">Log what went well. Tell Aria about your day and it spots the wins — you decide which to keep.</p>
 
   <div class="teller">
     <div class="lbl">How was your day? <b>e.g. “made that phone call, fixed the deploy bug, and went for a run”</b></div>
     <div class="teller-row">
-      <textarea id="day-input" placeholder="Tell Neo about your day…"></textarea>
+      <textarea id="day-input" placeholder="Tell Aria about your day…"></textarea>
       <button class="btn btn-gold" id="find-btn">Find wins</button>
     </div>
     <div class="suggests" id="suggests"></div>
@@ -267,13 +267,13 @@ function winRow(w) {
   return `<div class="win">
     <span class="tag ${esc(w.category)}">${esc(w.category)}</span>
     <span class="wtxt">${esc(w.text)}</span>
-    ${w.source === "ai" ? '<span class="ai" title="Recognized by Neo">✨</span>' : ""}
+    ${w.source === "ai" ? '<span class="ai" title="Recognized by Aria">✨</span>' : ""}
     <button class="x" data-id="${esc(w.id)}" title="Remove">✕</button>
   </div>`;
 }
 function render() {
   const list = $("#list");
-  if (!wins.length) { list.innerHTML = '<div class="empty">No wins logged yet — tell Neo about your day above.</div>'; return; }
+  if (!wins.length) { list.innerHTML = '<div class="empty">No wins logged yet — tell Aria about your day above.</div>'; return; }
   const byDay = {};
   wins.forEach(w => { (byDay[w.date] = byDay[w.date] || []).push(w); });
   const days = Object.keys(byDay).sort().reverse();
@@ -299,7 +299,7 @@ $("#find-btn").addEventListener("click", async () => {
     if (!out.ok) { box.innerHTML = `<div class="empty">${esc(out.message||"Failed.")}</div>`; box.classList.add("show"); }
     else if (!out.suggestions.length) { box.innerHTML = '<div class="empty">No clear wins in that — try adding detail, or log one directly below.</div>'; box.classList.add("show"); }
     else {
-      box.innerHTML = `<div class="stitle">Neo found ${out.suggestions.length} — add the ones you want
+      box.innerHTML = `<div class="stitle">Aria found ${out.suggestions.length} — add the ones you want
         <button class="btn btn-sm" id="add-all">Add all</button></div>` +
         out.suggestions.map((s,i) => `<div class="sug" data-i="${i}">
           <span class="tag ${esc(s.category)}">${esc(s.category)}</span>
